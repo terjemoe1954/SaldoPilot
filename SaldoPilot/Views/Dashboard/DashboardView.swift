@@ -10,6 +10,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \Category.name) private var categories: [Category]
     @AppStorage(AppSettingsKey.defaultPeriod) private var selectedPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
@@ -36,6 +37,8 @@ struct DashboardView: View {
                     )
 
                     DashboardSummarySection(summary: summary)
+
+                    AIInsightSection(insights: aiInsights)
 
                     DashboardAttentionSection(
                         items: attentionItems,
@@ -110,6 +113,10 @@ struct DashboardView: View {
             overdueCount: overdueCount,
             nextDueDate: nextDueDate
         )
+    }
+
+    private var aiInsights: [AIInsight] {
+        AIInsightEngine.insights(transactions: activeTransactions, categories: categories)
     }
 
     private var attentionItems: [DashboardAttentionItem] {
@@ -363,6 +370,56 @@ private struct DashboardNextDueTile: View {
                 Text("None")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct AIInsightSection: View {
+    let insights: [AIInsight]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(.blue)
+                Text("AI summary")
+                    .font(.headline)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(insights) { insight in
+                    AIInsightRow(insight: insight)
+                }
+            }
+        }
+    }
+}
+
+private struct AIInsightRow: View {
+    let insight: AIInsight
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: insight.systemImage)
+                .font(.title3)
+                .foregroundStyle(insight.tint)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(insight.title)
+                    .font(.subheadline.weight(.semibold))
+
+                Text(insight.message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
