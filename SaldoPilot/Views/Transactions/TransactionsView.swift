@@ -12,6 +12,8 @@ struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @Query(sort: \Category.name) private var categories: [Category]
+    @AppStorage(AppSettingsKey.showCompletedStatus) private var showCompletedStatus = true
+    @AppStorage(AppSettingsKey.defaultDateType) private var defaultDateTypeRawValue = AppDefaultDateType.dueDate.rawValue
 
     @State private var selectedFilter: TransactionListFilter = .all
     @State private var advancedFilter = TransactionAdvancedFilter()
@@ -39,7 +41,10 @@ struct TransactionsView: View {
                             NavigationLink {
                                 TransactionDetailView(transaction: transaction)
                             } label: {
-                                TransactionRowView(transaction: transaction)
+                                TransactionRowView(
+                                    transaction: transaction,
+                                    showsCompletedStatus: showCompletedStatus
+                                )
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
@@ -93,6 +98,9 @@ struct TransactionsView: View {
             .sheet(isPresented: $isShowingAdvancedFilter) {
                 TransactionFilterSheet(filter: $advancedFilter, categories: categories)
             }
+            .onAppear {
+                applyDefaultDateTypeIfNeeded()
+            }
         }
     }
 
@@ -104,6 +112,12 @@ struct TransactionsView: View {
         activeTransactions.filter { transaction in
             selectedFilter.includes(transaction) && advancedFilter.includes(transaction)
         }
+    }
+
+    private func applyDefaultDateTypeIfNeeded() {
+        guard !advancedFilter.hasActiveFilters else { return }
+        let defaultDateType = AppDefaultDateType(rawValue: defaultDateTypeRawValue) ?? .dueDate
+        advancedFilter.dateType = TransactionFilterDateType(rawValue: defaultDateType.rawValue) ?? .dueDate
     }
 
     private func markCompleted(_ transaction: Transaction) {
@@ -592,6 +606,7 @@ private struct TransactionFilterSheet: View {
 
 private struct TransactionRowView: View {
     let transaction: Transaction
+    let showsCompletedStatus: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -610,9 +625,11 @@ private struct TransactionRowView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    TransactionStatusBadge(status: transaction.effectiveStatus)
-                    TransactionTypeBadge(type: transaction.type)
+                if showsCompletedStatus {
+                    HStack(spacing: 8) {
+                        TransactionStatusBadge(status: transaction.effectiveStatus)
+                        TransactionTypeBadge(type: transaction.type)
+                    }
                 }
             }
 

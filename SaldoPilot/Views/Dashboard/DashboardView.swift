@@ -10,7 +10,9 @@ import SwiftUI
 
 struct DashboardView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
-    @State private var selectedPeriod: DashboardPeriod = .thisMonth
+    @AppStorage(AppSettingsKey.defaultPeriod) private var selectedPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
+    @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
+    @AppStorage(AppSettingsKey.displayName) private var displayName = ""
     @State private var customStartDate = Calendar.current.startOfDay(for: .now)
     @State private var customEndDate = Date.now
 
@@ -23,8 +25,12 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    if showNameOnDashboard && !displayName.trimmedForDisplay.isEmpty {
+                        DashboardGreetingView(name: displayName.trimmedForDisplay)
+                    }
+
                     DashboardPeriodSection(
-                        selectedPeriod: $selectedPeriod,
+                        selectedPeriod: selectedPeriodBinding,
                         customStartDate: $customStartDate,
                         customEndDate: $customEndDate
                     )
@@ -46,6 +52,18 @@ struct DashboardView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Overview")
+        }
+    }
+
+    private var selectedPeriod: DashboardPeriod {
+        DashboardPeriod(rawValue: selectedPeriodRawValue) ?? .thisMonth
+    }
+
+    private var selectedPeriodBinding: Binding<DashboardPeriod> {
+        Binding {
+            selectedPeriod
+        } set: { newValue in
+            selectedPeriodRawValue = newValue.rawValue
         }
     }
 
@@ -203,6 +221,27 @@ private struct DashboardAttentionItem: Identifiable {
     let value: String
     let systemImage: String
     let tint: Color
+}
+
+private struct DashboardGreetingView: View {
+    let name: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Hello, \(name)")
+                .font(.title2.weight(.semibold))
+                .lineLimit(2)
+
+            Text("Here is your current balance picture.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .combine)
+    }
 }
 
 private struct DashboardPeriodSection: View {
@@ -423,6 +462,12 @@ private struct DashboardQuickActionsSection: View {
             }
             .buttonStyle(.bordered)
         }
+    }
+}
+
+private extension String {
+    var trimmedForDisplay: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

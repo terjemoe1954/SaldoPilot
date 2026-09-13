@@ -1,0 +1,89 @@
+//
+//  AppSettings.swift
+//  SaldoPilot
+//
+//  Created by Terje Moe on 13/09/2026.
+//
+
+import SwiftUI
+
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .system:
+            "System"
+        case .light:
+            "Light"
+        case .dark:
+            "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            nil
+        case .light:
+            .light
+        case .dark:
+            .dark
+        }
+    }
+}
+
+enum AppDefaultPeriod: String, CaseIterable, Identifiable {
+    case thisMonth
+    case previousMonth
+    case thisYear
+    case custom
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .thisMonth:
+            "This month"
+        case .previousMonth:
+            "Previous month"
+        case .thisYear:
+            "This year"
+        case .custom:
+            "Custom"
+        }
+    }
+}
+
+enum AppDefaultDateType: String, CaseIterable, Identifiable {
+    case dueDate
+    case paidDate
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .dueDate:
+            "Due date"
+        case .paidDate:
+            "Paid date"
+        }
+    }
+}
+
+enum AppSettingsKey {
+    static let appearance = "settings.appearance"
+    static let showNameOnDashboard = "settings.showNameOnDashboard"
+    static let displayName = "settings.displayName"
+    static let showCompletedStatus = "settings.showCompletedStatus"
+    static let defaultPeriod = "settings.defaultPeriod"
+    static let defaultDateType = "settings.defaultDateType"
+    static let notifyDueToday = "settings.notifyDueToday"
+    static let notifyDueTomorrow = "settings.notifyDueTomorrow"
+    static let notifyDueInAdvance = "settings.notifyDueInAdvance"
+    static let notificationAdvanceDays = "settings.notificationAdvanceDays"
+}
