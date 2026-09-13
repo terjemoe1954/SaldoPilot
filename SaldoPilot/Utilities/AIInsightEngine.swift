@@ -49,8 +49,16 @@ enum AIInsightEngine {
             insights.append(recurringInsight)
         }
 
+        if let duplicateInsight = duplicateInsight(transactions: activeTransactions) {
+            insights.append(duplicateInsight)
+        }
+
         if let unusualAmountInsight = unusualAmountInsight(transactions: activeTransactions) {
             insights.append(unusualAmountInsight)
+        }
+
+        if let savingsInsight = savingsInsight(transactions: activeTransactions, categories: categories, calendar: calendar) {
+            insights.append(savingsInsight)
         }
 
         if let categorySuggestionInsight = categorySuggestionInsight(transactions: activeTransactions, categories: categories) {
@@ -176,6 +184,24 @@ enum AIInsightEngine {
         )
     }
 
+    private static func duplicateInsight(transactions: [Transaction]) -> AIInsight? {
+        let grouped = Dictionary(grouping: transactions) { transaction in
+            "\(transaction.title.normalizedInsightKey)-\(transaction.amount.description)-\(transaction.dueDate.dayKey)-\(transaction.type.rawValue)"
+        }
+
+        guard let duplicates = grouped.values.first(where: { $0.count > 1 }), let firstTransaction = duplicates.sortedByDueDate.first else {
+            return nil
+        }
+
+        return AIInsight(
+            id: "duplicate",
+            title: "Possible duplicate",
+            message: String(localized: "\(firstTransaction.title) appears more than once on the same date and amount."),
+            systemImage: "doc.on.doc",
+            tint: .orange
+        )
+    }
+
     private static func unusualAmountInsight(transactions: [Transaction]) -> AIInsight? {
         let expenseTransactions = transactions.filter { $0.type == .expense }
         let grouped = Dictionary(grouping: expenseTransactions) { transaction in
@@ -198,6 +224,25 @@ enum AIInsightEngine {
         }
 
         return nil
+    }
+
+    private static func savingsInsight(transactions: [Transaction], categories: [Category], calendar: Calendar) -> AIInsight? {
+        guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else { return nil }
+        let categoryTotals = categories.compactMap { category -> (category: Category, amount: Decimal)? in
+            let matches = transactions.filter { $0.type == .expense && $0.category?.id == category.id && currentMonth.contains($0.dueDate) }
+            guard !matches.isEmpty else { return nil }
+            return (category, matches.totalAmount)
+        }
+
+        guard let largest = categoryTotals.max(by: { $0.amount < $1.amount }) else { return nil }
+
+        return AIInsight(
+            id: "savings",
+            title: "Savings idea",
+            message: String(localized: "Review \(largest.category.name). It is your largest expense category this month at \(largest.amount.formattedCurrency)."),
+            systemImage: "scissors",
+            tint: .green
+        )
     }
 
     private static func categorySuggestionInsight(transactions: [Transaction], categories: [Category]) -> AIInsight? {
@@ -250,6 +295,13 @@ private extension Array where Element == Transaction {
         sorted { first, second in
             first.dueDate < second.dueDate
         }
+    }
+}
+
+private extension Date {
+    var dayKey: String {
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: self)
+        return "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
     }
 }
 

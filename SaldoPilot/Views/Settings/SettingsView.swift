@@ -83,6 +83,12 @@ struct SettingsView: View {
                         Label("Privacy", systemImage: "hand.raised")
                     }
 
+                    NavigationLink {
+                        AIPrivacyView()
+                    } label: {
+                        Label("AI & Privacy", systemImage: "sparkles")
+                    }
+
                     Link(destination: supportURL) {
                         Label("Support", systemImage: "questionmark.circle")
                     }

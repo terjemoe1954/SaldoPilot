@@ -16,6 +16,7 @@ struct DashboardView: View {
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
     @State private var customStartDate = Calendar.current.startOfDay(for: .now)
     @State private var customEndDate = Date.now
+    @State private var isShowingAIQuery = false
 
     let onNewIncome: () -> Void
     let onNewExpense: () -> Void
@@ -38,7 +39,9 @@ struct DashboardView: View {
 
                     DashboardSummarySection(summary: summary)
 
-                    AIInsightSection(insights: aiInsights)
+                    AIInsightSection(insights: aiInsights) {
+                        isShowingAIQuery = true
+                    }
 
                     DashboardAttentionSection(
                         items: attentionItems,
@@ -55,6 +58,9 @@ struct DashboardView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Overview")
+            .sheet(isPresented: $isShowingAIQuery) {
+                AIQueryView(transactions: activeTransactions, categories: categories)
+            }
         }
     }
 
@@ -382,6 +388,7 @@ private struct DashboardNextDueTile: View {
 
 private struct AIInsightSection: View {
     let insights: [AIInsight]
+    let onAsk: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -390,6 +397,14 @@ private struct AIInsightSection: View {
                     .foregroundStyle(.blue)
                 Text("AI summary")
                     .font(.headline)
+
+                Spacer()
+
+                Button(action: onAsk) {
+                    Label("Ask", systemImage: "text.bubble")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
 
             VStack(spacing: 10) {

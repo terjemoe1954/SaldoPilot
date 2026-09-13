@@ -87,4 +87,5 @@ enum AppSettingsKey {
     static let notifyDueInAdvance = "settings.notifyDueInAdvance"
     static let notificationAdvanceDays = "settings.notificationAdvanceDays"
     static let notifyPendingIncome = "settings.notifyPendingIncome"
+    static let allowExternalAI = "settings.allowExternalAI"
 }

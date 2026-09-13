@@ -93,6 +93,9 @@ struct TransactionFormView: View {
                     .disabled(!canSave)
                 }
             }
+            .onChange(of: title) { _, newTitle in
+                updateSuggestedCategory(for: newTitle)
+            }
             .onChange(of: type) { _, newType in
                 if status == .paid || status == .received {
                     status = newType == .income ? .received : .paid
@@ -117,6 +120,14 @@ struct TransactionFormView: View {
     private var selectedCategory: Category? {
         guard let selectedCategoryID else { return nil }
         return categories.first { $0.id == selectedCategoryID }
+    }
+
+    private func updateSuggestedCategory(for title: String) {
+        guard selectedCategoryID == nil else { return }
+        let normalizedTitle = title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current).lowercased()
+        selectedCategoryID = categories.first { category in
+            normalizedTitle.contains(category.name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current).lowercased())
+        }?.id
     }
 
     private func save() {

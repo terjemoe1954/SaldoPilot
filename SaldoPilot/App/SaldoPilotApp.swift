@@ -13,11 +13,31 @@ struct SaldoPilotApp: App {
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
 
     private let modelContainer: ModelContainer = {
+        let schema = Schema(SaldoPilotSchemaV1.models)
+
         do {
-            let schema = Schema(SaldoPilotSchemaV1.models)
-            return try ModelContainer(for: schema, migrationPlan: SaldoPilotMigrationPlan.self)
+            let cloudConfiguration = ModelConfiguration(
+                schema: schema,
+                cloudKitDatabase: .private("iCloud.com.terjemoe.SaldoPilot")
+            )
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: SaldoPilotMigrationPlan.self,
+                configurations: [cloudConfiguration]
+            )
         } catch {
-            fatalError("Could not create SwiftData model container: \(error)")
+            print("CloudKit SwiftData container failed, falling back to local storage: \(error)")
+        }
+
+        do {
+            let localConfiguration = ModelConfiguration(schema: schema, cloudKitDatabase: .none)
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: SaldoPilotMigrationPlan.self,
+                configurations: [localConfiguration]
+            )
+        } catch {
+            fatalError("Could not create local SwiftData model container: \(error)")
         }
     }()
 

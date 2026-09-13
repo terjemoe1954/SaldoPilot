@@ -10,14 +10,14 @@ import SwiftData
 
 @Model
 final class Category {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var icon: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var icon: String = "tag"
     var colorIdentifier: String?
-    var createdAt: Date
+    var createdAt: Date = Date.now
 
     @Relationship(deleteRule: .nullify, inverse: \Transaction.category)
-    var transactions: [Transaction]
+    var transactions: [Transaction]?
 
     init(
         id: UUID = UUID(),

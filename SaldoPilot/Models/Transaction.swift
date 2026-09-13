@@ -10,21 +10,21 @@ import SwiftData
 
 @Model
 final class Transaction {
-    @Attribute(.unique) var id: UUID
-    var title: String
-    var amount: Decimal
-    var type: TransactionType
-    var dueDate: Date
+    var id: UUID = UUID()
+    var title: String = ""
+    var amount: Decimal = Decimal.zero
+    var type: TransactionType = TransactionType.expense
+    var dueDate: Date = Date.now
     var paidDate: Date?
-    var status: TransactionStatus
+    var status: TransactionStatus = TransactionStatus.pending
     var category: Category?
-    var recurrence: RecurrenceRule
+    var recurrence: RecurrenceRule = RecurrenceRule.none
     var recurrenceIntervalMonths: Int?
-    var notes: String
-    var createdAt: Date
-    var updatedAt: Date
-    var isCompleted: Bool
-    var isArchived: Bool
+    var notes: String = ""
+    var createdAt: Date = Date.now
+    var updatedAt: Date = Date.now
+    var isCompleted: Bool = false
+    var isArchived: Bool = false
 
     var effectiveStatus: TransactionStatus {
         guard status == .pending, !isCompleted else {
