@@ -11,15 +11,25 @@ import SwiftUI
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \Category.name) private var categories: [Category]
 
     @State private var selectedFilter: TransactionListFilter = .all
+    @State private var advancedFilter = TransactionAdvancedFilter()
     @State private var editingTransaction: Transaction?
     @State private var isShowingEditForm = false
+    @State private var isShowingAdvancedFilter = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 TransactionFilterPicker(selectedFilter: $selectedFilter)
+
+                if advancedFilter.hasActiveFilters {
+                    TransactionActiveFilterChips(
+                        filter: $advancedFilter,
+                        categories: categories
+                    )
+                }
 
                 if filteredTransactions.isEmpty {
                     TransactionEmptyState(filter: selectedFilter)
@@ -66,10 +76,22 @@ struct TransactionsView: View {
                 }
             }
             .navigationTitle("Transactions")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingAdvancedFilter = true
+                    } label: {
+                        Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+                    }
+                }
+            }
             .sheet(isPresented: $isShowingEditForm, onDismiss: { editingTransaction = nil }) {
                 if let editingTransaction {
                     TransactionFormView(transaction: editingTransaction)
                 }
+            }
+            .sheet(isPresented: $isShowingAdvancedFilter) {
+                TransactionFilterSheet(filter: $advancedFilter, categories: categories)
             }
         }
     }
@@ -79,7 +101,9 @@ struct TransactionsView: View {
     }
 
     private var filteredTransactions: [Transaction] {
-        activeTransactions.filter { selectedFilter.includes($0) }
+        activeTransactions.filter { transaction in
+            selectedFilter.includes(transaction) && advancedFilter.includes(transaction)
+        }
     }
 
     private func markCompleted(_ transaction: Transaction) {
@@ -114,6 +138,233 @@ struct TransactionsView: View {
 
     private func delete(_ transaction: Transaction) {
         modelContext.delete(transaction)
+    }
+}
+
+private struct TransactionAdvancedFilter: Equatable {
+    var period: TransactionDatePeriod = .all
+    var dateType: TransactionFilterDateType = .dueDate
+    var customStartDate = Calendar.current.startOfDay(for: .now)
+    var customEndDate = Date.now
+    var status: TransactionFilterStatus = .all
+    var type: TransactionFilterType = .all
+    var categoryID: UUID?
+    var minimumAmountText = ""
+    var maximumAmountText = ""
+
+    var hasActiveFilters: Bool {
+        period != .all ||
+        status != .all ||
+        type != .all ||
+        categoryID != nil ||
+        parsedMinimumAmount != nil ||
+        parsedMaximumAmount != nil
+    }
+
+    var parsedMinimumAmount: Decimal? {
+        parseAmount(minimumAmountText)
+    }
+
+    var parsedMaximumAmount: Decimal? {
+        parseAmount(maximumAmountText)
+    }
+
+    func includes(_ transaction: Transaction) -> Bool {
+        if !period.includes(date(for: transaction), customStartDate: customStartDate, customEndDate: customEndDate) {
+            return false
+        }
+
+        if !status.includes(transaction) {
+            return false
+        }
+
+        if !type.includes(transaction) {
+            return false
+        }
+
+        if let categoryID, transaction.category?.id != categoryID {
+            return false
+        }
+
+        if let parsedMinimumAmount, transaction.amount < parsedMinimumAmount {
+            return false
+        }
+
+        if let parsedMaximumAmount, transaction.amount > parsedMaximumAmount {
+            return false
+        }
+
+        return true
+    }
+
+    mutating func reset() {
+        self = TransactionAdvancedFilter()
+    }
+
+    private func date(for transaction: Transaction) -> Date? {
+        switch dateType {
+        case .dueDate:
+            transaction.dueDate
+        case .paidDate:
+            transaction.paidDate
+        }
+    }
+
+    private func parseAmount(_ value: String) -> Decimal? {
+        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedValue.isEmpty else { return nil }
+
+        let formatter = NumberFormatter()
+        formatter.locale = .current
+        formatter.numberStyle = .decimal
+
+        if let number = formatter.number(from: trimmedValue) {
+            return number.decimalValue
+        }
+
+        let normalizedValue = trimmedValue.replacingOccurrences(of: ",", with: ".")
+        return Decimal(string: normalizedValue, locale: Locale(identifier: "en_US_POSIX"))
+    }
+}
+
+private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
+    case all
+    case thisMonth
+    case previousMonth
+    case thisYear
+    case custom
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .all:
+            "All"
+        case .thisMonth:
+            "This month"
+        case .previousMonth:
+            "Previous month"
+        case .thisYear:
+            "This year"
+        case .custom:
+            "Custom period"
+        }
+    }
+
+    func includes(_ date: Date?) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .thisMonth, .previousMonth, .thisYear, .custom:
+            guard let date else { return false }
+            return dateInterval.contains(date)
+        }
+    }
+
+    private var dateInterval: DateInterval {
+        let calendar = Calendar.current
+        let now = Date.now
+
+        switch self {
+        case .all:
+            return DateInterval(start: .distantPast, end: .distantFuture)
+        case .thisMonth:
+            return calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: .distantPast, end: .distantFuture)
+        case .previousMonth:
+            let currentMonthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
+            let previousMonth = calendar.date(byAdding: .month, value: -1, to: currentMonthStart) ?? now
+            return calendar.dateInterval(of: .month, for: previousMonth) ?? DateInterval(start: .distantPast, end: .distantFuture)
+        case .thisYear:
+            return calendar.dateInterval(of: .year, for: now) ?? DateInterval(start: .distantPast, end: .distantFuture)
+        case .custom:
+            return DateInterval(start: .distantPast, end: .distantFuture)
+        }
+    }
+}
+
+private enum TransactionFilterDateType: String, CaseIterable, Identifiable {
+    case dueDate
+    case paidDate
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .dueDate:
+            "Due date"
+        case .paidDate:
+            "Paid date"
+        }
+    }
+}
+
+private enum TransactionFilterStatus: String, CaseIterable, Identifiable {
+    case all
+    case pending
+    case overdue
+    case paid
+    case received
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .all:
+            "All"
+        case .pending:
+            "Pending"
+        case .overdue:
+            "Overdue"
+        case .paid:
+            "Paid"
+        case .received:
+            "Received"
+        }
+    }
+
+    func includes(_ transaction: Transaction) -> Bool {
+        switch self {
+        case .all:
+            true
+        case .pending:
+            transaction.effectiveStatus == .pending
+        case .overdue:
+            transaction.effectiveStatus == .overdue
+        case .paid:
+            transaction.status == .paid
+        case .received:
+            transaction.status == .received
+        }
+    }
+}
+
+private enum TransactionFilterType: String, CaseIterable, Identifiable {
+    case all
+    case income
+    case expense
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .all:
+            "All"
+        case .income:
+            "Income"
+        case .expense:
+            "Expense"
+        }
+    }
+
+    func includes(_ transaction: Transaction) -> Bool {
+        switch self {
+        case .all:
+            true
+        case .income:
+            transaction.type == .income
+        case .expense:
+            transaction.type == .expense
+        }
     }
 }
 
@@ -174,6 +425,168 @@ private struct TransactionFilterPicker: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(.bar)
+    }
+}
+
+private struct TransactionActiveFilterChips: View {
+    @Binding var filter: TransactionAdvancedFilter
+    let categories: [Category]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                if filter.period != .all {
+                    TransactionFilterChip(title: filter.period.title)
+                }
+
+                if filter.dateType != .dueDate && filter.period != .all {
+                    TransactionFilterChip(title: filter.dateType.title)
+                }
+
+                if filter.status != .all {
+                    TransactionFilterChip(title: filter.status.title)
+                }
+
+                if filter.type != .all {
+                    TransactionFilterChip(title: filter.type.title)
+                }
+
+                if let categoryName {
+                    TransactionFilterChip(text: categoryName)
+                }
+
+                if filter.parsedMinimumAmount != nil {
+                    TransactionFilterChip(title: "Minimum")
+                }
+
+                if filter.parsedMaximumAmount != nil {
+                    TransactionFilterChip(title: "Maximum")
+                }
+
+                Button("Reset") {
+                    filter.reset()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+        .background(.bar)
+    }
+
+    private var categoryName: String? {
+        guard let categoryID = filter.categoryID else { return nil }
+        return categories.first { $0.id == categoryID }?.name
+    }
+}
+
+private struct TransactionFilterChip: View {
+    let title: LocalizedStringKey?
+    let text: String?
+
+    init(title: LocalizedStringKey) {
+        self.title = title
+        text = nil
+    }
+
+    init(text: String) {
+        title = nil
+        self.text = text
+    }
+
+    var body: some View {
+        Group {
+            if let title {
+                Text(title)
+            } else if let text {
+                Text(text)
+            }
+        }
+        .font(.caption.weight(.semibold))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .foregroundStyle(.primary)
+        .background(.thinMaterial)
+        .clipShape(Capsule())
+    }
+}
+
+private struct TransactionFilterSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    @Binding var filter: TransactionAdvancedFilter
+    let categories: [Category]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Date") {
+                    Picker("Period", selection: $filter.period) {
+                        ForEach(TransactionDatePeriod.allCases) { period in
+                            Text(period.title).tag(period)
+                        }
+                    }
+
+                    Picker("Date type", selection: $filter.dateType) {
+                        ForEach(TransactionFilterDateType.allCases) { dateType in
+                            Text(dateType.title).tag(dateType)
+                        }
+                    }
+
+                    if filter.period == .custom {
+                        DatePicker("From", selection: $filter.customStartDate, displayedComponents: .date)
+                        DatePicker("To", selection: $filter.customEndDate, displayedComponents: .date)
+                    }
+                }
+
+                Section("Status") {
+                    Picker("Status", selection: $filter.status) {
+                        ForEach(TransactionFilterStatus.allCases) { status in
+                            Text(status.title).tag(status)
+                        }
+                    }
+                }
+
+                Section("Type") {
+                    Picker("Type", selection: $filter.type) {
+                        ForEach(TransactionFilterType.allCases) { type in
+                            Text(type.title).tag(type)
+                        }
+                    }
+                }
+
+                Section("Category") {
+                    Picker("Category", selection: $filter.categoryID) {
+                        Text("All categories").tag(Optional<UUID>.none)
+                        ForEach(categories, id: \.id) { category in
+                            Label(category.name, systemImage: category.icon).tag(Optional(category.id))
+                        }
+                    }
+                }
+
+                Section("Amount") {
+                    TextField("From", text: $filter.minimumAmountText)
+                        .keyboardType(.decimalPad)
+                    TextField("To", text: $filter.maximumAmountText)
+                        .keyboardType(.decimalPad)
+                }
+
+                Section {
+                    Button("Reset filters") {
+                        filter.reset()
+                    }
+                }
+            }
+            .navigationTitle("Filters")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -324,6 +737,20 @@ private struct TransactionDetailView: View {
         }
         .navigationTitle(transaction.title)
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private extension TransactionDatePeriod {
+    func includes(_ date: Date?, customStartDate: Date, customEndDate: Date) -> Bool {
+        guard self == .custom else { return includes(date) }
+        guard let date else { return false }
+
+        let calendar = Calendar.current
+        let startDate = calendar.startOfDay(for: customStartDate)
+        let endDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: customEndDate)) ?? customEndDate
+        let lowerBound = min(startDate, endDate)
+        let upperBound = max(startDate, endDate)
+        return DateInterval(start: lowerBound, end: upperBound).contains(date)
     }
 }
 
