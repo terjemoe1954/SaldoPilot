@@ -11,6 +11,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Manage") {
+                    NavigationLink {
+                        CategoriesView()
+                    } label: {
+                        Label("Categories", systemImage: "tag")
+                    }
+                }
+
                 Section("App") {
                     LabeledContent("Name", value: "SaldoPilot")
                 }

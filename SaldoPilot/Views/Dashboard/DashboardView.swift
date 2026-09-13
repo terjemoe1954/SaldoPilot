@@ -432,14 +432,6 @@ private extension Array where Element == Transaction {
     }
 }
 
-private extension Decimal {
-    var formattedCurrency: String {
-        let value = NSDecimalNumber(decimal: self).doubleValue
-        let currencyCode = Locale.current.currency?.identifier ?? "NOK"
-        return value.formatted(.currency(code: currencyCode))
-    }
-}
-
 #Preview {
     DashboardView(
         onNewIncome: {},

@@ -14,7 +14,7 @@ struct TransactionsView: View {
 
     @State private var selectedFilter: TransactionListFilter = .all
     @State private var editingTransaction: Transaction?
-    @State private var isShowingEditPlaceholder = false
+    @State private var isShowingEditForm = false
 
     var body: some View {
         NavigationStack {
@@ -66,8 +66,10 @@ struct TransactionsView: View {
                 }
             }
             .navigationTitle("Transactions")
-            .sheet(isPresented: $isShowingEditPlaceholder) {
-                EditTransactionPlaceholderView(transactionTitle: editingTransaction?.title ?? "Transaction")
+            .sheet(isPresented: $isShowingEditForm, onDismiss: { editingTransaction = nil }) {
+                if let editingTransaction {
+                    TransactionFormView(transaction: editingTransaction)
+                }
             }
         }
     }
@@ -107,7 +109,7 @@ struct TransactionsView: View {
 
     private func edit(_ transaction: Transaction) {
         editingTransaction = transaction
-        isShowingEditPlaceholder = true
+        isShowingEditForm = true
     }
 
     private func delete(_ transaction: Transaction) {
@@ -325,56 +327,7 @@ private struct TransactionDetailView: View {
     }
 }
 
-private struct EditTransactionPlaceholderView: View {
-    @Environment(\.dismiss) private var dismiss
-    let transactionTitle: String
-
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                "Edit transaction",
-                systemImage: "pencil",
-                description: Text("Editing forms arrive in the next milestone.")
-            )
-            .navigationTitle(transactionTitle)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-private extension TransactionType {
-    var title: LocalizedStringKey {
-        switch self {
-        case .income:
-            "Income"
-        case .expense:
-            "Expense"
-        }
-    }
-}
-
 private extension TransactionStatus {
-    var title: LocalizedStringKey {
-        switch self {
-        case .pending:
-            "Pending"
-        case .overdue:
-            "Overdue"
-        case .paid:
-            "Paid"
-        case .received:
-            "Received"
-        case .cancelled:
-            "Cancelled"
-        }
-    }
-
     var tint: Color {
         switch self {
         case .pending:
@@ -386,14 +339,6 @@ private extension TransactionStatus {
         case .cancelled:
             .secondary
         }
-    }
-}
-
-private extension Decimal {
-    var formattedCurrency: String {
-        let value = NSDecimalNumber(decimal: self).doubleValue
-        let currencyCode = Locale.current.currency?.identifier ?? "NOK"
-        return value.formatted(.currency(code: currencyCode))
     }
 }
 

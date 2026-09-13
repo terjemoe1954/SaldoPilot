@@ -48,7 +48,7 @@ struct MainTabView: View {
             }
         }
         .sheet(item: $newTransactionIntent) { intent in
-            NewTransactionPlaceholderView(intent: intent)
+            TransactionFormView(intent: intent)
         }
     }
 }
@@ -67,32 +67,6 @@ enum NewTransactionIntent: String, Identifiable {
     case payment
 
     var id: String { rawValue }
-
-    var title: LocalizedStringKey {
-        switch self {
-        case .transaction:
-            "New transaction"
-        case .income:
-            "New income"
-        case .expense:
-            "New expense"
-        case .payment:
-            "Register payment"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .transaction:
-            "plus.circle"
-        case .income:
-            "arrow.down.circle"
-        case .expense:
-            "arrow.up.circle"
-        case .payment:
-            "checkmark.circle"
-        }
-    }
 }
 
 private struct AddTransactionBar: View {
@@ -116,29 +90,6 @@ private struct AddTransactionBar: View {
         .padding(.top, 8)
         .padding(.bottom, 4)
         .background(.bar)
-    }
-}
-
-private struct NewTransactionPlaceholderView: View {
-    @Environment(\.dismiss) private var dismiss
-    let intent: NewTransactionIntent
-
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                intent.title,
-                systemImage: intent.systemImage,
-                description: Text("The income and expense form will arrive in a later milestone.")
-            )
-            .navigationTitle(intent.title)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
-            }
-        }
     }
 }
 
