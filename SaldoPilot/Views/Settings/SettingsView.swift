@@ -18,6 +18,7 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKey.notifyDueTomorrow) private var notifyDueTomorrow = false
     @AppStorage(AppSettingsKey.notifyDueInAdvance) private var notifyDueInAdvance = false
     @AppStorage(AppSettingsKey.notificationAdvanceDays) private var notificationAdvanceDays = 7
+    @AppStorage(AppSettingsKey.notifyPendingIncome) private var notifyPendingIncome = false
 
     var body: some View {
         NavigationStack {
@@ -58,6 +59,7 @@ struct SettingsView: View {
                     Toggle("Due today", isOn: $notifyDueToday)
                     Toggle("Due tomorrow", isOn: $notifyDueTomorrow)
                     Toggle("Due in advance", isOn: $notifyDueInAdvance)
+                    Toggle("Pending income", isOn: $notifyPendingIncome)
 
                     Stepper(value: $notificationAdvanceDays, in: 1...30) {
                         LabeledContent("Days in advance", value: notificationAdvanceDays.formatted())
