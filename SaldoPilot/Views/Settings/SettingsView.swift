@@ -5,9 +5,13 @@
 //  Created by Terje Moe on 12/09/2026.
 //
 
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
@@ -20,6 +24,8 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKey.notifyDueInAdvance) private var notifyDueInAdvance = false
     @AppStorage(AppSettingsKey.notificationAdvanceDays) private var notificationAdvanceDays = 7
     @AppStorage(AppSettingsKey.notifyPendingIncome) private var notifyPendingIncome = false
+
+    @State private var isShowingDeleteAllConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -92,6 +98,13 @@ struct SettingsView: View {
                     } label: {
                         Label("Backup and export", systemImage: "externaldrive")
                     }
+
+                    Button(role: .destructive) {
+                        isShowingDeleteAllConfirmation = true
+                    } label: {
+                        Label("Delete all transactions", systemImage: "trash")
+                    }
+                    .disabled(transactions.isEmpty)
                 }
 
                 Section("App") {
@@ -114,6 +127,18 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .confirmationDialog(
+                "Delete all transactions?",
+                isPresented: $isShowingDeleteAllConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete all transactions", role: .destructive) {
+                    deleteAllTransactions()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This permanently deletes \(transactions.count) transactions from this device and iCloud sync.")
+            }
         }
     }
 
@@ -163,6 +188,12 @@ struct SettingsView: View {
 
     private var supportURL: URL {
         URL(string: "https://github.com/terjemoe1954/SaldoPilot/issues") ?? URL(fileURLWithPath: "/")
+    }
+
+    private func deleteAllTransactions() {
+        for transaction in transactions {
+            modelContext.delete(transaction)
+        }
     }
 }
 
