@@ -17,7 +17,7 @@ struct AIInsight: Identifiable, Equatable {
 }
 
 enum AIInsightEngine {
-    static func insights(transactions: [Transaction], categories: [Category], calendar: Calendar = .current) -> [AIInsight] {
+    static func insights(transactions: [Transaction], calendar: Calendar = .current) -> [AIInsight] {
         let activeTransactions = transactions.filter { !$0.isArchived && $0.status != .cancelled }
         guard !activeTransactions.isEmpty else {
             return [
@@ -57,11 +57,11 @@ enum AIInsightEngine {
             insights.append(unusualAmountInsight)
         }
 
-        if let savingsInsight = savingsInsight(transactions: activeTransactions, categories: categories, calendar: calendar) {
+        if let savingsInsight = savingsInsight(transactions: activeTransactions, calendar: calendar) {
             insights.append(savingsInsight)
         }
 
-        if let categorySuggestionInsight = categorySuggestionInsight(transactions: activeTransactions, categories: categories) {
+        if let categorySuggestionInsight = categorySuggestionInsight(transactions: activeTransactions) {
             insights.append(categorySuggestionInsight)
         }
 
@@ -205,7 +205,7 @@ enum AIInsightEngine {
     private static func unusualAmountInsight(transactions: [Transaction]) -> AIInsight? {
         let expenseTransactions = transactions.filter { $0.type == .expense }
         let grouped = Dictionary(grouping: expenseTransactions) { transaction in
-            transaction.category?.id.uuidString ?? "no-category"
+            transaction.category.rawValue
         }
 
         for group in grouped.values where group.count >= 3 {
@@ -226,36 +226,36 @@ enum AIInsightEngine {
         return nil
     }
 
-    private static func savingsInsight(transactions: [Transaction], categories: [Category], calendar: Calendar) -> AIInsight? {
+    private static func savingsInsight(transactions: [Transaction], calendar: Calendar) -> AIInsight? {
         guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else { return nil }
-        let categoryTotals = categories.compactMap { category -> (category: Category, amount: Decimal)? in
-            let matches = transactions.filter { $0.type == .expense && $0.category?.id == category.id && currentMonth.contains($0.dueDate) }
+        let categoryTotals = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, amount: Decimal)? in
+            let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.contains($0.dueDate) }
             guard !matches.isEmpty else { return nil }
             return (category, matches.totalAmount)
         }
 
         guard let largest = categoryTotals.max(by: { $0.amount < $1.amount }) else { return nil }
+        let categoryName = String(localized: largest.category.title)
 
         return AIInsight(
             id: "savings",
             title: "Savings idea",
-            message: String(localized: "Review \(largest.category.name). It is your largest expense category this month at \(largest.amount.formattedCurrency)."),
+            message: String(localized: "Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency)."),
             systemImage: "scissors",
             tint: .green
         )
     }
 
-    private static func categorySuggestionInsight(transactions: [Transaction], categories: [Category]) -> AIInsight? {
-        let uncategorized = transactions.filter { $0.category == nil }
-        guard !uncategorized.isEmpty, !categories.isEmpty else { return nil }
+    private static func categorySuggestionInsight(transactions: [Transaction]) -> AIInsight? {
+        let candidates = transactions.filter { $0.category == .other }
 
-        for transaction in uncategorized {
-            let title = transaction.title.localizedCaseInsensitiveFolded
-            if let category = categories.first(where: { title.contains($0.name.localizedCaseInsensitiveFolded) }) {
+        for transaction in candidates {
+            if let category = CategoryKind.allCases.first(where: { $0 != .other && $0.matches(transactionTitle: transaction.title) }) {
+                let categoryName = String(localized: category.title)
                 return AIInsight(
                     id: "categorySuggestion",
                     title: "Suggested category",
-                    message: String(localized: "\(transaction.title) may fit the \(category.name) category."),
+                    message: String(localized: "\(transaction.title) may fit the \(categoryName) category."),
                     systemImage: "tag",
                     tint: .blue
                 )
@@ -312,9 +312,5 @@ private extension String {
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-    }
-
-    var localizedCaseInsensitiveFolded: String {
-        folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
     }
 }

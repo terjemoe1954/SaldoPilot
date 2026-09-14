@@ -11,14 +11,13 @@ import SwiftUI
 struct TransactionFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Category.name) private var categories: [Category]
 
     private let transaction: Transaction?
 
     @State private var title: String
     @State private var amountText: String
     @State private var type: TransactionType
-    @State private var selectedCategoryID: UUID?
+    @State private var category: CategoryKind
     @State private var dueDate: Date
     @State private var hasPaidDate: Bool
     @State private var paidDate: Date
@@ -37,7 +36,7 @@ struct TransactionFormView: View {
         _title = State(initialValue: transaction?.title ?? "")
         _amountText = State(initialValue: transaction.map { Self.amountFormatter.string(from: NSDecimalNumber(decimal: $0.amount)) ?? "" } ?? "")
         _type = State(initialValue: initialType)
-        _selectedCategoryID = State(initialValue: transaction?.category?.id)
+        _category = State(initialValue: transaction?.category ?? (initialType == .income ? .income : .other))
         _dueDate = State(initialValue: transaction?.dueDate ?? .now)
         _hasPaidDate = State(initialValue: transaction?.paidDate != nil || initialStatus == .paid || initialStatus == .received)
         _paidDate = State(initialValue: initialPaidDate)
@@ -56,10 +55,7 @@ struct TransactionFormView: View {
                     type: $type
                 )
 
-                TransactionCategorySection(
-                    categories: categories,
-                    selectedCategoryID: $selectedCategoryID
-                )
+                TransactionCategorySection(category: $category)
 
                 TransactionDatesSection(
                     dueDate: $dueDate,
@@ -97,6 +93,10 @@ struct TransactionFormView: View {
                 updateSuggestedCategory(for: newTitle)
             }
             .onChange(of: type) { _, newType in
+                if transaction == nil && category == .other {
+                    category = newType == .income ? .income : .other
+                }
+
                 if status == .paid || status == .received {
                     status = newType == .income ? .received : .paid
                 }
@@ -117,17 +117,11 @@ struct TransactionFormView: View {
         Self.parseAmount(amountText)
     }
 
-    private var selectedCategory: Category? {
-        guard let selectedCategoryID else { return nil }
-        return categories.first { $0.id == selectedCategoryID }
-    }
-
     private func updateSuggestedCategory(for title: String) {
-        guard selectedCategoryID == nil else { return }
-        let normalizedTitle = title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current).lowercased()
-        selectedCategoryID = categories.first { category in
-            normalizedTitle.contains(category.name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current).lowercased())
-        }?.id
+        guard category == .other else { return }
+        if let suggestedCategory = CategoryKind.allCases.first(where: { $0 != .other && $0.matches(transactionTitle: title) }) {
+            category = suggestedCategory
+        }
     }
 
     private func save() {
@@ -145,7 +139,7 @@ struct TransactionFormView: View {
             transaction.dueDate = dueDate
             transaction.paidDate = resolvedPaidDate
             transaction.status = status
-            transaction.category = selectedCategory
+            transaction.category = category
             transaction.recurrence = recurrence
             transaction.recurrenceIntervalMonths = resolvedInterval
             transaction.notes = notes
@@ -159,7 +153,7 @@ struct TransactionFormView: View {
                 dueDate: dueDate,
                 paidDate: resolvedPaidDate,
                 status: status,
-                category: selectedCategory,
+                category: category,
                 recurrence: recurrence,
                 recurrenceIntervalMonths: resolvedInterval,
                 notes: notes,
@@ -221,18 +215,14 @@ private struct TransactionBasicsSection: View {
 }
 
 private struct TransactionCategorySection: View {
-    let categories: [Category]
-    @Binding var selectedCategoryID: UUID?
+    @Binding var category: CategoryKind
 
     var body: some View {
         Section("Category") {
-            Picker("Category", selection: $selectedCategoryID) {
-                Label("No category", systemImage: "tag")
-                    .tag(Optional<UUID>.none)
-
-                ForEach(categories, id: \.id) { category in
-                    Label(category.name, systemImage: category.icon)
-                        .tag(Optional(category.id))
+            Picker("Category", selection: $category) {
+                ForEach(CategoryKind.allCases) { category in
+                    Label(category.title, systemImage: category.systemImage)
+                        .tag(category)
                 }
             }
         }
@@ -299,12 +289,8 @@ private extension NewTransactionIntent {
         switch self {
         case .payment:
             type == .income ? .received : .paid
-        case .transaction, .income, .expense:
+        case .income, .transaction, .expense:
             .pending
         }
     }
-}
-
-#Preview {
-    TransactionFormView()
 }

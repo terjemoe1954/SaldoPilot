@@ -73,6 +73,18 @@ struct SettingsView: View {
                     } label: {
                         Label("Categories", systemImage: "tag")
                     }
+
+                    NavigationLink {
+                        ImportDataView()
+                    } label: {
+                        Label("Import data", systemImage: "square.and.arrow.down")
+                    }
+
+                    NavigationLink {
+                        ExportDataView()
+                    } label: {
+                        Label("Backup and export", systemImage: "externaldrive")
+                    }
                 }
 
                 Section("App") {
@@ -91,10 +103,6 @@ struct SettingsView: View {
 
                     Link(destination: supportURL) {
                         Label("Support", systemImage: "questionmark.circle")
-                    }
-
-                    ShareLink(item: exportText) {
-                        Label("Export data", systemImage: "square.and.arrow.up")
                     }
                 }
             }
@@ -140,10 +148,6 @@ struct SettingsView: View {
 
     private var supportURL: URL {
         URL(string: "mailto:support@example.com") ?? URL(fileURLWithPath: "/")
-    }
-
-    private var exportText: String {
-        "SaldoPilot export\nVersion: \(appVersion)\nBuild: \(buildNumber)"
     }
 }
 

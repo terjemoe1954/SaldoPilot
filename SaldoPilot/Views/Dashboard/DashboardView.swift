@@ -10,7 +10,6 @@ import SwiftUI
 
 struct DashboardView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
-    @Query(sort: \Category.name) private var categories: [Category]
     @AppStorage(AppSettingsKey.defaultPeriod) private var selectedPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
@@ -59,7 +58,7 @@ struct DashboardView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Overview")
             .sheet(isPresented: $isShowingAIQuery) {
-                AIQueryView(transactions: activeTransactions, categories: categories)
+                AIQueryView(transactions: activeTransactions)
             }
         }
     }
@@ -122,7 +121,7 @@ struct DashboardView: View {
     }
 
     private var aiInsights: [AIInsight] {
-        AIInsightEngine.insights(transactions: activeTransactions, categories: categories)
+        AIInsightEngine.insights(transactions: activeTransactions)
     }
 
     private var attentionItems: [DashboardAttentionItem] {

@@ -67,18 +67,14 @@ private struct StatisticsSnapshot {
     }
 
     private static func makeExpenseCategoryStatistics(transactions: [Transaction]) -> [CategoryStatistics] {
-        let noCategoryID = UUID(uuidString: "00000000-0000-0000-0000-000000000000") ?? UUID()
         let expenseTransactions = transactions.filter { $0.type == .expense }
-        let groupedTransactions = Dictionary(grouping: expenseTransactions) { transaction in
-            transaction.category?.id ?? noCategoryID
-        }
+        let groupedTransactions = Dictionary(grouping: expenseTransactions, by: \.category)
 
-        return groupedTransactions.map { categoryID, transactions in
-            let firstTransaction = transactions.first
-            return CategoryStatistics(
-                id: categoryID,
-                name: firstTransaction?.category?.name ?? String(localized: "No category"),
-                icon: firstTransaction?.category?.icon ?? "tag",
+        return groupedTransactions.map { category, transactions in
+            CategoryStatistics(
+                id: category.rawValue,
+                name: String(localized: category.title),
+                icon: category.systemImage,
                 amount: transactions.totalAmount,
                 transactions: transactions.sortedByDueDate
             )
@@ -138,7 +134,7 @@ private struct MonthStatistics: Identifiable {
 }
 
 private struct CategoryStatistics: Identifiable {
-    let id: UUID
+    let id: String
     let name: String
     let icon: String
     let amount: Decimal
@@ -469,7 +465,7 @@ private struct StatisticsTransactionRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text(transaction.category?.name ?? String(localized: "No category"))
+                Text(transaction.category.title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

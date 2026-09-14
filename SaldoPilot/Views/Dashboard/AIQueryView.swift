@@ -13,7 +13,6 @@ struct AIQueryView: View {
     @State private var result: AIQueryResult?
 
     let transactions: [Transaction]
-    let categories: [Category]
 
     var body: some View {
         NavigationStack {
@@ -64,7 +63,7 @@ struct AIQueryView: View {
     }
 
     private func runQuery() {
-        result = AIQueryEngine.answer(question: question, transactions: transactions, categories: categories)
+        result = AIQueryEngine.answer(question: question, transactions: transactions)
     }
 }
 
@@ -117,5 +116,5 @@ private struct AIQueryTransactionRow: View {
 }
 
 #Preview {
-    AIQueryView(transactions: [], categories: [])
+    AIQueryView(transactions: [])
 }

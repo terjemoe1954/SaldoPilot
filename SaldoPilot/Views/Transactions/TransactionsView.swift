@@ -11,7 +11,6 @@ import SwiftUI
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
-    @Query(sort: \Category.name) private var categories: [Category]
     @AppStorage(AppSettingsKey.showCompletedStatus) private var showCompletedStatus = true
     @AppStorage(AppSettingsKey.defaultDateType) private var defaultDateTypeRawValue = AppDefaultDateType.dueDate.rawValue
 
@@ -27,10 +26,7 @@ struct TransactionsView: View {
                 TransactionFilterPicker(selectedFilter: $selectedFilter)
 
                 if advancedFilter.hasActiveFilters {
-                    TransactionActiveFilterChips(
-                        filter: $advancedFilter,
-                        categories: categories
-                    )
+                    TransactionActiveFilterChips(filter: $advancedFilter)
                 }
 
                 if filteredTransactions.isEmpty {
@@ -96,7 +92,7 @@ struct TransactionsView: View {
                 }
             }
             .sheet(isPresented: $isShowingAdvancedFilter) {
-                TransactionFilterSheet(filter: $advancedFilter, categories: categories)
+                TransactionFilterSheet(filter: $advancedFilter)
             }
             .onAppear {
                 applyDefaultDateTypeIfNeeded()
@@ -162,7 +158,7 @@ private struct TransactionAdvancedFilter: Equatable {
     var customEndDate = Date.now
     var status: TransactionFilterStatus = .all
     var type: TransactionFilterType = .all
-    var categoryID: UUID?
+    var category: CategoryKind?
     var minimumAmountText = ""
     var maximumAmountText = ""
 
@@ -170,7 +166,7 @@ private struct TransactionAdvancedFilter: Equatable {
         period != .all ||
         status != .all ||
         type != .all ||
-        categoryID != nil ||
+        category != nil ||
         parsedMinimumAmount != nil ||
         parsedMaximumAmount != nil
     }
@@ -196,7 +192,7 @@ private struct TransactionAdvancedFilter: Equatable {
             return false
         }
 
-        if let categoryID, transaction.category?.id != categoryID {
+        if let category, transaction.category != category {
             return false
         }
 
@@ -444,7 +440,6 @@ private struct TransactionFilterPicker: View {
 
 private struct TransactionActiveFilterChips: View {
     @Binding var filter: TransactionAdvancedFilter
-    let categories: [Category]
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -465,8 +460,8 @@ private struct TransactionActiveFilterChips: View {
                     TransactionFilterChip(title: filter.type.title)
                 }
 
-                if let categoryName {
-                    TransactionFilterChip(text: categoryName)
+                if let categoryTitle {
+                    TransactionFilterChip(text: categoryTitle)
                 }
 
                 if filter.parsedMinimumAmount != nil {
@@ -489,9 +484,9 @@ private struct TransactionActiveFilterChips: View {
         .background(.bar)
     }
 
-    private var categoryName: String? {
-        guard let categoryID = filter.categoryID else { return nil }
-        return categories.first { $0.id == categoryID }?.name
+    private var categoryTitle: String? {
+        guard let category = filter.category else { return nil }
+        return String(localized: category.title)
     }
 }
 
@@ -530,7 +525,6 @@ private struct TransactionFilterSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @Binding var filter: TransactionAdvancedFilter
-    let categories: [Category]
 
     var body: some View {
         NavigationStack {
@@ -571,10 +565,11 @@ private struct TransactionFilterSheet: View {
                 }
 
                 Section("Category") {
-                    Picker("Category", selection: $filter.categoryID) {
-                        Text("All categories").tag(Optional<UUID>.none)
-                        ForEach(categories, id: \.id) { category in
-                            Label(category.name, systemImage: category.icon).tag(Optional(category.id))
+                    Picker("Category", selection: $filter.category) {
+                        Text("All categories").tag(Optional<CategoryKind>.none)
+                        ForEach(CategoryKind.allCases) { category in
+                            Label(String(localized: category.title), systemImage: category.systemImage)
+                                .tag(Optional(category))
                         }
                     }
                 }
@@ -618,7 +613,7 @@ private struct TransactionRowView: View {
                     .lineLimit(2)
 
                 HStack(spacing: 6) {
-                    Label(transaction.category?.name ?? String(localized: "No category"), systemImage: transaction.category?.icon ?? "tag")
+                    Label(String(localized: transaction.category.title), systemImage: transaction.category.systemImage)
                     Text("Due \(transaction.dueDate, format: .dateTime.day().month().year())")
                 }
                 .font(.caption)
@@ -743,7 +738,7 @@ private struct TransactionDetailView: View {
             }
 
             Section("Category") {
-                Label(transaction.category?.name ?? String(localized: "No category"), systemImage: transaction.category?.icon ?? "tag")
+                Label(String(localized: transaction.category.title), systemImage: transaction.category.systemImage)
             }
 
             if !transaction.notes.isEmpty {

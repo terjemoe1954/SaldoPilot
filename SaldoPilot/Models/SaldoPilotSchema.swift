@@ -12,8 +12,7 @@ enum SaldoPilotSchemaV1: VersionedSchema {
 
     static var models: [any PersistentModel.Type] {
         [
-            Transaction.self,
-            Category.self
+            Transaction.self
         ]
     }
 }

@@ -17,7 +17,7 @@ final class Transaction {
     var dueDate: Date = Date.now
     var paidDate: Date?
     var status: TransactionStatus = TransactionStatus.pending
-    var category: Category?
+    var category: CategoryKind = CategoryKind.other
     var recurrence: RecurrenceRule = RecurrenceRule.none
     var recurrenceIntervalMonths: Int?
     var notes: String = ""
@@ -42,7 +42,7 @@ final class Transaction {
         dueDate: Date,
         paidDate: Date? = nil,
         status: TransactionStatus = .pending,
-        category: Category? = nil,
+        category: CategoryKind = .other,
         recurrence: RecurrenceRule = .none,
         recurrenceIntervalMonths: Int? = nil,
         notes: String = "",
