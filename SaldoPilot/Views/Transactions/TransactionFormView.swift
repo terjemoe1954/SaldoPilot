@@ -234,7 +234,7 @@ private struct TransactionCategorySection: View {
     var body: some View {
         Section("Category") {
             Picker("Category", selection: $category) {
-                ForEach(CategoryKind.allCases) { category in
+                ForEach(CategoryKind.sortedForDisplay) { category in
                     Label(category.title, systemImage: category.systemImage)
                         .tag(category)
                 }

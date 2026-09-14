@@ -707,7 +707,7 @@ private struct TransactionFilterSheet: View {
                 Section("Category") {
                     Picker("Category", selection: $filter.category) {
                         Text("All categories").tag(Optional<CategoryKind>.none)
-                        ForEach(CategoryKind.allCases) { category in
+                        ForEach(CategoryKind.sortedForDisplay) { category in
                             Label(String(localized: category.title), systemImage: category.systemImage)
                                 .tag(Optional(category))
                         }

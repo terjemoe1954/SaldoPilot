@@ -13,8 +13,8 @@ struct DashboardView: View {
     @AppStorage(AppSettingsKey.defaultPeriod) private var selectedPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
-    @State private var customStartDate = Calendar.current.startOfDay(for: .now)
-    @State private var customEndDate = Date.now
+    @State private var customStartDate = Calendar.current.currentMonthStart
+    @State private var customEndDate = Calendar.current.currentMonthEnd
     @State private var isShowingAIQuery = false
 
     let onNewIncome: () -> Void
@@ -576,6 +576,20 @@ private struct DashboardQuickActionsSection: View {
 private extension String {
     var trimmedForDisplay: String {
         trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private extension Calendar {
+    var currentMonthStart: Date {
+        dateInterval(of: .month, for: .now)?.start ?? startOfDay(for: .now)
+    }
+
+    var currentMonthEnd: Date {
+        guard let monthInterval = dateInterval(of: .month, for: .now) else {
+            return startOfDay(for: .now)
+        }
+
+        return date(byAdding: .day, value: -1, to: monthInterval.end) ?? monthInterval.start
     }
 }
 

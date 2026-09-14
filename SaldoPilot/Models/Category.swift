@@ -17,6 +17,7 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case clothing
     case health
     case entertainment
+    case gifts
     case savings
     case payrollDeduction
     case income
@@ -45,6 +46,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             "Health"
         case .entertainment:
             "Entertainment"
+        case .gifts:
+            "Gifts"
         case .savings:
             "Savings"
         case .payrollDeduction:
@@ -78,6 +81,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             "cross.case"
         case .entertainment:
             "popcorn"
+        case .gifts:
+            "gift"
         case .savings:
             "banknote"
         case .payrollDeduction:
@@ -111,6 +116,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             .red
         case .entertainment:
             .yellow
+        case .gifts:
+            .purple
         case .savings:
             .mint
         case .payrollDeduction:
@@ -140,6 +147,12 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         } ?? .other
     }
 
+    static var sortedForDisplay: [CategoryKind] {
+        allCases.sorted {
+            String(localized: $0.title).localizedCaseInsensitiveCompare(String(localized: $1.title)) == .orderedAscending
+        }
+    }
+
     func matches(transactionTitle: String) -> Bool {
         let normalizedTitle = transactionTitle.normalizedCategoryKey
         return searchTerms.contains { normalizedTitle.contains($0.normalizedCategoryKey) }
@@ -165,6 +178,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             ["health", "doctor", "pharmacy", "medicine", "helse", "lege", "apotek", "สุขภาพ", "ยา"]
         case .entertainment:
             ["entertainment", "movie", "cinema", "game", "restaurant", "underholdning", "kino", "spill", "บันเทิง"]
+        case .gifts:
+            ["gift", "gifts", "present", "presents", "gave", "gaver", "presang", "ของขวัญ"]
         case .savings:
             ["savings", "saving", "save", "spare", "sparing", "ออม", "เงินออม"]
         case .payrollDeduction:

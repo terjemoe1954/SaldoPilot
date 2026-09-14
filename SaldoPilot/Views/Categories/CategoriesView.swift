@@ -20,7 +20,7 @@ struct CategoriesView: View {
             }
 
             Section("Standard categories") {
-                ForEach(CategoryKind.allCases) { category in
+                ForEach(CategoryKind.sortedForDisplay) { category in
                     CategoryRowView(
                         category: category,
                         transactionCount: transactionCount(for: category),
