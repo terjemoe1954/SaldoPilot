@@ -20,7 +20,7 @@ struct DashboardView: View {
     let onNewIncome: () -> Void
     let onNewExpense: () -> Void
     let onRegisterPayment: () -> Void
-    let onShowTransactions: () -> Void
+    let onShowTransactions: (TransactionListFilter) -> Void
 
     var body: some View {
         NavigationStack {
@@ -36,7 +36,11 @@ struct DashboardView: View {
                         customEndDate: $customEndDate
                     )
 
-                    DashboardSummarySection(summary: summary)
+                    DashboardSummarySection(
+                        summary: summary,
+                        onShowOverdue: { onShowTransactions(.overdue) },
+                        onShowNextDue: { onShowTransactions(.nextDue) }
+                    )
 
                     AIInsightSection(insights: aiInsights) {
                         isShowingAIQuery = true
@@ -44,7 +48,10 @@ struct DashboardView: View {
 
                     DashboardAttentionSection(
                         items: attentionItems,
-                        onShowTransactions: onShowTransactions
+                        onShowTransactions: { onShowTransactions(.all) },
+                        onSelectItem: { item in
+                            onShowTransactions(item.listFilter)
+                        }
                     )
 
                     DashboardQuickActionsSection(
@@ -233,6 +240,19 @@ private struct DashboardAttentionItem: Identifiable {
     let value: String
     let systemImage: String
     let tint: Color
+
+    var listFilter: TransactionListFilter {
+        switch id {
+        case "overdue":
+            .overdue
+        case "dueSoon":
+            .upcoming
+        case "pendingIncome":
+            .receivable
+        default:
+            .all
+        }
+    }
 }
 
 private struct DashboardGreetingView: View {
@@ -288,6 +308,8 @@ private struct DashboardPeriodSection: View {
 
 private struct DashboardSummarySection: View {
     let summary: DashboardSummary
+    let onShowOverdue: () -> Void
+    let onShowNextDue: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -302,8 +324,17 @@ private struct DashboardSummarySection: View {
             }
 
             HStack(spacing: 12) {
-                DashboardCountTile(title: "Overdue", value: summary.overdueCount, systemImage: "exclamationmark.triangle", tint: .red)
-                DashboardNextDueTile(date: summary.nextDueDate)
+                Button(action: onShowOverdue) {
+                    DashboardCountTile(title: "Overdue", value: summary.overdueCount, systemImage: "exclamationmark.triangle", tint: .red)
+                }
+                .buttonStyle(.plain)
+                .disabled(summary.overdueCount == 0)
+
+                Button(action: onShowNextDue) {
+                    DashboardNextDueTile(date: summary.nextDueDate)
+                }
+                .buttonStyle(.plain)
+                .disabled(summary.nextDueDate == nil)
             }
         }
     }
@@ -447,6 +478,7 @@ private struct AIInsightRow: View {
 private struct DashboardAttentionSection: View {
     let items: [DashboardAttentionItem]
     let onShowTransactions: () -> Void
+    let onSelectItem: (DashboardAttentionItem) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -471,7 +503,12 @@ private struct DashboardAttentionSection: View {
             } else {
                 VStack(spacing: 10) {
                     ForEach(items) { item in
-                        DashboardAttentionRow(item: item)
+                        Button {
+                            onSelectItem(item)
+                        } label: {
+                            DashboardAttentionRow(item: item)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -553,6 +590,6 @@ private extension Array where Element == Transaction {
         onNewIncome: {},
         onNewExpense: {},
         onRegisterPayment: {},
-        onShowTransactions: {}
+        onShowTransactions: { _ in }
     )
 }

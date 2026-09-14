@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
+    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
     @AppStorage(AppSettingsKey.showCompletedStatus) private var showCompletedStatus = true
@@ -30,6 +31,12 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+
+                    Picker("Language", selection: languageBinding) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.title).tag(language)
+                        }
+                    }
                 }
 
                 Section("Personal") {
@@ -126,6 +133,14 @@ struct SettingsView: View {
         }
     }
 
+    private var languageBinding: Binding<AppLanguage> {
+        Binding {
+            AppLanguage(rawValue: languageRawValue) ?? .system
+        } set: { newValue in
+            languageRawValue = newValue.rawValue
+        }
+    }
+
     private var defaultDateTypeBinding: Binding<AppDefaultDateType> {
         Binding {
             AppDefaultDateType(rawValue: defaultDateTypeRawValue) ?? .dueDate
@@ -143,11 +158,11 @@ struct SettingsView: View {
     }
 
     private var privacyURL: URL {
-        URL(string: "https://example.com/privacy") ?? URL(fileURLWithPath: "/")
+        URL(string: "https://github.com/terjemoe1954/SaldoPilot/blob/main/AppStore/PrivacyPolicy.md") ?? URL(fileURLWithPath: "/")
     }
 
     private var supportURL: URL {
-        URL(string: "mailto:support@example.com") ?? URL(fileURLWithPath: "/")
+        URL(string: "https://github.com/terjemoe1954/SaldoPilot/issues") ?? URL(fileURLWithPath: "/")
     }
 }
 

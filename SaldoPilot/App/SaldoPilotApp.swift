@@ -11,6 +11,7 @@ import SwiftUI
 @main
 struct SaldoPilotApp: App {
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
+    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
 
     private let modelContainer: ModelContainer = {
         let schema = Schema(SaldoPilotSchemaV1.models)
@@ -45,11 +46,16 @@ struct SaldoPilotApp: App {
         WindowGroup {
             MainTabView()
                 .preferredColorScheme(selectedAppearance.colorScheme)
+                .environment(\.locale, selectedLanguage.locale)
         }
         .modelContainer(modelContainer)
     }
 
     private var selectedAppearance: AppAppearance {
         AppAppearance(rawValue: appearanceRawValue) ?? .system
+    }
+
+    private var selectedLanguage: AppLanguage {
+        AppLanguage(rawValue: languageRawValue) ?? .system
     }
 }

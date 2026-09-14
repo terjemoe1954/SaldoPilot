@@ -70,14 +70,17 @@ struct ImportDataView: View {
             isPresented: $isShowingImportConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Merge import data") {
-                confirmImport()
+            Button("Merge with existing data") {
+                confirmImport(mode: .merge)
+            }
+            Button("Replace existing data", role: .destructive) {
+                confirmImport(mode: .replaceExisting)
             }
             Button("Cancel", role: .cancel) {
                 pendingImportURL = nil
             }
         } message: {
-            Text("Imported data will be added to your existing categories and transactions. Existing data will not be deleted.")
+            Text("Merge adds imported transactions to your current data. Replace removes existing transactions first.")
         }
     }
 
@@ -94,12 +97,13 @@ struct ImportDataView: View {
         }
     }
 
-    private func confirmImport() {
+    private func confirmImport(mode: ImportMode) {
         guard let pendingImportURL else { return }
 
         do {
             importSummary = try ImportService.importFile(
                 at: pendingImportURL,
+                mode: mode,
                 modelContext: modelContext
             )
             self.pendingImportURL = nil

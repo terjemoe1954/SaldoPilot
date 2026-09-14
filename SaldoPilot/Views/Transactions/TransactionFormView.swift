@@ -129,22 +129,28 @@ struct TransactionFormView: View {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedPaidDate = hasPaidDate ? paidDate : nil
-        let resolvedIsCompleted = status == .paid || status == .received
+        let resolvedStatus = resolvedPaidDate == nil ? status : completedStatus(for: type)
+        let resolvedIsCompleted = resolvedStatus == .paid || resolvedStatus == .received
         let resolvedInterval = recurrence == .everyNMonths || recurrence == .custom ? recurrenceIntervalMonths : nil
 
         if let transaction {
+            let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
             transaction.title = trimmedTitle
             transaction.amount = amount
             transaction.type = type
             transaction.dueDate = dueDate
             transaction.paidDate = resolvedPaidDate
-            transaction.status = status
+            transaction.status = resolvedStatus
             transaction.category = category
             transaction.recurrence = recurrence
             transaction.recurrenceIntervalMonths = resolvedInterval
             transaction.notes = notes
             transaction.isCompleted = resolvedIsCompleted
             transaction.markUpdated()
+
+            if !wasCompleted && resolvedIsCompleted {
+                RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+            }
         } else {
             let newTransaction = Transaction(
                 title: trimmedTitle,
@@ -152,7 +158,7 @@ struct TransactionFormView: View {
                 type: type,
                 dueDate: dueDate,
                 paidDate: resolvedPaidDate,
-                status: status,
+                status: resolvedStatus,
                 category: category,
                 recurrence: recurrence,
                 recurrenceIntervalMonths: resolvedInterval,
@@ -160,9 +166,17 @@ struct TransactionFormView: View {
                 isCompleted: resolvedIsCompleted
             )
             modelContext.insert(newTransaction)
+
+            if resolvedIsCompleted {
+                RecurrenceService.insertNextOccurrenceIfNeeded(after: newTransaction, in: modelContext)
+            }
         }
 
         dismiss()
+    }
+
+    private func completedStatus(for type: TransactionType) -> TransactionStatus {
+        type == .income ? .received : .paid
     }
 
     private static let amountFormatter: NumberFormatter = {

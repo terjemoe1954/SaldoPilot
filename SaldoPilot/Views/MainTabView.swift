@@ -18,6 +18,7 @@ struct MainTabView: View {
 
     @State private var selectedTab: MainTab = .dashboard
     @State private var newTransactionIntent: NewTransactionIntent?
+    @State private var transactionListFilter: TransactionListFilter = .all
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -25,14 +26,14 @@ struct MainTabView: View {
                 onNewIncome: { newTransactionIntent = .income },
                 onNewExpense: { newTransactionIntent = .expense },
                 onRegisterPayment: { newTransactionIntent = .payment },
-                onShowTransactions: { selectedTab = .transactions }
+                onShowTransactions: showTransactions
             )
             .tabItem {
                 Label("Overview", systemImage: "gauge.with.dots.needle.33percent")
             }
             .tag(MainTab.dashboard)
 
-            TransactionsView()
+            TransactionsView(initialFilter: transactionListFilter)
                 .tabItem {
                     Label("Transactions", systemImage: "list.bullet.rectangle")
                 }
@@ -50,10 +51,12 @@ struct MainTabView: View {
                 }
                 .tag(MainTab.settings)
         }
-        .safeAreaInset(edge: .bottom) {
-            AddTransactionBar {
+        .overlay(alignment: .bottomTrailing) {
+            FloatingAddTransactionButton {
                 newTransactionIntent = .transaction
             }
+            .padding(.trailing, 20)
+            .padding(.bottom, 72)
         }
         .sheet(item: $newTransactionIntent) { intent in
             TransactionFormView(intent: intent)
@@ -106,6 +109,11 @@ struct MainTabView: View {
     private func synchronizeNotifications() async {
         await NotificationScheduler.synchronize(transactions: transactions, settings: notificationSettings)
     }
+
+    private func showTransactions(filter: TransactionListFilter) {
+        transactionListFilter = filter
+        selectedTab = .transactions
+    }
 }
 
 private enum MainTab: Hashable {
@@ -124,27 +132,19 @@ enum NewTransactionIntent: String, Identifiable {
     var id: String { rawValue }
 }
 
-private struct AddTransactionBar: View {
+private struct FloatingAddTransactionButton: View {
     let action: () -> Void
 
     var body: some View {
-        HStack {
-            Spacer()
-
-            Button(action: action) {
-                Label("New transaction", systemImage: "plus")
-                    .font(.headline)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.borderedProminent)
-            .accessibilityLabel("New transaction")
-
-            Spacer()
+        Button(action: action) {
+            Image(systemName: "plus")
+                .font(.title2.weight(.semibold))
+                .frame(width: 56, height: 56)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 4)
-        .background(.bar)
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.circle)
+        .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
+        .accessibilityLabel("New transaction")
     }
 }
 

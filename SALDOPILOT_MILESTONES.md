@@ -603,12 +603,12 @@ Dette bør vurderes dersom dagens brukere skal flyttes over.
 
 Muligheter:
 
-- [ ] JSON-eksport fra gammel app.
-- [ ] JSON-import i SaldoPilot.
-- [ ] CSV som reserveformat.
-- [ ] Import av kategorier.
-- [ ] Import av gamle poster.
-- [ ] Import av gjentakende regler.
+- [x] JSON-eksport fra gammel app.
+- [x] JSON-import i SaldoPilot.
+- [x] CSV som reserveformat.
+- [x] Import av kategorier.
+- [x] Import av gamle poster.
+- [x] Import av gjentakende regler.
 
 Viktig:
 
@@ -618,11 +618,11 @@ Viktig:
 
 # 21. Milepæl 16 – Backup og eksport
 
-- [ ] Eksport til CSV.
-- [ ] Eksport til JSON.
-- [ ] Del eksportfil via Share Sheet.
-- [ ] Import fra backup.
-- [ ] Bekreft før overskriving / sammenslåing.
+- [x] Eksport til CSV.
+- [x] Eksport til JSON.
+- [x] Del eksportfil via Share Sheet.
+- [x] Import fra backup.
+- [x] Bekreft før overskriving / sammenslåing.
 
 Dette bør være tilgjengelig selv om iCloud senere aktiveres.
 
@@ -632,13 +632,13 @@ Dette bør være tilgjengelig selv om iCloud senere aktiveres.
 
 Før første TestFlight:
 
-- [ ] Appikon.
+- [x] Appikon.
 - [ ] Launch experience.
-- [ ] Privacy Policy.
-- [ ] Support URL.
-- [ ] App Store-beskrivelse.
+- [x] Privacy Policy.
+- [x] Support URL.
+- [x] App Store-beskrivelse.
 - [ ] Screenshots.
-- [ ] App Privacy-skjema.
+- [x] App Privacy-skjema.
 - [ ] TestFlight intern testing.
 - [ ] Test på flere skjermstørrelser.
 - [ ] Test med tom database.

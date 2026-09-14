@@ -75,8 +75,44 @@ enum AppDefaultDateType: String, CaseIterable, Identifiable {
     }
 }
 
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case system
+    case english
+    case norwegian
+    case thai
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .system:
+            "System"
+        case .english:
+            "English"
+        case .norwegian:
+            "Norwegian"
+        case .thai:
+            "Thai"
+        }
+    }
+
+    var locale: Locale {
+        switch self {
+        case .system:
+            .autoupdatingCurrent
+        case .english:
+            Locale(identifier: "en")
+        case .norwegian:
+            Locale(identifier: "nb")
+        case .thai:
+            Locale(identifier: "th")
+        }
+    }
+}
+
 enum AppSettingsKey {
     static let appearance = "settings.appearance"
+    static let language = "settings.language"
     static let showNameOnDashboard = "settings.showNameOnDashboard"
     static let displayName = "settings.displayName"
     static let showCompletedStatus = "settings.showCompletedStatus"

@@ -20,6 +20,13 @@ struct TransactionsView: View {
     @State private var isShowingEditForm = false
     @State private var isShowingAdvancedFilter = false
 
+    private let initialFilter: TransactionListFilter
+
+    init(initialFilter: TransactionListFilter = .all) {
+        self.initialFilter = initialFilter
+        _selectedFilter = State(initialValue: initialFilter)
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -97,6 +104,9 @@ struct TransactionsView: View {
             .onAppear {
                 applyDefaultDateTypeIfNeeded()
             }
+            .onChange(of: initialFilter) { _, newFilter in
+                selectedFilter = newFilter
+            }
         }
     }
 
@@ -105,8 +115,13 @@ struct TransactionsView: View {
     }
 
     private var filteredTransactions: [Transaction] {
-        activeTransactions.filter { transaction in
-            selectedFilter.includes(transaction) && advancedFilter.includes(transaction)
+        let nextDueDate = activeTransactions
+            .filter { $0.status == .pending && !$0.isCompleted && $0.dueDate >= Calendar.current.startOfDay(for: .now) }
+            .map(\.dueDate)
+            .min()
+
+        return activeTransactions.filter { transaction in
+            selectedFilter.includes(transaction, nextDueDate: nextDueDate) && advancedFilter.includes(transaction)
         }
     }
 
@@ -117,10 +132,15 @@ struct TransactionsView: View {
     }
 
     private func markCompleted(_ transaction: Transaction) {
+        let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
         transaction.paidDate = .now
         transaction.isCompleted = true
         transaction.status = transaction.type == .income ? .received : .paid
         transaction.markUpdated()
+
+        if !wasCompleted {
+            RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+        }
     }
 
     private func duplicate(_ transaction: Transaction) {
@@ -378,9 +398,10 @@ private enum TransactionFilterType: String, CaseIterable, Identifiable {
     }
 }
 
-private enum TransactionListFilter: String, CaseIterable, Identifiable {
+enum TransactionListFilter: String, CaseIterable, Identifiable {
     case all
     case overdue
+    case nextDue
     case upcoming
     case completed
     case receivable
@@ -393,6 +414,8 @@ private enum TransactionListFilter: String, CaseIterable, Identifiable {
             "All"
         case .overdue:
             "Overdue"
+        case .nextDue:
+            "Next due"
         case .upcoming:
             "Upcoming"
         case .completed:
@@ -402,18 +425,21 @@ private enum TransactionListFilter: String, CaseIterable, Identifiable {
         }
     }
 
-    func includes(_ transaction: Transaction) -> Bool {
+    func includes(_ transaction: Transaction, nextDueDate: Date? = nil) -> Bool {
         switch self {
         case .all:
-            true
+            return true
         case .overdue:
-            transaction.effectiveStatus == .overdue
+            return transaction.effectiveStatus == .overdue
+        case .nextDue:
+            guard let nextDueDate else { return false }
+            return transaction.status == .pending && !transaction.isCompleted && Calendar.current.isDate(transaction.dueDate, inSameDayAs: nextDueDate)
         case .upcoming:
-            transaction.status == .pending && !transaction.isCompleted && !isPastDue(transaction.dueDate)
+            return transaction.status == .pending && !transaction.isCompleted && !isPastDue(transaction.dueDate)
         case .completed:
-            transaction.isCompleted || transaction.status == .paid || transaction.status == .received
+            return transaction.isCompleted || transaction.status == .paid || transaction.status == .received
         case .receivable:
-            transaction.type == .income && transaction.status == .pending && !transaction.isCompleted
+            return transaction.type == .income && transaction.status == .pending && !transaction.isCompleted
         }
     }
 
@@ -699,6 +725,8 @@ private struct TransactionEmptyState: View {
             "New transactions will appear here."
         case .overdue:
             "Overdue transactions will appear here."
+        case .nextDue:
+            "Transactions with the next due date will appear here."
         case .upcoming:
             "Upcoming transactions will appear here."
         case .completed:
@@ -710,7 +738,12 @@ private struct TransactionEmptyState: View {
 }
 
 private struct TransactionDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+
     let transaction: Transaction
+
+    @State private var isShowingCompletionSheet = false
+    @State private var completionDate = Date.now
 
     var body: some View {
         List {
@@ -731,9 +764,18 @@ private struct TransactionDetailView: View {
                 }
 
                 if let paidDate = transaction.paidDate {
-                    LabeledContent("Paid date") {
+                    LabeledContent(completionDateTitle) {
                         Text(paidDate, format: .dateTime.day().month().year())
                     }
+                }
+            }
+
+            Section {
+                Button {
+                    completionDate = transaction.paidDate ?? .now
+                    isShowingCompletionSheet = true
+                } label: {
+                    Label(completionActionTitle, systemImage: "calendar.badge.checkmark")
                 }
             }
 
@@ -749,6 +791,85 @@ private struct TransactionDetailView: View {
         }
         .navigationTitle(transaction.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isShowingCompletionSheet) {
+            RegisterCompletionDateView(
+                transaction: transaction,
+                completionDate: $completionDate,
+                modelContext: modelContext
+            )
+        }
+    }
+
+    private var completionDateTitle: LocalizedStringKey {
+        transaction.type == .income ? "Received date" : "Paid date"
+    }
+
+    private var completionActionTitle: LocalizedStringKey {
+        if transaction.paidDate == nil {
+            transaction.type == .income ? "Register received date" : "Register paid date"
+        } else {
+            transaction.type == .income ? "Change received date" : "Change paid date"
+        }
+    }
+}
+
+private struct RegisterCompletionDateView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let transaction: Transaction
+    @Binding var completionDate: Date
+    let modelContext: ModelContext
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Date") {
+                    DatePicker(completionDateTitle, selection: $completionDate, displayedComponents: .date)
+                }
+
+                Section {
+                    Button {
+                        registerCompletion()
+                    } label: {
+                        Label(saveButtonTitle, systemImage: "checkmark.circle")
+                    }
+                }
+            }
+            .navigationTitle(navigationTitle)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var navigationTitle: LocalizedStringKey {
+        transaction.type == .income ? "Register received" : "Register paid"
+    }
+
+    private var completionDateTitle: LocalizedStringKey {
+        transaction.type == .income ? "Received date" : "Paid date"
+    }
+
+    private var saveButtonTitle: LocalizedStringKey {
+        transaction.type == .income ? "Mark as received" : "Mark as paid"
+    }
+
+    private func registerCompletion() {
+        let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
+        transaction.paidDate = completionDate
+        transaction.status = transaction.type == .income ? .received : .paid
+        transaction.isCompleted = true
+        transaction.markUpdated()
+
+        if !wasCompleted {
+            RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+        }
+
+        dismiss()
     }
 }
 

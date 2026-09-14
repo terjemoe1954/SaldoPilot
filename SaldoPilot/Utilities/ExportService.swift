@@ -28,6 +28,7 @@ enum ExportService {
 
     static func makeCSVExport(transactions: [Transaction]) throws -> URL {
         let headers = [
+            "id",
             "title",
             "amount",
             "type",
@@ -37,11 +38,16 @@ enum ExportService {
             "category",
             "recurrence",
             "recurrenceIntervalMonths",
-            "notes"
+            "notes",
+            "createdAt",
+            "updatedAt",
+            "isCompleted",
+            "isArchived"
         ]
 
         let rows = transactions.map { transaction in
             [
+                transaction.id.uuidString,
                 transaction.title,
                 transaction.amount.description,
                 transaction.type.rawValue,
@@ -51,7 +57,11 @@ enum ExportService {
                 transaction.category.rawValue,
                 transaction.recurrence.rawValue,
                 transaction.recurrenceIntervalMonths?.formatted() ?? "",
-                transaction.notes
+                transaction.notes,
+                isoString(from: transaction.createdAt),
+                isoString(from: transaction.updatedAt),
+                transaction.isCompleted.description,
+                transaction.isArchived.description
             ]
             .map(csvEscaped)
             .joined(separator: ",")
@@ -104,6 +114,7 @@ private struct ExportCategory: Encodable {
 }
 
 private struct ExportTransaction: Encodable {
+    let id: UUID
     let title: String
     let amount: String
     let type: String
@@ -114,8 +125,13 @@ private struct ExportTransaction: Encodable {
     let recurrence: String
     let recurrenceIntervalMonths: String?
     let notes: String
+    let createdAt: Date
+    let updatedAt: Date
+    let isCompleted: Bool
+    let isArchived: Bool
 
     init(transaction: Transaction) {
+        id = transaction.id
         title = transaction.title
         amount = transaction.amount.description
         type = transaction.type.rawValue
@@ -126,5 +142,9 @@ private struct ExportTransaction: Encodable {
         recurrence = transaction.recurrence.rawValue
         recurrenceIntervalMonths = transaction.recurrenceIntervalMonths?.formatted()
         notes = transaction.notes
+        createdAt = transaction.createdAt
+        updatedAt = transaction.updatedAt
+        isCompleted = transaction.isCompleted
+        isArchived = transaction.isArchived
     }
 }
