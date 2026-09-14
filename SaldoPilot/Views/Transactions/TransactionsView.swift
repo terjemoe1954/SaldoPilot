@@ -17,7 +17,9 @@ struct TransactionsView: View {
     @State private var selectedFilter: TransactionListFilter = .all
     @State private var advancedFilter = TransactionAdvancedFilter()
     @State private var editingTransaction: Transaction?
+    @State private var transactionPendingDeletion: Transaction?
     @State private var isShowingAdvancedFilter = false
+    @State private var isShowingDeleteConfirmation = false
 
     private let initialFilter: TransactionListFilter
 
@@ -58,7 +60,7 @@ struct TransactionsView: View {
                             }
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
-                                    delete(transaction)
+                                    requestDelete(transaction)
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -95,6 +97,20 @@ struct TransactionsView: View {
             .sheet(item: $editingTransaction) { transaction in
                 TransactionFormView(transaction: transaction)
             }
+            .confirmationDialog(
+                "Delete transaction?",
+                isPresented: $isShowingDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    confirmDelete()
+                }
+                Button("Cancel", role: .cancel) {
+                    transactionPendingDeletion = nil
+                }
+            } message: {
+                Text("This transaction will be permanently deleted.")
+            }
             .sheet(isPresented: $isShowingAdvancedFilter) {
                 TransactionFilterSheet(filter: $advancedFilter)
             }
@@ -117,9 +133,11 @@ struct TransactionsView: View {
             .map(\.dueDate)
             .min()
 
-        return activeTransactions.filter { transaction in
+        let filteredTransactions = activeTransactions.filter { transaction in
             selectedFilter.includes(transaction, nextDueDate: nextDueDate) && advancedFilter.includes(transaction)
         }
+
+        return advancedFilter.sort(filteredTransactions)
     }
 
     private func applyDefaultDateTypeIfNeeded() {
@@ -162,8 +180,15 @@ struct TransactionsView: View {
         editingTransaction = transaction
     }
 
-    private func delete(_ transaction: Transaction) {
-        modelContext.delete(transaction)
+    private func requestDelete(_ transaction: Transaction) {
+        transactionPendingDeletion = transaction
+        isShowingDeleteConfirmation = true
+    }
+
+    private func confirmDelete() {
+        guard let transactionPendingDeletion else { return }
+        modelContext.delete(transactionPendingDeletion)
+        self.transactionPendingDeletion = nil
     }
 }
 
@@ -177,6 +202,8 @@ private struct TransactionAdvancedFilter: Equatable {
     var category: CategoryKind?
     var minimumAmountText = ""
     var maximumAmountText = ""
+    var sortOption: TransactionSortOption = .dueDate
+    var sortDirection: TransactionSortDirection = .ascending
 
     var hasActiveFilters: Bool {
         period != .all ||
@@ -184,7 +211,9 @@ private struct TransactionAdvancedFilter: Equatable {
         type != .all ||
         category != nil ||
         parsedMinimumAmount != nil ||
-        parsedMaximumAmount != nil
+        parsedMaximumAmount != nil ||
+        sortOption != .dueDate ||
+        sortDirection != .ascending
     }
 
     var parsedMinimumAmount: Decimal? {
@@ -223,6 +252,22 @@ private struct TransactionAdvancedFilter: Equatable {
         return true
     }
 
+    func sort(_ transactions: [Transaction]) -> [Transaction] {
+        transactions.sorted { first, second in
+            let comparison = sortOption.compare(first, second)
+            if comparison == .orderedSame {
+                return first.dueDate < second.dueDate
+            }
+
+            switch sortDirection {
+            case .ascending:
+                return comparison == .orderedAscending
+            case .descending:
+                return comparison == .orderedDescending
+            }
+        }
+    }
+
     mutating func reset() {
         self = TransactionAdvancedFilter()
     }
@@ -250,6 +295,71 @@ private struct TransactionAdvancedFilter: Equatable {
 
         let normalizedValue = trimmedValue.replacingOccurrences(of: ",", with: ".")
         return Decimal(string: normalizedValue, locale: Locale(identifier: "en_US_POSIX"))
+    }
+}
+
+private enum TransactionSortOption: String, CaseIterable, Identifiable {
+    case dueDate
+    case paidDate
+    case amount
+    case title
+    case category
+    case status
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .dueDate:
+            "Due date"
+        case .paidDate:
+            "Paid date"
+        case .amount:
+            "Amount"
+        case .title:
+            "Title"
+        case .category:
+            "Category"
+        case .status:
+            "Status"
+        }
+    }
+
+    func compare(_ first: Transaction, _ second: Transaction) -> ComparisonResult {
+        switch self {
+        case .dueDate:
+            return first.dueDate.compare(second.dueDate)
+        case .paidDate:
+            return optionalDate(first.paidDate).compare(optionalDate(second.paidDate))
+        case .amount:
+            return NSDecimalNumber(decimal: first.amount).compare(NSDecimalNumber(decimal: second.amount))
+        case .title:
+            return first.title.localizedCaseInsensitiveCompare(second.title)
+        case .category:
+            return String(localized: first.category.title).localizedCaseInsensitiveCompare(String(localized: second.category.title))
+        case .status:
+            return first.effectiveStatus.rawValue.localizedCaseInsensitiveCompare(second.effectiveStatus.rawValue)
+        }
+    }
+
+    private func optionalDate(_ date: Date?) -> Date {
+        date ?? .distantFuture
+    }
+}
+
+private enum TransactionSortDirection: String, CaseIterable, Identifiable {
+    case ascending
+    case descending
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .ascending:
+            "Ascending"
+        case .descending:
+            "Descending"
+        }
     }
 }
 
@@ -494,6 +604,14 @@ private struct TransactionActiveFilterChips: View {
                     TransactionFilterChip(title: "Maximum")
                 }
 
+                if filter.sortOption != .dueDate {
+                    TransactionFilterChip(title: filter.sortOption.title)
+                }
+
+                if filter.sortDirection != .ascending {
+                    TransactionFilterChip(title: filter.sortDirection.title)
+                }
+
                 Button("Reset") {
                     filter.reset()
                 }
@@ -601,6 +719,21 @@ private struct TransactionFilterSheet: View {
                         .keyboardType(.decimalPad)
                     TextField("To", text: $filter.maximumAmountText)
                         .keyboardType(.decimalPad)
+                }
+
+                Section("Sorting") {
+                    Picker("Sort by", selection: $filter.sortOption) {
+                        ForEach(TransactionSortOption.allCases) { sortOption in
+                            Text(sortOption.title).tag(sortOption)
+                        }
+                    }
+
+                    Picker("Direction", selection: $filter.sortDirection) {
+                        ForEach(TransactionSortDirection.allCases) { direction in
+                            Text(direction.title).tag(direction)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
 
                 Section {
