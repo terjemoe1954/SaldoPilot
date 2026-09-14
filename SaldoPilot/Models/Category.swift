@@ -18,6 +18,7 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case health
     case entertainment
     case savings
+    case payrollDeduction
     case income
     case developer
     case other
@@ -46,6 +47,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             "Entertainment"
         case .savings:
             "Savings"
+        case .payrollDeduction:
+            "Payroll deduction"
         case .income:
             "Income"
         case .developer:
@@ -77,6 +80,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             "popcorn"
         case .savings:
             "banknote"
+        case .payrollDeduction:
+            "doc.text.magnifyingglass"
         case .income:
             "arrow.down.circle"
         case .developer:
@@ -108,6 +113,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             .yellow
         case .savings:
             .mint
+        case .payrollDeduction:
+            .brown
         case .income:
             .green
         case .developer:
@@ -160,6 +167,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             ["entertainment", "movie", "cinema", "game", "restaurant", "underholdning", "kino", "spill", "บันเทิง"]
         case .savings:
             ["savings", "saving", "save", "spare", "sparing", "ออม", "เงินออม"]
+        case .payrollDeduction:
+            ["payroll deduction", "wage garnishment", "garnishment", "attachment of earnings", "påleggstrekk", "paleggstrekk", "trekk", "utleggstrekk", "การหักเงินเดือน", "หักเงินเดือนตามคำสั่ง"]
         case .income:
             ["income", "salary", "wage", "lønn", "lonn", "inntekt", "รายรับ", "เงินเดือน"]
         case .developer:

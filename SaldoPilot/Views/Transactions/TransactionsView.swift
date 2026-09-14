@@ -17,7 +17,6 @@ struct TransactionsView: View {
     @State private var selectedFilter: TransactionListFilter = .all
     @State private var advancedFilter = TransactionAdvancedFilter()
     @State private var editingTransaction: Transaction?
-    @State private var isShowingEditForm = false
     @State private var isShowingAdvancedFilter = false
 
     private let initialFilter: TransactionListFilter
@@ -93,10 +92,8 @@ struct TransactionsView: View {
                     }
                 }
             }
-            .sheet(isPresented: $isShowingEditForm, onDismiss: { editingTransaction = nil }) {
-                if let editingTransaction {
-                    TransactionFormView(transaction: editingTransaction)
-                }
+            .sheet(item: $editingTransaction) { transaction in
+                TransactionFormView(transaction: transaction)
             }
             .sheet(isPresented: $isShowingAdvancedFilter) {
                 TransactionFilterSheet(filter: $advancedFilter)
@@ -163,7 +160,6 @@ struct TransactionsView: View {
 
     private func edit(_ transaction: Transaction) {
         editingTransaction = transaction
-        isShowingEditForm = true
     }
 
     private func delete(_ transaction: Transaction) {
