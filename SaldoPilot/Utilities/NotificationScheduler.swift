@@ -64,8 +64,9 @@ enum NotificationScheduler {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
         let dueDay = calendar.startOfDay(for: transaction.dueDate)
+        let isExpense = transaction.type == .expense
 
-        if settings.notifyDueInAdvance, settings.notificationAdvanceDays > 0 {
+        if isExpense, settings.notifyDueInAdvance, settings.notificationAdvanceDays > 0 {
             let reminderDate = calendar.date(byAdding: .day, value: -settings.notificationAdvanceDays, to: dueDay)
             await schedule(
                 transaction: transaction,
@@ -75,7 +76,7 @@ enum NotificationScheduler {
             )
         }
 
-        if settings.notifyDueTomorrow {
+        if isExpense, settings.notifyDueTomorrow {
             let reminderDate = calendar.date(byAdding: .day, value: -1, to: dueDay)
             await schedule(
                 transaction: transaction,
@@ -85,7 +86,7 @@ enum NotificationScheduler {
             )
         }
 
-        if settings.notifyDueToday {
+        if isExpense, settings.notifyDueToday {
             await schedule(
                 transaction: transaction,
                 kind: "today",
@@ -94,7 +95,7 @@ enum NotificationScheduler {
             )
         }
 
-        if dueDay < today {
+        if isExpense, dueDay < today {
             await schedule(
                 transaction: transaction,
                 kind: "overdue",

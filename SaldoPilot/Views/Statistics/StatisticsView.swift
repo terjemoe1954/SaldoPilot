@@ -75,6 +75,7 @@ private struct StatisticsSnapshot {
                 id: category.rawValue,
                 name: String(localized: category.title),
                 icon: category.systemImage,
+                tint: category.tint,
                 amount: transactions.totalAmount,
                 transactions: transactions.sortedByDueDate
             )
@@ -84,7 +85,9 @@ private struct StatisticsSnapshot {
 
     private static func makeOutstandingMonthStatistics(transactions: [Transaction], calendar: Calendar) -> [OutstandingMonthStatistics] {
         let outstandingTransactions = transactions.filter { transaction in
-            !transaction.isCompleted && (transaction.effectiveStatus == .pending || transaction.effectiveStatus == .overdue)
+            transaction.type == .income &&
+            !transaction.isCompleted &&
+            transaction.status == .pending
         }
         let monthStarts = rollingMonthStarts(count: 12, calendar: calendar)
 
@@ -137,6 +140,7 @@ private struct CategoryStatistics: Identifiable {
     let id: String
     let name: String
     let icon: String
+    let tint: Color
     let amount: Decimal
     let transactions: [Transaction]
 }
@@ -215,7 +219,7 @@ private struct MonthlyComparisonChart: View {
             .chartYAxisLabel("Amount")
             .frame(height: 220)
 
-            StatisticsMonthLinkList(months: months, value: { $0.income + $0.expenses })
+            StatisticsMonthLinkList(months: months, subtitle: "Net", value: { $0.net })
         }
     }
 }
@@ -236,6 +240,10 @@ private struct ExpenseCategoryChart: View {
                     )
                     .foregroundStyle(by: .value("Category", category.name))
                 }
+                .chartForegroundStyleScale(
+                    domain: categories.map(\.name),
+                    range: categories.map(\.tint)
+                )
                 .frame(height: 220)
 
                 VStack(spacing: 8) {
@@ -276,7 +284,7 @@ private struct NetTrendChart: View {
             .chartYAxisLabel("Net")
             .frame(height: 220)
 
-            StatisticsMonthLinkList(months: months, value: { $0.net })
+            StatisticsMonthLinkList(months: months, subtitle: "Net", value: { $0.net })
         }
     }
 }
@@ -285,9 +293,9 @@ private struct OutstandingAmountChart: View {
     let months: [OutstandingMonthStatistics]
 
     var body: some View {
-        StatisticsChartSection(title: "Outstanding amount") {
+        StatisticsChartSection(title: "Receivable amount") {
             if months.isEmpty {
-                StatisticsEmptyChartState(text: "No outstanding transactions.")
+                StatisticsEmptyChartState(text: "No receivable transactions.")
             } else {
                 Chart(months) { month in
                     BarMark(
@@ -309,7 +317,7 @@ private struct OutstandingAmountChart: View {
                         } label: {
                             StatisticsValueRow(
                                 title: month.title,
-                                subtitle: "Outstanding",
+                                subtitle: "Receivable",
                                 value: month.amount,
                                 systemImage: "clock.badge.exclamationmark"
                             )
@@ -346,6 +354,7 @@ private struct StatisticsChartSection<Content: View>: View {
 
 private struct StatisticsMonthLinkList: View {
     let months: [MonthStatistics]
+    let subtitle: LocalizedStringKey
     let value: (MonthStatistics) -> Decimal
 
     var body: some View {
@@ -359,7 +368,7 @@ private struct StatisticsMonthLinkList: View {
                 } label: {
                     StatisticsValueRow(
                         title: month.title,
-                        subtitle: "Transactions",
+                        subtitle: subtitle,
                         value: value(month),
                         systemImage: "calendar"
                     )

@@ -146,6 +146,7 @@ enum AIInsightEngine {
         let today = calendar.startOfDay(for: .now)
         guard let endDate = calendar.date(byAdding: .day, value: 7, to: today) else { return nil }
         let dueSoon = transactions.filter { transaction in
+            transaction.type == .expense &&
             transaction.status == .pending &&
             !transaction.isCompleted &&
             transaction.dueDate >= today &&

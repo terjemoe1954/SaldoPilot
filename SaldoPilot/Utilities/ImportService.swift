@@ -238,6 +238,37 @@ enum ImportService {
 private struct ImportPayload: Decodable {
     let categories: [ImportCategory]?
     let transactions: [ImportTransaction]?
+
+    enum CodingKeys: String, CodingKey {
+        case categories
+        case transactions
+        case posts
+        case poster
+        case records
+        case items
+    }
+
+    init(from decoder: Decoder) throws {
+        if let transactions = try? [ImportTransaction](from: decoder) {
+            categories = []
+            self.transactions = transactions
+            return
+        }
+
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        categories = (try? container.decodeIfPresent([ImportCategory].self, forKey: .categories)) ?? []
+        transactions = Self.decodeTransactions(from: container)
+    }
+
+    private static func decodeTransactions(from container: KeyedDecodingContainer<CodingKeys>) -> [ImportTransaction] {
+        for key in [CodingKeys.transactions, .posts, .poster, .records, .items] {
+            if let transactions = try? container.decodeIfPresent([ImportTransaction].self, forKey: key) {
+                return transactions
+            }
+        }
+
+        return []
+    }
 }
 
 private struct PreparedImportResult {
@@ -441,16 +472,19 @@ private struct CategoryImportLookup {
 
 private extension KeyedDecodingContainer {
     func decodeFlexibleString(forKey key: Key) throws -> String? {
-        if let stringValue = try decodeIfPresent(String.self, forKey: key) {
+        if let stringValue = try? decodeIfPresent(String.self, forKey: key) {
             return stringValue
         }
-        if let decimalValue = try decodeIfPresent(Decimal.self, forKey: key) {
+        if let decimalValue = try? decodeIfPresent(Decimal.self, forKey: key) {
             return decimalValue.description
         }
-        if let intValue = try decodeIfPresent(Int.self, forKey: key) {
+        if let doubleValue = try? decodeIfPresent(Double.self, forKey: key) {
+            return doubleValue.description
+        }
+        if let intValue = try? decodeIfPresent(Int.self, forKey: key) {
             return intValue.description
         }
-        if let boolValue = try decodeIfPresent(Bool.self, forKey: key) {
+        if let boolValue = try? decodeIfPresent(Bool.self, forKey: key) {
             return boolValue.description
         }
         return nil

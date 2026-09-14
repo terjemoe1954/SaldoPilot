@@ -45,6 +45,7 @@ enum AIQueryEngine {
         let today = calendar.startOfDay(for: .now)
         let nextWeek = calendar.date(byAdding: .day, value: 7, to: today) ?? today
         let matches = transactions.filter { transaction in
+            transaction.type == .expense &&
             transaction.status == .pending &&
             !transaction.isCompleted &&
             transaction.dueDate >= today &&

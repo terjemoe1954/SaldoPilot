@@ -125,7 +125,7 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .income:
             .green
         case .developer:
-            .cyan
+            .black
         case .other:
             .gray
         }

@@ -113,7 +113,7 @@ struct DashboardView: View {
 
         let overdueCount = activeTransactions.filter { $0.effectiveStatus == .overdue }.count
         let nextDueDate = activeTransactions
-            .filter { $0.status == .pending && !$0.isCompleted && $0.dueDate >= Calendar.current.startOfDay(for: .now) }
+            .filter { $0.type == .expense && $0.status == .pending && !$0.isCompleted && $0.dueDate >= Calendar.current.startOfDay(for: .now) }
             .map(\.dueDate)
             .min()
 
@@ -137,7 +137,7 @@ struct DashboardView: View {
 
         let overdue = activeTransactions.filter { $0.effectiveStatus == .overdue }
         let dueSoon = activeTransactions.filter {
-            $0.status == .pending && !$0.isCompleted && $0.dueDate >= today && $0.dueDate <= soon
+            $0.type == .expense && $0.status == .pending && !$0.isCompleted && $0.dueDate >= today && $0.dueDate <= soon
         }
         let pendingIncome = activeTransactions.filter {
             $0.type == .income && $0.status == .pending && !$0.isCompleted

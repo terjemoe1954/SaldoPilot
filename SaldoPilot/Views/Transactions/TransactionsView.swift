@@ -129,7 +129,7 @@ struct TransactionsView: View {
 
     private var filteredTransactions: [Transaction] {
         let nextDueDate = activeTransactions
-            .filter { $0.status == .pending && !$0.isCompleted && $0.dueDate >= Calendar.current.startOfDay(for: .now) }
+            .filter { $0.type == .expense && $0.status == .pending && !$0.isCompleted && $0.dueDate >= Calendar.current.startOfDay(for: .now) }
             .map(\.dueDate)
             .min()
 
@@ -539,7 +539,7 @@ enum TransactionListFilter: String, CaseIterable, Identifiable {
             return transaction.effectiveStatus == .overdue
         case .nextDue:
             guard let nextDueDate else { return false }
-            return transaction.status == .pending && !transaction.isCompleted && Calendar.current.isDate(transaction.dueDate, inSameDayAs: nextDueDate)
+            return transaction.type == .expense && transaction.status == .pending && !transaction.isCompleted && Calendar.current.isDate(transaction.dueDate, inSameDayAs: nextDueDate)
         case .upcoming:
             return transaction.status == .pending && !transaction.isCompleted && !isPastDue(transaction.dueDate)
         case .completed:
