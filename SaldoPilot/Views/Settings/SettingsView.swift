@@ -111,6 +111,12 @@ struct SettingsView: View {
                     LabeledContent("Version", value: appVersion)
                     LabeledContent("Build", value: buildNumber)
 
+                    NavigationLink {
+                        HelpView()
+                    } label: {
+                        Label("Help", systemImage: "book")
+                    }
+
                     Link(destination: privacyURL) {
                         Label("Privacy", systemImage: "hand.raised")
                     }

@@ -851,11 +851,12 @@ private struct TransactionRowView: View {
 
                         if let nextDueDate {
                             Label {
-                                recurrenceSummary
-                                + Text(" · ")
-                                + Text("Next:")
-                                + Text(" ")
-                                + Text(nextDueDate, format: .dateTime.day().month().year())
+                                HStack(spacing: 3) {
+                                    recurrenceSummary
+                                    Text("·")
+                                    Text("Next:")
+                                    Text(nextDueDate, format: .dateTime.day().month().year())
+                                }
                             } icon: {
                                 Image(systemName: "calendar.badge.clock")
                             }
