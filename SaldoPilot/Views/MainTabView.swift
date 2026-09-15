@@ -34,6 +34,9 @@ struct MainTabView: View {
             .tag(MainTab.dashboard)
 
             TransactionsView(initialFilter: transactionListFilter)
+                .onNewTransaction {
+                    newTransactionIntent = .transaction
+                }
                 .tabItem {
                     Label("Transactions", systemImage: "list.bullet.rectangle")
                 }
@@ -50,13 +53,6 @@ struct MainTabView: View {
                     Label("Settings", systemImage: "gearshape")
                 }
                 .tag(MainTab.settings)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            FloatingAddTransactionButton {
-                newTransactionIntent = .transaction
-            }
-            .padding(.trailing, 20)
-            .padding(.bottom, 72)
         }
         .sheet(item: $newTransactionIntent) { intent in
             TransactionFormView(intent: intent)
@@ -130,22 +126,6 @@ enum NewTransactionIntent: String, Identifiable {
     case payment
 
     var id: String { rawValue }
-}
-
-private struct FloatingAddTransactionButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "plus")
-                .font(.title2.weight(.semibold))
-                .frame(width: 56, height: 56)
-        }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.circle)
-        .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
-        .accessibilityLabel("New transaction")
-    }
 }
 
 #Preview {

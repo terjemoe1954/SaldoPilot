@@ -22,6 +22,7 @@ struct TransactionsView: View {
     @State private var isShowingDeleteConfirmation = false
 
     private let initialFilter: TransactionListFilter
+    private var newTransactionAction: (() -> Void)?
 
     init(initialFilter: TransactionListFilter = .all) {
         self.initialFilter = initialFilter
@@ -31,6 +32,7 @@ struct TransactionsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                AvailableAmountBanner(amount: availableAmount)
                 TransactionFilterPicker(selectedFilter: $selectedFilter)
 
                 if advancedFilter.hasActiveFilters {
@@ -86,7 +88,13 @@ struct TransactionsView: View {
             }
             .navigationTitle("Transactions")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        newTransactionAction?()
+                    } label: {
+                        Label("New transaction", systemImage: "plus")
+                    }
+
                     Button {
                         isShowingAdvancedFilter = true
                     } label: {
@@ -123,6 +131,12 @@ struct TransactionsView: View {
         }
     }
 
+    func onNewTransaction(_ action: @escaping () -> Void) -> Self {
+        var copy = self
+        copy.newTransactionAction = action
+        return copy
+    }
+
     private var activeTransactions: [Transaction] {
         transactions.filter { !$0.isArchived && $0.status != .cancelled }
     }
@@ -138,6 +152,21 @@ struct TransactionsView: View {
         }
 
         return advancedFilter.sort(filteredTransactions)
+    }
+
+    private var availableAmount: Decimal {
+        activeTransactions.reduce(.zero) { result, transaction in
+            guard transaction.isCompleted || transaction.status == .paid || transaction.status == .received else {
+                return result
+            }
+
+            switch transaction.type {
+            case .income:
+                return result + transaction.amount
+            case .expense:
+                return result - transaction.amount
+            }
+        }
     }
 
     private func applyDefaultDateTypeIfNeeded() {
@@ -504,6 +533,44 @@ private enum TransactionFilterType: String, CaseIterable, Identifiable {
     }
 }
 
+private struct AvailableAmountBanner: View {
+    let amount: Decimal
+
+    var body: some View {
+        HStack {
+            Spacer(minLength: 0)
+
+            HStack(spacing: 8) {
+                Image(systemName: amount < .zero ? "minus.circle.fill" : "checkmark.circle.fill")
+                    .font(.caption.weight(.semibold))
+                    .accessibilityHidden(true)
+
+                Text("Available")
+                    .font(.caption.weight(.semibold))
+
+                Text(amount.formattedCurrency)
+                    .font(.subheadline.weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(tint.gradient, in: Capsule())
+            .accessibilityElement(children: .combine)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.bar)
+    }
+
+    private var tint: Color {
+        amount < .zero ? .red : .green
+    }
+}
+
 enum TransactionListFilter: String, CaseIterable, Identifiable {
     case all
     case overdue
@@ -776,9 +843,31 @@ private struct TransactionRowView: View {
                 .lineLimit(1)
 
                 if showsCompletedStatus {
-                    HStack(spacing: 8) {
-                        TransactionStatusBadge(status: transaction.effectiveStatus)
-                        TransactionTypeBadge(type: transaction.type)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            TransactionStatusBadge(status: transaction.effectiveStatus)
+                            TransactionTypeBadge(type: transaction.type)
+                        }
+
+                        if let nextDueDate {
+                            Label {
+                                recurrenceSummary
+                                + Text(" · ")
+                                + Text("Next:")
+                                + Text(" ")
+                                + Text(nextDueDate, format: .dateTime.day().month().year())
+                            } icon: {
+                                Image(systemName: "calendar.badge.clock")
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        } else {
+                            Label("One-time", systemImage: "calendar")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                 }
             }
@@ -793,6 +882,19 @@ private struct TransactionRowView: View {
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
+    }
+
+    private var nextDueDate: Date? {
+        RecurrenceService.nextDueDate(after: transaction.dueDate, for: transaction)
+    }
+
+    private var recurrenceSummary: Text {
+        switch transaction.recurrence {
+        case .everyNMonths, .custom:
+            Text("Every \(transaction.recurrenceIntervalMonths ?? 1) months")
+        case .none, .monthly, .quarterly, .halfYearly, .yearly:
+            Text(transaction.recurrence.title)
+        }
     }
 }
 

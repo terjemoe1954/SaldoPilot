@@ -9,6 +9,22 @@ import Foundation
 import SwiftData
 
 enum RecurrenceService {
+    static func nextDueDate(
+        after date: Date,
+        for transaction: Transaction,
+        calendar: Calendar = .current
+    ) -> Date? {
+        guard transaction.recurrence != .none else {
+            return nil
+        }
+
+        return calendar.date(
+            byAdding: .month,
+            value: monthInterval(for: transaction),
+            to: date
+        )
+    }
+
     static func insertNextOccurrenceIfNeeded(
         after transaction: Transaction,
         in modelContext: ModelContext,
@@ -32,23 +48,6 @@ enum RecurrenceService {
 
         modelContext.insert(nextTransaction)
     }
-
-    private static func nextDueDate(
-        after date: Date,
-        for transaction: Transaction,
-        calendar: Calendar
-    ) -> Date? {
-        guard transaction.recurrence != .none else {
-            return nil
-        }
-
-        return calendar.date(
-            byAdding: .month,
-            value: monthInterval(for: transaction),
-            to: date
-        )
-    }
-
     private static func monthInterval(for transaction: Transaction) -> Int {
         switch transaction.recurrence {
         case .none:

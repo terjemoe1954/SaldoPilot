@@ -282,7 +282,9 @@ private struct TransactionRecurrenceSection: View {
 
             if recurrence == .everyNMonths || recurrence == .custom {
                 Stepper(value: $recurrenceIntervalMonths, in: 1...60) {
-                    LabeledContent("Interval", value: "\(recurrenceIntervalMonths) months")
+                    LabeledContent("Interval") {
+                        Text("Every \(recurrenceIntervalMonths) months")
+                    }
                 }
             }
         }
