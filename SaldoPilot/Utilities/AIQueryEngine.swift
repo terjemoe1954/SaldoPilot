@@ -14,34 +14,34 @@ struct AIQueryResult: Equatable {
 }
 
 enum AIQueryEngine {
-    static func answer(question: String, transactions: [Transaction], calendar: Calendar = .current) -> AIQueryResult {
+    static func answer(question: String, transactions: [Transaction], calendar: Calendar = .current, locale: Locale = .autoupdatingCurrent) -> AIQueryResult {
         let activeTransactions = transactions.filter { !$0.isArchived && $0.status != .cancelled }
         let normalizedQuestion = question.normalizedAIQuery
 
         if normalizedQuestion.containsAny(of: ["next week", "neste uke", "due", "forfaller", "ครบกำหนด"]) {
-            return dueNextWeekResult(transactions: activeTransactions, calendar: calendar)
+            return dueNextWeekResult(transactions: activeTransactions, calendar: calendar, locale: locale)
         }
 
         if normalizedQuestion.containsAny(of: ["increased most", "økt mest", "okt mest", "เพิ่มขึ้นมากที่สุด"]) {
-            return biggestIncreaseResult(transactions: activeTransactions, calendar: calendar)
+            return biggestIncreaseResult(transactions: activeTransactions, calendar: calendar, locale: locale)
         }
 
         if normalizedQuestion.containsAny(of: ["save", "spare", "ประหยัด"]) {
-            return savingsResult(transactions: activeTransactions, calendar: calendar)
+            return savingsResult(transactions: activeTransactions, calendar: calendar, locale: locale)
         }
 
         if let category = CategoryKind.allCases.first(where: { normalizedQuestion.contains($0.rawValue) || normalizedQuestion.contains(String(localized: $0.title).normalizedAIQuery) }), normalizedQuestion.containsAny(of: ["how much", "hvor mye", "เท่าไร", "เท่าไหร่"]) {
-            return categorySpendingResult(category: category, question: normalizedQuestion, transactions: activeTransactions, calendar: calendar)
+            return categorySpendingResult(category: category, question: normalizedQuestion, transactions: activeTransactions, calendar: calendar, locale: locale)
         }
 
         if normalizedQuestion.containsAny(of: ["over", "above", "over", "มากกว่า"]), let amount = normalizedQuestion.firstDecimalNumber {
-            return amountSearchResult(amount: amount, question: normalizedQuestion, transactions: activeTransactions, calendar: calendar)
+            return amountSearchResult(amount: amount, question: normalizedQuestion, transactions: activeTransactions, calendar: calendar, locale: locale)
         }
 
-        return overviewResult(transactions: activeTransactions, calendar: calendar)
+        return overviewResult(transactions: activeTransactions, calendar: calendar, locale: locale)
     }
 
-    private static func dueNextWeekResult(transactions: [Transaction], calendar: Calendar) -> AIQueryResult {
+    private static func dueNextWeekResult(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         let today = calendar.startOfDay(for: .now)
         let nextWeek = calendar.date(byAdding: .day, value: 7, to: today) ?? today
         let matches = transactions.filter { transaction in
@@ -53,13 +53,13 @@ enum AIQueryEngine {
         }.sortedByDueDate
 
         return AIQueryResult(
-            title: String(localized: "Due next week"),
-            answer: String(localized: "You have \(matches.count) transactions totaling \(matches.totalAmount.formattedCurrency) due in the next 7 days."),
+            title: localized("Due next week", locale: locale),
+            answer: localized("You have \(matches.count) transactions totaling \(matches.totalAmount.formattedCurrency) due in the next 7 days.", locale: locale),
             transactions: matches
         )
     }
 
-    private static func categorySpendingResult(category: CategoryKind, question: String, transactions: [Transaction], calendar: Calendar) -> AIQueryResult {
+    private static func categorySpendingResult(category: CategoryKind, question: String, transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         let interval = question.containsAny(of: ["year", "år", "ar", "ปี"]) ?
             calendar.dateInterval(of: .year, for: .now) :
             calendar.dateInterval(of: .month, for: .now)
@@ -73,18 +73,18 @@ enum AIQueryEngine {
         let categoryName = String(localized: category.title)
         return AIQueryResult(
             title: categoryName,
-            answer: String(localized: "You spent \(matches.totalAmount.formattedCurrency) on \(categoryName)."),
+            answer: localized("You spent \(matches.totalAmount.formattedCurrency) on \(categoryName).", locale: locale),
             transactions: matches
         )
     }
 
-    private static func biggestIncreaseResult(transactions: [Transaction], calendar: Calendar) -> AIQueryResult {
+    private static func biggestIncreaseResult(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         guard
             let currentMonth = calendar.dateInterval(of: .month, for: .now),
             let previousMonthDate = calendar.date(byAdding: .month, value: -1, to: currentMonth.start),
             let previousMonth = calendar.dateInterval(of: .month, for: previousMonthDate)
         else {
-            return overviewResult(transactions: transactions, calendar: calendar)
+            return overviewResult(transactions: transactions, calendar: calendar, locale: locale)
         }
 
         let changes = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, difference: Decimal, matches: [Transaction])? in
@@ -97,23 +97,23 @@ enum AIQueryEngine {
 
         guard let largest = changes.max(by: { $0.difference < $1.difference }) else {
             return AIQueryResult(
-                title: String(localized: "Spending change"),
-                answer: String(localized: "No expense category has increased compared with last month."),
+                title: localized("Spending change", locale: locale),
+                answer: localized("No expense category has increased compared with last month.", locale: locale),
                 transactions: []
             )
         }
 
         let categoryName = String(localized: largest.category.title)
         return AIQueryResult(
-            title: String(localized: "Spending change"),
-            answer: String(localized: "\(categoryName) increased the most, up \(largest.difference.formattedCurrency) from last month."),
+            title: localized("Spending change", locale: locale),
+            answer: localized("\(categoryName) increased the most, up \(largest.difference.formattedCurrency) from last month.", locale: locale),
             transactions: largest.matches
         )
     }
 
-    private static func savingsResult(transactions: [Transaction], calendar: Calendar) -> AIQueryResult {
+    private static func savingsResult(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else {
-            return overviewResult(transactions: transactions, calendar: calendar)
+            return overviewResult(transactions: transactions, calendar: calendar, locale: locale)
         }
 
         let categoryTotals = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, amount: Decimal, matches: [Transaction])? in
@@ -124,21 +124,21 @@ enum AIQueryEngine {
 
         guard let largest = categoryTotals.max(by: { $0.amount < $1.amount }) else {
             return AIQueryResult(
-                title: String(localized: "Savings idea"),
-                answer: String(localized: "Add categories to expenses and SaldoPilot can point out where to review spending."),
+                title: localized("Savings idea", locale: locale),
+                answer: localized("Add categories to expenses and SaldoPilot can point out where to review spending.", locale: locale),
                 transactions: []
             )
         }
 
         let categoryName = String(localized: largest.category.title)
         return AIQueryResult(
-            title: String(localized: "Savings idea"),
-            answer: String(localized: "Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency)."),
+            title: localized("Savings idea", locale: locale),
+            answer: localized("Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency).", locale: locale),
             transactions: largest.matches
         )
     }
 
-    private static func amountSearchResult(amount: Decimal, question: String, transactions: [Transaction], calendar: Calendar) -> AIQueryResult {
+    private static func amountSearchResult(amount: Decimal, question: String, transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         let requestedYear = question.firstYear
         let category = CategoryKind.allCases.first { question.contains($0.rawValue) || question.contains(String(localized: $0.title).normalizedAIQuery) }
         let titleWords = question.significantQueryWords(excluding: CategoryKind.allCases.map { String(localized: $0.title) })
@@ -155,15 +155,15 @@ enum AIQueryEngine {
         }.sortedByDueDate
 
         return AIQueryResult(
-            title: String(localized: "Search result"),
-            answer: String(localized: "Found \(matches.count) transactions over \(amount.formattedCurrency)."),
+            title: localized("Search result", locale: locale),
+            answer: localized("Found \(matches.count) transactions over \(amount.formattedCurrency).", locale: locale),
             transactions: matches
         )
     }
 
-    private static func overviewResult(transactions: [Transaction], calendar: Calendar) -> AIQueryResult {
+    private static func overviewResult(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else {
-            return AIQueryResult(title: String(localized: "AI answer"), answer: String(localized: "I could not read the current period."), transactions: [])
+            return AIQueryResult(title: localized("AI answer", locale: locale), answer: localized("I could not read the current period.", locale: locale), transactions: [])
         }
 
         let currentTransactions = transactions.filter { currentMonth.contains($0.dueDate) }
@@ -172,10 +172,14 @@ enum AIQueryEngine {
         let net = income - expenses
 
         return AIQueryResult(
-            title: String(localized: "AI answer"),
-            answer: String(localized: "This month has \(income.formattedCurrency) in income, \(expenses.formattedCurrency) in expenses, and \(net.formattedCurrency) net."),
+            title: localized("AI answer", locale: locale),
+            answer: localized("This month has \(income.formattedCurrency) in income, \(expenses.formattedCurrency) in expenses, and \(net.formattedCurrency) net.", locale: locale),
             transactions: currentTransactions.sortedByDueDate
         )
+    }
+
+    private static func localized(_ value: String.LocalizationValue, locale: Locale) -> String {
+        String(localized: value, bundle: .main, locale: locale)
     }
 }
 

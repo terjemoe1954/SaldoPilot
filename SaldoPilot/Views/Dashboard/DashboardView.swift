@@ -11,6 +11,7 @@ import SwiftUI
 struct DashboardView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @AppStorage(AppSettingsKey.defaultPeriod) private var selectedPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
+    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
     @State private var customStartDate = Calendar.current.currentMonthStart
@@ -128,7 +129,11 @@ struct DashboardView: View {
     }
 
     private var aiInsights: [AIInsight] {
-        AIInsightEngine.insights(transactions: activeTransactions)
+        AIInsightEngine.insights(transactions: activeTransactions, locale: selectedLanguage.locale)
+    }
+
+    private var selectedLanguage: AppLanguage {
+        AppLanguage(rawValue: languageRawValue) ?? .system
     }
 
     private var attentionItems: [DashboardAttentionItem] {

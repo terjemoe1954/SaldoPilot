@@ -17,14 +17,14 @@ struct AIInsight: Identifiable, Equatable {
 }
 
 enum AIInsightEngine {
-    static func insights(transactions: [Transaction], calendar: Calendar = .current) -> [AIInsight] {
+    static func insights(transactions: [Transaction], calendar: Calendar = .current, locale: Locale = .autoupdatingCurrent) -> [AIInsight] {
         let activeTransactions = transactions.filter { !$0.isArchived && $0.status != .cancelled }
         guard !activeTransactions.isEmpty else {
             return [
                 AIInsight(
                     id: "empty",
                     title: "AI summary",
-                    message: String(localized: "Add a few transactions and SaldoPilot will summarize patterns here."),
+                    message: localized("Add a few transactions and SaldoPilot will summarize patterns here.", locale: locale),
                     systemImage: "sparkles",
                     tint: .blue
                 )
@@ -33,39 +33,39 @@ enum AIInsightEngine {
 
         var insights: [AIInsight] = []
 
-        if let situationInsight = financialSituationInsight(transactions: activeTransactions, calendar: calendar) {
+        if let situationInsight = financialSituationInsight(transactions: activeTransactions, calendar: calendar, locale: locale) {
             insights.append(situationInsight)
         }
 
-        if let spendingChangeInsight = spendingChangeInsight(transactions: activeTransactions, calendar: calendar) {
+        if let spendingChangeInsight = spendingChangeInsight(transactions: activeTransactions, calendar: calendar, locale: locale) {
             insights.append(spendingChangeInsight)
         }
 
-        if let dueSoonInsight = dueSoonInsight(transactions: activeTransactions, calendar: calendar) {
+        if let dueSoonInsight = dueSoonInsight(transactions: activeTransactions, calendar: calendar, locale: locale) {
             insights.append(dueSoonInsight)
         }
 
-        if let recurringInsight = recurringInsight(transactions: activeTransactions) {
+        if let recurringInsight = recurringInsight(transactions: activeTransactions, locale: locale) {
             insights.append(recurringInsight)
         }
 
-        if let duplicateInsight = duplicateInsight(transactions: activeTransactions) {
+        if let duplicateInsight = duplicateInsight(transactions: activeTransactions, locale: locale) {
             insights.append(duplicateInsight)
         }
 
-        if let unusualAmountInsight = unusualAmountInsight(transactions: activeTransactions) {
+        if let unusualAmountInsight = unusualAmountInsight(transactions: activeTransactions, locale: locale) {
             insights.append(unusualAmountInsight)
         }
 
-        if let savingsInsight = savingsInsight(transactions: activeTransactions, calendar: calendar) {
+        if let savingsInsight = savingsInsight(transactions: activeTransactions, calendar: calendar, locale: locale) {
             insights.append(savingsInsight)
         }
 
-        if let categorySuggestionInsight = categorySuggestionInsight(transactions: activeTransactions) {
+        if let categorySuggestionInsight = categorySuggestionInsight(transactions: activeTransactions, locale: locale) {
             insights.append(categorySuggestionInsight)
         }
 
-        if insights.isEmpty, let summaryInsight = summaryInsight(transactions: activeTransactions, calendar: calendar) {
+        if insights.isEmpty, let summaryInsight = summaryInsight(transactions: activeTransactions, calendar: calendar, locale: locale) {
             insights.append(summaryInsight)
         }
 
@@ -73,7 +73,7 @@ enum AIInsightEngine {
             AIInsight(
                 id: "safety",
                 title: "Advisory only",
-                message: String(localized: "These insights are local suggestions. SaldoPilot does not act as a bank or financial advisor."),
+                message: localized("These insights are local suggestions. SaldoPilot does not act as a bank or financial advisor.", locale: locale),
                 systemImage: "checkmark.shield",
                 tint: .secondary
             )
@@ -82,7 +82,7 @@ enum AIInsightEngine {
         return Array(insights.prefix(6))
     }
 
-    private static func financialSituationInsight(transactions: [Transaction], calendar: Calendar) -> AIInsight? {
+    private static func financialSituationInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
         let now = Date.now
         guard let currentMonth = calendar.dateInterval(of: .month, for: now) else { return nil }
         let currentTransactions = transactions.filter { currentMonth.contains($0.dueDate) }
@@ -94,9 +94,9 @@ enum AIInsightEngine {
 
         let message: String
         if net >= 0 {
-            message = String(localized: "This month is positive by \(net.formattedCurrency) after registered income and expenses.")
+            message = localized("This month is positive by \(net.formattedCurrency) after registered income and expenses.", locale: locale)
         } else {
-            message = String(localized: "This month is negative by \(abs(net).formattedCurrency) after registered income and expenses.")
+            message = localized("This month is negative by \(abs(net).formattedCurrency) after registered income and expenses.", locale: locale)
         }
 
         return AIInsight(
@@ -108,7 +108,7 @@ enum AIInsightEngine {
         )
     }
 
-    private static func spendingChangeInsight(transactions: [Transaction], calendar: Calendar) -> AIInsight? {
+    private static func spendingChangeInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
         let now = Date.now
         guard
             let currentMonth = calendar.dateInterval(of: .month, for: now),
@@ -126,10 +126,10 @@ enum AIInsightEngine {
         let message: String
         let tint: Color
         if difference > 0 {
-            message = String(localized: "Expenses this month are \(difference.formattedCurrency) higher than last month.")
+            message = localized("Expenses this month are \(difference.formattedCurrency) higher than last month.", locale: locale)
             tint = .orange
         } else {
-            message = String(localized: "Expenses this month are \(abs(difference).formattedCurrency) lower than last month.")
+            message = localized("Expenses this month are \(abs(difference).formattedCurrency) lower than last month.", locale: locale)
             tint = .green
         }
 
@@ -142,7 +142,7 @@ enum AIInsightEngine {
         )
     }
 
-    private static func dueSoonInsight(transactions: [Transaction], calendar: Calendar) -> AIInsight? {
+    private static func dueSoonInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
         let today = calendar.startOfDay(for: .now)
         guard let endDate = calendar.date(byAdding: .day, value: 7, to: today) else { return nil }
         let dueSoon = transactions.filter { transaction in
@@ -157,13 +157,13 @@ enum AIInsightEngine {
         return AIInsight(
             id: "dueSoon",
             title: "Upcoming payments",
-            message: String(localized: "You have \(dueSoon.count) transactions totaling \(dueSoon.totalAmount.formattedCurrency) due in the next 7 days."),
+            message: localized("You have \(dueSoon.count) transactions totaling \(dueSoon.totalAmount.formattedCurrency) due in the next 7 days.", locale: locale),
             systemImage: "calendar.badge.clock",
             tint: .red
         )
     }
 
-    private static func recurringInsight(transactions: [Transaction]) -> AIInsight? {
+    private static func recurringInsight(transactions: [Transaction], locale: Locale) -> AIInsight? {
         let candidates = transactions.filter { !$0.isCompleted && $0.recurrence == .none }
         let grouped = Dictionary(grouping: candidates) { transaction in
             "\(transaction.title.normalizedInsightKey)-\(transaction.amount.description)-\(transaction.type.rawValue)"
@@ -179,13 +179,13 @@ enum AIInsightEngine {
         return AIInsight(
             id: "recurring",
             title: "Possible recurring transaction",
-            message: String(localized: "\(firstTransaction.title) appears more than once with the same amount. It may be recurring."),
+            message: localized("\(firstTransaction.title) appears more than once with the same amount. It may be recurring.", locale: locale),
             systemImage: "repeat",
             tint: .purple
         )
     }
 
-    private static func duplicateInsight(transactions: [Transaction]) -> AIInsight? {
+    private static func duplicateInsight(transactions: [Transaction], locale: Locale) -> AIInsight? {
         let grouped = Dictionary(grouping: transactions) { transaction in
             "\(transaction.title.normalizedInsightKey)-\(transaction.amount.description)-\(transaction.dueDate.dayKey)-\(transaction.type.rawValue)"
         }
@@ -197,13 +197,13 @@ enum AIInsightEngine {
         return AIInsight(
             id: "duplicate",
             title: "Possible duplicate",
-            message: String(localized: "\(firstTransaction.title) appears more than once on the same date and amount."),
+            message: localized("\(firstTransaction.title) appears more than once on the same date and amount.", locale: locale),
             systemImage: "doc.on.doc",
             tint: .orange
         )
     }
 
-    private static func unusualAmountInsight(transactions: [Transaction]) -> AIInsight? {
+    private static func unusualAmountInsight(transactions: [Transaction], locale: Locale) -> AIInsight? {
         let expenseTransactions = transactions.filter { $0.type == .expense }
         let grouped = Dictionary(grouping: expenseTransactions) { transaction in
             transaction.category.rawValue
@@ -217,7 +217,7 @@ enum AIInsightEngine {
                 return AIInsight(
                     id: "unusualAmount",
                     title: "Unusual amount",
-                    message: String(localized: "\(unusual.title) is much higher than similar registered expenses."),
+                    message: localized("\(unusual.title) is much higher than similar registered expenses.", locale: locale),
                     systemImage: "exclamationmark.magnifyingglass",
                     tint: .orange
                 )
@@ -227,7 +227,7 @@ enum AIInsightEngine {
         return nil
     }
 
-    private static func savingsInsight(transactions: [Transaction], calendar: Calendar) -> AIInsight? {
+    private static func savingsInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
         guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else { return nil }
         let categoryTotals = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, amount: Decimal)? in
             let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.contains($0.dueDate) }
@@ -241,13 +241,13 @@ enum AIInsightEngine {
         return AIInsight(
             id: "savings",
             title: "Savings idea",
-            message: String(localized: "Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency)."),
+            message: localized("Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency).", locale: locale),
             systemImage: "scissors",
             tint: .green
         )
     }
 
-    private static func categorySuggestionInsight(transactions: [Transaction]) -> AIInsight? {
+    private static func categorySuggestionInsight(transactions: [Transaction], locale: Locale) -> AIInsight? {
         let candidates = transactions.filter { $0.category == .other }
 
         for transaction in candidates {
@@ -256,7 +256,7 @@ enum AIInsightEngine {
                 return AIInsight(
                     id: "categorySuggestion",
                     title: "Suggested category",
-                    message: String(localized: "\(transaction.title) may fit the \(categoryName) category."),
+                    message: localized("\(transaction.title) may fit the \(categoryName) category.", locale: locale),
                     systemImage: "tag",
                     tint: .blue
                 )
@@ -266,7 +266,7 @@ enum AIInsightEngine {
         return nil
     }
 
-    private static func summaryInsight(transactions: [Transaction], calendar: Calendar) -> AIInsight? {
+    private static func summaryInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
         let today = calendar.startOfDay(for: .now)
         guard let weekStart = calendar.date(byAdding: .day, value: -7, to: today) else { return nil }
         let recentTransactions = transactions.filter { $0.dueDate >= weekStart && $0.dueDate <= today }
@@ -278,10 +278,14 @@ enum AIInsightEngine {
         return AIInsight(
             id: "weeklySummary",
             title: "Weekly summary",
-            message: String(localized: "The last 7 days include \(income.formattedCurrency) in income and \(expenses.formattedCurrency) in expenses."),
+            message: localized("The last 7 days include \(income.formattedCurrency) in income and \(expenses.formattedCurrency) in expenses.", locale: locale),
             systemImage: "calendar",
             tint: .blue
         )
+    }
+
+    private static func localized(_ value: String.LocalizationValue, locale: Locale) -> String {
+        String(localized: value, bundle: .main, locale: locale)
     }
 }
 

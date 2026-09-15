@@ -9,6 +9,8 @@ import SwiftUI
 
 struct AIQueryView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
+
     @State private var question = ""
     @State private var result: AIQueryResult?
 
@@ -63,7 +65,11 @@ struct AIQueryView: View {
     }
 
     private func runQuery() {
-        result = AIQueryEngine.answer(question: question, transactions: transactions)
+        result = AIQueryEngine.answer(question: question, transactions: transactions, locale: selectedLanguage.locale)
+    }
+
+    private var selectedLanguage: AppLanguage {
+        AppLanguage(rawValue: languageRawValue) ?? .system
     }
 }
 
