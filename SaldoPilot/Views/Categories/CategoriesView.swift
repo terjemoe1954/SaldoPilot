@@ -9,6 +9,8 @@ import SwiftData
 import SwiftUI
 
 struct CategoriesView: View {
+    @Environment(\.locale) private var locale
+
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
 
     @State private var selectedPeriod: CategoryPeriod = .thisMonth
@@ -20,7 +22,7 @@ struct CategoriesView: View {
             }
 
             Section("Standard categories") {
-                ForEach(CategoryKind.sortedForDisplay) { category in
+                ForEach(CategoryKind.sortedForDisplay(locale: locale)) { category in
                     CategoryRowView(
                         category: category,
                         transactionCount: transactionCount(for: category),

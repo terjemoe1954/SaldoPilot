@@ -229,12 +229,14 @@ private struct TransactionBasicsSection: View {
 }
 
 private struct TransactionCategorySection: View {
+    @Environment(\.locale) private var locale
+
     @Binding var category: CategoryKind
 
     var body: some View {
         Section("Category") {
             Picker("Category", selection: $category) {
-                ForEach(CategoryKind.sortedForDisplay) { category in
+                ForEach(CategoryKind.sortedForDisplay(locale: locale)) { category in
                     Label(category.title, systemImage: category.systemImage)
                         .tag(category)
                 }

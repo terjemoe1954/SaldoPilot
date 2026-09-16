@@ -11,6 +11,7 @@ import SwiftUI
 
 struct StatisticsView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
 
     var body: some View {
         NavigationStack {
@@ -34,7 +35,11 @@ struct StatisticsView: View {
     }
 
     private var snapshot: StatisticsSnapshot {
-        StatisticsSnapshot(transactions: activeTransactions)
+        StatisticsSnapshot(transactions: activeTransactions, locale: selectedLanguage.locale)
+    }
+
+    private var selectedLanguage: AppLanguage {
+        AppLanguage(rawValue: languageRawValue) ?? .system
     }
 }
 
@@ -44,7 +49,7 @@ private struct StatisticsSnapshot {
     let expenseCategories: [CategoryStatistics]
     let outstandingMonths: [OutstandingMonthStatistics]
 
-    init(transactions: [Transaction]) {
+    init(transactions: [Transaction], locale: Locale) {
         let calendar = Calendar.current
         let now = Date.now
         let currentMonthInterval = calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: now, duration: 0)
@@ -52,7 +57,7 @@ private struct StatisticsSnapshot {
 
         currentMonthSummary = StatisticsSummary(transactions: currentMonthTransactions)
         months = Self.makeMonthStatistics(transactions: transactions, calendar: calendar)
-        expenseCategories = Self.makeExpenseCategoryStatistics(transactions: currentMonthTransactions)
+        expenseCategories = Self.makeExpenseCategoryStatistics(transactions: currentMonthTransactions, locale: locale)
         outstandingMonths = Self.makeOutstandingMonthStatistics(transactions: transactions, calendar: calendar)
     }
 
@@ -66,14 +71,14 @@ private struct StatisticsSnapshot {
         }
     }
 
-    private static func makeExpenseCategoryStatistics(transactions: [Transaction]) -> [CategoryStatistics] {
+    private static func makeExpenseCategoryStatistics(transactions: [Transaction], locale: Locale) -> [CategoryStatistics] {
         let expenseTransactions = transactions.filter { $0.type == .expense }
         let groupedTransactions = Dictionary(grouping: expenseTransactions, by: \.category)
 
         return groupedTransactions.map { category, transactions in
             CategoryStatistics(
                 id: category.rawValue,
-                name: String(localized: category.title),
+                name: category.localizedTitle(locale: locale),
                 icon: category.systemImage,
                 tint: category.tint,
                 amount: transactions.totalAmount,
@@ -197,6 +202,8 @@ private struct StatisticsMetricCard: View {
 }
 
 private struct MonthlyComparisonChart: View {
+    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
+
     let months: [MonthStatistics]
 
     var body: some View {
@@ -207,13 +214,13 @@ private struct MonthlyComparisonChart: View {
                         x: .value("Month", month.monthStart, unit: .month),
                         y: .value("Amount", month.income.doubleValue)
                     )
-                    .foregroundStyle(by: .value("Type", String(localized: "Income")))
+                    .foregroundStyle(by: .value("Type", localized("Income")))
 
                     BarMark(
                         x: .value("Month", month.monthStart, unit: .month),
                         y: .value("Amount", month.expenses.doubleValue)
                     )
-                    .foregroundStyle(by: .value("Type", String(localized: "Expenses")))
+                    .foregroundStyle(by: .value("Type", localized("Expenses")))
                 }
             }
             .chartYAxisLabel("Amount")
@@ -221,6 +228,14 @@ private struct MonthlyComparisonChart: View {
 
             StatisticsMonthLinkList(months: months, subtitle: "Net", value: { $0.net })
         }
+    }
+
+    private func localized(_ value: String.LocalizationValue) -> String {
+        String(localized: value, bundle: .main, locale: selectedLanguage.locale)
+    }
+
+    private var selectedLanguage: AppLanguage {
+        AppLanguage(rawValue: languageRawValue) ?? .system
     }
 }
 
@@ -385,7 +400,7 @@ private struct StatisticsCategoryRow: View {
     var body: some View {
         StatisticsValueRow(
             title: category.name,
-            subtitle: "Expenses",
+            subtitle: "Expenses · \(category.transactions.count) transactions",
             value: category.amount,
             systemImage: category.icon
         )

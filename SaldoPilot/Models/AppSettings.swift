@@ -116,6 +116,7 @@ enum AppSettingsKey {
     static let showNameOnDashboard = "settings.showNameOnDashboard"
     static let displayName = "settings.displayName"
     static let showCompletedStatus = "settings.showCompletedStatus"
+    static let showSettledTransactions = "settings.showSettledTransactions"
     static let defaultPeriod = "settings.defaultPeriod"
     static let defaultDateType = "settings.defaultDateType"
     static let notifyDueToday = "settings.notifyDueToday"

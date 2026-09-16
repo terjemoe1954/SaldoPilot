@@ -34,6 +34,10 @@ final class Transaction {
         return dueDate < Calendar.current.startOfDay(for: .now) ? .overdue : status
     }
 
+    var isSettled: Bool {
+        isCompleted || status == .paid || status == .received
+    }
+
     init(
         id: UUID = UUID(),
         title: String,

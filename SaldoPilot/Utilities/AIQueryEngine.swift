@@ -30,7 +30,7 @@ enum AIQueryEngine {
             return savingsResult(transactions: activeTransactions, calendar: calendar, locale: locale)
         }
 
-        if let category = CategoryKind.allCases.first(where: { normalizedQuestion.contains($0.rawValue) || normalizedQuestion.contains(String(localized: $0.title).normalizedAIQuery) }), normalizedQuestion.containsAny(of: ["how much", "hvor mye", "เท่าไร", "เท่าไหร่"]) {
+        if let category = CategoryKind.allCases.first(where: { normalizedQuestion.contains($0.rawValue) || normalizedQuestion.contains(localizedResource($0.title, locale: locale).normalizedAIQuery) }), normalizedQuestion.containsAny(of: ["how much", "hvor mye", "เท่าไร", "เท่าไหร่"]) {
             return categorySpendingResult(category: category, question: normalizedQuestion, transactions: activeTransactions, calendar: calendar, locale: locale)
         }
 
@@ -53,8 +53,8 @@ enum AIQueryEngine {
         }.sortedByDueDate
 
         return AIQueryResult(
-            title: localized("Due next week", locale: locale),
-            answer: localized("You have \(matches.count) transactions totaling \(matches.totalAmount.formattedCurrency) due in the next 7 days.", locale: locale),
+            title: localizedValue("Due next week", locale: locale),
+            answer: localizedValue("You have \(matches.count) transactions totaling \(matches.totalAmount.formattedCurrency) due in the next 7 days.", locale: locale),
             transactions: matches
         )
     }
@@ -70,10 +70,10 @@ enum AIQueryEngine {
             interval?.contains(transaction.dueDate) == true
         }.sortedByDueDate
 
-        let categoryName = String(localized: category.title)
+        let categoryName = localizedResource(category.title, locale: locale)
         return AIQueryResult(
             title: categoryName,
-            answer: localized("You spent \(matches.totalAmount.formattedCurrency) on \(categoryName).", locale: locale),
+            answer: localizedValue("You spent \(matches.totalAmount.formattedCurrency) on \(categoryName).", locale: locale),
             transactions: matches
         )
     }
@@ -97,16 +97,16 @@ enum AIQueryEngine {
 
         guard let largest = changes.max(by: { $0.difference < $1.difference }) else {
             return AIQueryResult(
-                title: localized("Spending change", locale: locale),
-                answer: localized("No expense category has increased compared with last month.", locale: locale),
+                title: localizedValue("Spending change", locale: locale),
+                answer: localizedValue("No expense category has increased compared with last month.", locale: locale),
                 transactions: []
             )
         }
 
-        let categoryName = String(localized: largest.category.title)
+        let categoryName = localizedResource(largest.category.title, locale: locale)
         return AIQueryResult(
-            title: localized("Spending change", locale: locale),
-            answer: localized("\(categoryName) increased the most, up \(largest.difference.formattedCurrency) from last month.", locale: locale),
+            title: localizedValue("Spending change", locale: locale),
+            answer: localizedValue("\(categoryName) increased the most, up \(largest.difference.formattedCurrency) from last month.", locale: locale),
             transactions: largest.matches
         )
     }
@@ -124,24 +124,24 @@ enum AIQueryEngine {
 
         guard let largest = categoryTotals.max(by: { $0.amount < $1.amount }) else {
             return AIQueryResult(
-                title: localized("Savings idea", locale: locale),
-                answer: localized("Add categories to expenses and SaldoPilot can point out where to review spending.", locale: locale),
+                title: localizedValue("Savings idea", locale: locale),
+                answer: localizedValue("Add categories to expenses and SaldoPilot can point out where to review spending.", locale: locale),
                 transactions: []
             )
         }
 
-        let categoryName = String(localized: largest.category.title)
+        let categoryName = localizedResource(largest.category.title, locale: locale)
         return AIQueryResult(
-            title: localized("Savings idea", locale: locale),
-            answer: localized("Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency).", locale: locale),
+            title: localizedValue("Savings idea", locale: locale),
+            answer: localizedValue("Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency).", locale: locale),
             transactions: largest.matches
         )
     }
 
     private static func amountSearchResult(amount: Decimal, question: String, transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         let requestedYear = question.firstYear
-        let category = CategoryKind.allCases.first { question.contains($0.rawValue) || question.contains(String(localized: $0.title).normalizedAIQuery) }
-        let titleWords = question.significantQueryWords(excluding: CategoryKind.allCases.map { String(localized: $0.title) })
+        let category = CategoryKind.allCases.first { question.contains($0.rawValue) || question.contains(localizedResource($0.title, locale: locale).normalizedAIQuery) }
+        let titleWords = question.significantQueryWords(excluding: CategoryKind.allCases.map { localizedResource($0.title, locale: locale) })
 
         let matches = transactions.filter { transaction in
             guard transaction.amount > amount else { return false }
@@ -155,15 +155,15 @@ enum AIQueryEngine {
         }.sortedByDueDate
 
         return AIQueryResult(
-            title: localized("Search result", locale: locale),
-            answer: localized("Found \(matches.count) transactions over \(amount.formattedCurrency).", locale: locale),
+            title: localizedValue("Search result", locale: locale),
+            answer: localizedValue("Found \(matches.count) transactions over \(amount.formattedCurrency).", locale: locale),
             transactions: matches
         )
     }
 
     private static func overviewResult(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIQueryResult {
         guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else {
-            return AIQueryResult(title: localized("AI answer", locale: locale), answer: localized("I could not read the current period.", locale: locale), transactions: [])
+            return AIQueryResult(title: localizedValue("AI answer", locale: locale), answer: localizedValue("I could not read the current period.", locale: locale), transactions: [])
         }
 
         let currentTransactions = transactions.filter { currentMonth.contains($0.dueDate) }
@@ -172,14 +172,18 @@ enum AIQueryEngine {
         let net = income - expenses
 
         return AIQueryResult(
-            title: localized("AI answer", locale: locale),
-            answer: localized("This month has \(income.formattedCurrency) in income, \(expenses.formattedCurrency) in expenses, and \(net.formattedCurrency) net.", locale: locale),
+            title: localizedValue("AI answer", locale: locale),
+            answer: localizedValue("This month has \(income.formattedCurrency) in income, \(expenses.formattedCurrency) in expenses, and \(net.formattedCurrency) net.", locale: locale),
             transactions: currentTransactions.sortedByDueDate
         )
     }
 
-    private static func localized(_ value: String.LocalizationValue, locale: Locale) -> String {
+    private static func localizedValue(_ value: String.LocalizationValue, locale: Locale) -> String {
         String(localized: value, bundle: .main, locale: locale)
+    }
+
+    private static func localizedResource(_ value: LocalizedStringResource, locale: Locale) -> String {
+        String(localized: value)
     }
 }
 

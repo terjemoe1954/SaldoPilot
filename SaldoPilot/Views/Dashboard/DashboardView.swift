@@ -145,7 +145,10 @@ struct DashboardView: View {
             $0.type == .expense && $0.status == .pending && !$0.isCompleted && $0.dueDate >= today && $0.dueDate <= soon
         }
         let pendingIncome = activeTransactions.filter {
-            $0.type == .income && $0.status == .pending && !$0.isCompleted
+            $0.type == .income &&
+            $0.status == .pending &&
+            !$0.isCompleted &&
+            periodInterval.contains($0.dueDate)
         }
 
         var items: [DashboardAttentionItem] = []

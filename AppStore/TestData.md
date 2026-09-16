@@ -37,7 +37,7 @@ Bruk dette dokumentet etter at du har slettet alle poster, eller i en ren simula
 | Forsikring | Utgift | 699 | Insurance | Om 10 dager | Pending | Monthly | Forsikring |
 | Busskort | Utgift | 897 | Transport | Om 12 dager | Pending | Monthly | Transport |
 | Gave til bursdag | Utgift | 600 | Gifts / Gaver | Om 3 dager | Pending | None | Tester Gaver |
-| Påleggstrekk skatt | Utgift | 2500 | Payroll deduction / Påleggstrekk | 15. denne måned | Pending | Monthly | Tester Påleggstrekk |
+| Lotto og tipping | Utgift | 250 | Gambling | 15. denne måned | Pending | Monthly | Tester Gambling |
 | Refusjon jobb | Inntekt | 1200 | Income | Om 2 dager | Pending | None | Tester til gode |
 | Sparekonto | Utgift | 2000 | Savings | Om 20 dager | Pending | Monthly | Sparing |
 | Lege | Utgift | 375 | Health | For 3 dager siden | Pending | None | Skal vises som forfalt |
@@ -108,7 +108,7 @@ Bruk dette dokumentet etter at du har slettet alle poster, eller i en ren simula
 | [ ] | Lønn | Neste måned |
 | [ ] | Husleie | Neste måned |
 | [ ] | Netflix | Neste måned |
-| [ ] | Påleggstrekk skatt | Neste måned |
+| [ ] | Lotto og tipping | Neste måned |
 | [ ] | Sparekonto | Neste måned |
 
 Poster uten gjentakelse skal ikke lage ny post.
@@ -119,9 +119,9 @@ Poster uten gjentakelse skal ikke lage ny post.
 |---|---|
 | [ ] | Kategorilisten er alfabetisk sortert. |
 | [ ] | `Gifts / Gaver` finnes. |
-| [ ] | `Payroll deduction / Påleggstrekk` finnes. |
+| [ ] | `Gambling` finnes. |
 | [ ] | Automatisk kategoriforslag treffer på gave/gaver. |
-| [ ] | Automatisk kategoriforslag treffer på påleggstrekk. |
+| [ ] | Automatisk kategoriforslag treffer på lotto/tipping/gambling. |
 
 ## 8. Språk
 
@@ -132,7 +132,7 @@ Poster uten gjentakelse skal ikke lage ny post.
 | [ ] | Kontroller at `Register paid date` er oversatt. |
 | [ ] | Kontroller at `Register received date` er oversatt. |
 | [ ] | Kontroller at `Delete all transactions` er oversatt. |
-| [ ] | Kontroller at sortering, `Gifts` og `Payroll deduction` vises riktig. |
+| [ ] | Kontroller at sortering, `Gifts` og `Gambling` vises riktig. |
 
 ## 9. Import og eksport
 

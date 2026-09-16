@@ -12,6 +12,8 @@ struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @AppStorage(AppSettingsKey.showCompletedStatus) private var showCompletedStatus = true
+    @AppStorage(AppSettingsKey.showSettledTransactions) private var showSettledTransactions = true
+    @AppStorage(AppSettingsKey.defaultPeriod) private var defaultPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.defaultDateType) private var defaultDateTypeRawValue = AppDefaultDateType.dueDate.rawValue
 
     @State private var selectedFilter: TransactionListFilter = .all
@@ -123,7 +125,7 @@ struct TransactionsView: View {
                 TransactionFilterSheet(filter: $advancedFilter)
             }
             .onAppear {
-                applyDefaultDateTypeIfNeeded()
+                applyDefaultFiltersIfNeeded()
             }
             .onChange(of: initialFilter) { _, newFilter in
                 selectedFilter = newFilter
@@ -148,10 +150,20 @@ struct TransactionsView: View {
             .min()
 
         let filteredTransactions = activeTransactions.filter { transaction in
-            selectedFilter.includes(transaction, nextDueDate: nextDueDate) && advancedFilter.includes(transaction)
+            selectedFilter.includes(transaction, nextDueDate: nextDueDate) &&
+            advancedFilter.includes(transaction) &&
+            includesSettledTransaction(transaction)
         }
 
         return advancedFilter.sort(filteredTransactions)
+    }
+
+    private func includesSettledTransaction(_ transaction: Transaction) -> Bool {
+        guard !showSettledTransactions, selectedFilter != .completed else {
+            return true
+        }
+
+        return !transaction.isSettled
     }
 
     private var availableAmount: Decimal {
@@ -169,9 +181,11 @@ struct TransactionsView: View {
         }
     }
 
-    private func applyDefaultDateTypeIfNeeded() {
+    private func applyDefaultFiltersIfNeeded() {
         guard !advancedFilter.hasActiveFilters else { return }
+        let defaultPeriod = AppDefaultPeriod(rawValue: defaultPeriodRawValue) ?? .thisMonth
         let defaultDateType = AppDefaultDateType(rawValue: defaultDateTypeRawValue) ?? .dueDate
+        advancedFilter.period = TransactionDatePeriod(defaultPeriod: defaultPeriod)
         advancedFilter.dateType = TransactionFilterDateType(rawValue: defaultDateType.rawValue) ?? .dueDate
     }
 
@@ -398,6 +412,19 @@ private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
     case previousMonth
     case thisYear
     case custom
+
+    init(defaultPeriod: AppDefaultPeriod) {
+        switch defaultPeriod {
+        case .thisMonth:
+            self = .thisMonth
+        case .previousMonth:
+            self = .previousMonth
+        case .thisYear:
+            self = .thisYear
+        case .custom:
+            self = .all
+        }
+    }
 
     var id: String { rawValue }
 
@@ -638,6 +665,8 @@ private struct TransactionFilterPicker: View {
 }
 
 private struct TransactionActiveFilterChips: View {
+    @Environment(\.locale) private var locale
+
     @Binding var filter: TransactionAdvancedFilter
 
     var body: some View {
@@ -693,7 +722,7 @@ private struct TransactionActiveFilterChips: View {
 
     private var categoryTitle: String? {
         guard let category = filter.category else { return nil }
-        return String(localized: category.title)
+        return category.localizedTitle(locale: locale)
     }
 }
 
@@ -730,6 +759,7 @@ private struct TransactionFilterChip: View {
 
 private struct TransactionFilterSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     @Binding var filter: TransactionAdvancedFilter
 
@@ -774,8 +804,8 @@ private struct TransactionFilterSheet: View {
                 Section("Category") {
                     Picker("Category", selection: $filter.category) {
                         Text("All categories").tag(Optional<CategoryKind>.none)
-                        ForEach(CategoryKind.sortedForDisplay) { category in
-                            Label(String(localized: category.title), systemImage: category.systemImage)
+                        ForEach(CategoryKind.sortedForDisplay(locale: locale)) { category in
+                            Label(category.localizedTitle(locale: locale), systemImage: category.systemImage)
                                 .tag(Optional(category))
                         }
                     }
@@ -822,6 +852,8 @@ private struct TransactionFilterSheet: View {
 }
 
 private struct TransactionRowView: View {
+    @Environment(\.locale) private var locale
+
     let transaction: Transaction
     let showsCompletedStatus: Bool
 
@@ -835,7 +867,7 @@ private struct TransactionRowView: View {
                     .lineLimit(2)
 
                 HStack(spacing: 6) {
-                    Label(String(localized: transaction.category.title), systemImage: transaction.category.systemImage)
+                    Label(transaction.category.localizedTitle(locale: locale), systemImage: transaction.category.systemImage)
                     Text("Due \(transaction.dueDate, format: .dateTime.day().month().year())")
                 }
                 .font(.caption)
@@ -971,6 +1003,7 @@ private struct TransactionEmptyState: View {
 
 private struct TransactionDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.locale) private var locale
 
     let transaction: Transaction
 
@@ -1012,7 +1045,7 @@ private struct TransactionDetailView: View {
             }
 
             Section("Category") {
-                Label(String(localized: transaction.category.title), systemImage: transaction.category.systemImage)
+                Label(transaction.category.localizedTitle(locale: locale), systemImage: transaction.category.systemImage)
             }
 
             if !transaction.notes.isEmpty {

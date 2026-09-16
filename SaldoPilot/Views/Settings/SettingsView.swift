@@ -17,6 +17,7 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
     @AppStorage(AppSettingsKey.showCompletedStatus) private var showCompletedStatus = true
+    @AppStorage(AppSettingsKey.showSettledTransactions) private var showSettledTransactions = true
     @AppStorage(AppSettingsKey.defaultPeriod) private var defaultPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.defaultDateType) private var defaultDateTypeRawValue = AppDefaultDateType.dueDate.rawValue
     @AppStorage(AppSettingsKey.notifyDueToday) private var notifyDueToday = false
@@ -54,6 +55,7 @@ struct SettingsView: View {
 
                 Section("Transactions") {
                     Toggle("Show completed status", isOn: $showCompletedStatus)
+                    Toggle("Show settled transactions", isOn: $showSettledTransactions)
 
                     Picker("Default period", selection: defaultPeriodBinding) {
                         ForEach(AppDefaultPeriod.allCases) { period in

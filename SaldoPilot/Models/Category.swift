@@ -8,126 +8,133 @@
 import SwiftUI
 
 enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
-    case home
-    case groceries
-    case transport
-    case insurance
-    case subscriptions
-    case communication
     case clothing
-    case health
-    case entertainment
-    case gifts
-    case savings
-    case payrollDeduction
-    case income
+    case communication
+    case deduction
     case developer
+    case entertainment
+    case payrollDeduction
+    case gifts
+    case groceries
+    case health
+    case home
+    case income
+    case insurance
     case other
+    case savings
+    case subscriptions
+    case transport
 
     var id: String { rawValue }
 
     var title: LocalizedStringResource {
         switch self {
-        case .home:
-            "Home"
-        case .groceries:
-            "Groceries"
-        case .transport:
-            "Transport"
-        case .insurance:
-            "Insurance"
-        case .subscriptions:
-            "Subscriptions"
-        case .communication:
-            "Communication"
         case .clothing:
             "Clothing"
-        case .health:
-            "Health"
-        case .entertainment:
-            "Entertainment"
-        case .gifts:
-            "Gifts"
-        case .savings:
-            "Savings"
-        case .payrollDeduction:
-            "Payroll deduction"
-        case .income:
-            "Income"
+        case .communication:
+            "Communication"
+        case .deduction:
+            "Deduction"
         case .developer:
             "Developer"
+        case .entertainment:
+            "Entertainment"
+        case .payrollDeduction:
+            "Gambling"
+        case .gifts:
+            "Gifts"
+        case .groceries:
+            "Groceries"
+        case .health:
+            "Health"
+        case .home:
+            "Home"
+        case .income:
+            "Income"
+        case .insurance:
+            "Insurance"
         case .other:
             "Other"
+        case .savings:
+            "Savings"
+        case .subscriptions:
+            "Subscriptions"
+        case .transport:
+            "Transport"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .home:
-            "house"
-        case .groceries:
-            "cart"
-        case .transport:
-            "car"
-        case .insurance:
-            "shield"
-        case .subscriptions:
-            "repeat"
-        case .communication:
-            "phone"
         case .clothing:
             "tshirt"
-        case .health:
-            "cross.case"
-        case .entertainment:
-            "popcorn"
-        case .gifts:
-            "gift"
-        case .savings:
-            "banknote"
-        case .payrollDeduction:
-            "doc.text.magnifyingglass"
-        case .income:
-            "arrow.down.circle"
+        case .communication:
+            "phone"
+        case .deduction:
+            "minus.circle"
         case .developer:
             "curlybraces"
+        case .entertainment:
+            "popcorn"
+        case .payrollDeduction:
+            "dice"
+        case .gifts:
+            "gift"
+        case .groceries:
+            "cart"
+        case .health:
+            "cross.case"
+        case .home:
+            "house"
+        case .income:
+            "arrow.down.circle"
+        case .insurance:
+            "shield"
         case .other:
             "tag"
+        case .savings:
+            "banknote"
+        case .subscriptions:
+            "repeat"
+        case .transport:
+            "car"
         }
     }
 
     var tint: Color {
         switch self {
-        case .home:
-            .blue
-        case .groceries:
-            .green
-        case .transport:
-            .orange
-        case .insurance:
-            .indigo
-        case .subscriptions:
-            .purple
-        case .communication:
-            .teal
         case .clothing:
             .pink
-        case .health:
-            .red
-        case .entertainment:
-            .yellow
-        case .gifts:
-            .purple
-        case .savings:
-            .mint
-        case .payrollDeduction:
+        case .communication:
+            .teal
+        case .deduction:
             .brown
-        case .income:
-            .green
         case .developer:
             .black
+        case .entertainment:
+            .yellow
+        case .payrollDeduction:
+            .red
+        case .gifts:
+            .purple
+        case .groceries:
+            .green
+        case .health:
+            .red
+        case .home:
+            .blue
+        case .income:
+            .green
+        case .insurance:
+            .indigo
         case .other:
             .gray
+        case .savings:
+            .mint
+        case .subscriptions:
+            .purple
+        case .transport:
+            .orange
         }
     }
 
@@ -153,6 +160,137 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    static func sortedForDisplay(locale: Locale) -> [CategoryKind] {
+        allCases.sorted {
+            $0.localizedTitle(locale: locale).localizedCaseInsensitiveCompare($1.localizedTitle(locale: locale)) == .orderedAscending
+        }
+    }
+
+    func localizedTitle(locale: Locale) -> String {
+        let identifier = locale.identifier.lowercased()
+
+        if identifier.hasPrefix("nb") || identifier.hasPrefix("nn") || identifier.hasPrefix("no") {
+            return norwegianTitle
+        }
+
+        if identifier.hasPrefix("th") {
+            return thaiTitle
+        }
+
+        return englishTitle
+    }
+
+    private var englishTitle: String {
+        switch self {
+        case .clothing:
+            "Clothing"
+        case .communication:
+            "Communication"
+        case .deduction:
+            "Deduction"
+        case .developer:
+            "Developer"
+        case .entertainment:
+            "Entertainment"
+        case .payrollDeduction:
+            "Gambling"
+        case .gifts:
+            "Gifts"
+        case .groceries:
+            "Groceries"
+        case .health:
+            "Health"
+        case .home:
+            "Home"
+        case .income:
+            "Income"
+        case .insurance:
+            "Insurance"
+        case .other:
+            "Other"
+        case .savings:
+            "Savings"
+        case .subscriptions:
+            "Subscriptions"
+        case .transport:
+            "Transport"
+        }
+    }
+
+    private var norwegianTitle: String {
+        switch self {
+        case .clothing:
+            "Klær"
+        case .communication:
+            "Kommunikasjon"
+        case .deduction:
+            "Trekk"
+        case .developer:
+            "Utvikler"
+        case .entertainment:
+            "Underholdning"
+        case .payrollDeduction:
+            "Pengespill"
+        case .gifts:
+            "Gaver"
+        case .groceries:
+            "Dagligvarer"
+        case .health:
+            "Helse"
+        case .home:
+            "Hjem"
+        case .income:
+            "Inntekt"
+        case .insurance:
+            "Forsikring"
+        case .other:
+            "Annet"
+        case .savings:
+            "Sparing"
+        case .subscriptions:
+            "Abonnementer"
+        case .transport:
+            "Transport"
+        }
+    }
+
+    private var thaiTitle: String {
+        switch self {
+        case .clothing:
+            "เสื้อผ้า"
+        case .communication:
+            "การสื่อสาร"
+        case .deduction:
+            "การหักเงิน"
+        case .developer:
+            "นักพัฒนา"
+        case .entertainment:
+            "บันเทิง"
+        case .payrollDeduction:
+            "การพนัน"
+        case .gifts:
+            "ของขวัญ"
+        case .groceries:
+            "ของชำ"
+        case .health:
+            "สุขภาพ"
+        case .home:
+            "บ้าน"
+        case .income:
+            "รายรับ"
+        case .insurance:
+            "ประกัน"
+        case .other:
+            "อื่น"
+        case .savings:
+            "เงินออม"
+        case .subscriptions:
+            "การสมัครสมาชิก"
+        case .transport:
+            "การเดินทาง"
+        }
+    }
+
     func matches(transactionTitle: String) -> Bool {
         let normalizedTitle = transactionTitle.normalizedCategoryKey
         return searchTerms.contains { normalizedTitle.contains($0.normalizedCategoryKey) }
@@ -160,36 +298,38 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
 
     private var searchTerms: [String] {
         switch self {
-        case .home:
-            ["home", "housing", "rent", "mortgage", "electricity", "power", "bolig", "husleie", "strom", "strøm", "บ้าน", "ค่าเช่า"]
-        case .groceries:
-            ["groceries", "grocery", "food", "supermarket", "mat", "dagligvarer", "butikk", "อาหาร", "ของชำ"]
-        case .transport:
-            ["transport", "car", "bus", "train", "taxi", "fuel", "bensin", "bil", "transport", "รถ", "เดินทาง"]
-        case .insurance:
-            ["insurance", "forsikring", "ประกัน"]
-        case .subscriptions:
-            ["subscription", "subscriptions", "netflix", "spotify", "abonnement", "สมาชิก"]
-        case .communication:
-            ["communication", "phone", "mobile", "internet", "mobil", "telefon", "โทรศัพท์", "อินเทอร์เน็ต"]
         case .clothing:
             ["clothing", "clothes", "shoes", "klær", "klaer", "sko", "เสื้อผ้า", "รองเท้า"]
-        case .health:
-            ["health", "doctor", "pharmacy", "medicine", "helse", "lege", "apotek", "สุขภาพ", "ยา"]
-        case .entertainment:
-            ["entertainment", "movie", "cinema", "game", "restaurant", "underholdning", "kino", "spill", "บันเทิง"]
-        case .gifts:
-            ["gift", "gifts", "present", "presents", "gave", "gaver", "presang", "ของขวัญ"]
-        case .savings:
-            ["savings", "saving", "save", "spare", "sparing", "ออม", "เงินออม"]
-        case .payrollDeduction:
-            ["payroll deduction", "wage garnishment", "garnishment", "attachment of earnings", "påleggstrekk", "paleggstrekk", "trekk", "utleggstrekk", "การหักเงินเดือน", "หักเงินเดือนตามคำสั่ง"]
-        case .income:
-            ["income", "salary", "wage", "lønn", "lonn", "inntekt", "รายรับ", "เงินเดือน"]
+        case .communication:
+            ["communication", "phone", "mobile", "internet", "mobil", "telefon", "โทรศัพท์", "อินเทอร์เน็ต"]
+        case .deduction:
+            ["deduction", "deductions", "withholding", "payroll deduction", "wage garnishment", "garnishment", "attachment of earnings", "trekk", "påleggstrekk", "paleggstrekk", "utleggstrekk", "fradrag", "การหักเงินเดือน", "หักเงินเดือน", "หักเงินเดือนตามคำสั่ง"]
         case .developer:
             ["developer", "development", "software", "app", "code", "coding", "programming", "utvikler", "utvikling", "programmering", "kode", "นักพัฒนา", "ซอฟต์แวร์", "เขียนโค้ด"]
+        case .entertainment:
+            ["entertainment", "movie", "cinema", "game", "restaurant", "underholdning", "kino", "spill", "บันเทิง"]
+        case .payrollDeduction:
+            ["gambling", "casino", "betting", "bet", "lottery", "lotto", "spill", "pengespill", "casino", "tipping", "พนัน", "คาสิโน", "ลอตเตอรี่"]
+        case .gifts:
+            ["gift", "gifts", "present", "presents", "gave", "gaver", "presang", "ของขวัญ"]
+        case .groceries:
+            ["groceries", "grocery", "food", "supermarket", "mat", "dagligvarer", "butikk", "อาหาร", "ของชำ"]
+        case .health:
+            ["health", "doctor", "pharmacy", "medicine", "helse", "lege", "apotek", "สุขภาพ", "ยา"]
+        case .home:
+            ["home", "housing", "rent", "mortgage", "electricity", "power", "bolig", "husleie", "strom", "strøm", "บ้าน", "ค่าเช่า"]
+        case .income:
+            ["income", "salary", "wage", "lønn", "lonn", "inntekt", "รายรับ", "เงินเดือน"]
+        case .insurance:
+            ["insurance", "forsikring", "ประกัน"]
         case .other:
             ["other", "annet", "øvrig", "ovrig", "อื่น"]
+        case .savings:
+            ["savings", "saving", "save", "spare", "sparing", "ออม", "เงินออม"]
+        case .subscriptions:
+            ["subscription", "subscriptions", "netflix", "spotify", "abonnement", "สมาชิก"]
+        case .transport:
+            ["transport", "car", "bus", "train", "taxi", "fuel", "bensin", "bil", "transport", "รถ", "เดินทาง"]
         }
     }
 }

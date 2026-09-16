@@ -30,10 +30,9 @@ struct AIQueryView: View {
                 }
 
                 Section("Examples") {
-                    AIQueryExampleButton(text: "What is due next week?", question: $question, runQuery: runQuery)
-                    AIQueryExampleButton(text: "How much did I spend on subscriptions this year?", question: $question, runQuery: runQuery)
-                    AIQueryExampleButton(text: "Which expenses increased most?", question: $question, runQuery: runQuery)
-                    AIQueryExampleButton(text: "What can I save on?", question: $question, runQuery: runQuery)
+                    ForEach(exampleQuestions) { example in
+                        AIQueryExampleButton(example: example, question: $question, runQuery: runQuery)
+                    }
                 }
 
                 if let result {
@@ -71,19 +70,50 @@ struct AIQueryView: View {
     private var selectedLanguage: AppLanguage {
         AppLanguage(rawValue: languageRawValue) ?? .system
     }
+
+    private var exampleQuestions: [AIQueryExample] {
+        [
+            AIQueryExample(
+                displayText: localized("What is due next week?"),
+                queryText: "What is due next week?"
+            ),
+            AIQueryExample(
+                displayText: localized("How much did I spend on subscriptions this year?"),
+                queryText: "How much did I spend on subscriptions this year?"
+            ),
+            AIQueryExample(
+                displayText: localized("Which expenses increased most?"),
+                queryText: "Which expenses increased most?"
+            ),
+            AIQueryExample(
+                displayText: localized("What can I save on?"),
+                queryText: "What can I save on?"
+            )
+        ]
+    }
+
+    private func localized(_ value: String.LocalizationValue) -> String {
+        String(localized: value, bundle: .main, locale: selectedLanguage.locale)
+    }
+}
+
+private struct AIQueryExample: Identifiable {
+    let id = UUID()
+    let displayText: String
+    let queryText: String
 }
 
 private struct AIQueryExampleButton: View {
-    let text: String
+    let example: AIQueryExample
     @Binding var question: String
     let runQuery: () -> Void
 
     var body: some View {
         Button {
-            question = text
+            question = example.queryText
             runQuery()
         } label: {
-            Label(text, systemImage: "text.bubble")
+            Label(example.displayText, systemImage: "text.bubble")
         }
     }
 }

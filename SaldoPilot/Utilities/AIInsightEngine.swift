@@ -236,7 +236,7 @@ enum AIInsightEngine {
         }
 
         guard let largest = categoryTotals.max(by: { $0.amount < $1.amount }) else { return nil }
-        let categoryName = String(localized: largest.category.title)
+        let categoryName = largest.category.localizedTitle(locale: locale)
 
         return AIInsight(
             id: "savings",
@@ -252,7 +252,7 @@ enum AIInsightEngine {
 
         for transaction in candidates {
             if let category = CategoryKind.allCases.first(where: { $0 != .other && $0.matches(transactionTitle: transaction.title) }) {
-                let categoryName = String(localized: category.title)
+                let categoryName = category.localizedTitle(locale: locale)
                 return AIInsight(
                     id: "categorySuggestion",
                     title: "Suggested category",
