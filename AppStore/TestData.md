@@ -1,162 +1,125 @@
-# SaldoPilot - testdata og testprosedyre
+# SaldoPilot - testdata og skjermbilder til App Store Connect
 
-**Dato:** 15. september 2026  
-**Formål:** Siste manuelle test før TestFlight og App Store Connect.
+**Dato:** 16. september 2026  
+**Formål:** Lage pene og realistiske data for TestFlight/App Store-skjermbilder.
 
-Bruk dette dokumentet etter at du har slettet alle poster, eller i en ren simulator. Testdataene dekker oversikt, poster, sortering, betalt/mottatt, gjentakelse, import/eksport og norsk språk.
+Bruk dette datasettet i TestFlight/Production hvis du vil se ekte iCloud-sync mellom enheter. Ta JSON-backup før du sletter eller importerer data.
 
-## 1. Klargjøring
+## Anbefalt oppsett
 
-| Ferdig | Kontrollpunkt |
+| Punkt | Anbefaling |
 |---|---|
-| [ ] | Ta backup hvis du har ekte data. |
-| [ ] | Gå til `Settings > Manage > Delete all transactions`. |
-| [ ] | Bekreft sletting. |
-| [ ] | Kontroller at `Oversikt` og `Poster` er tomme. |
-| [ ] | Opprett testpostene i tabellen nedenfor manuelt. |
+| Språk | Norsk for første skjermbildesett. Ta eventuelt egne sett på engelsk og thai senere. |
+| Valuta | NOK / norske beløp. |
+| Dato | Datasettet er laget for september 2026. Hvis du tester senere, flytt datoene relativt slik at noen poster er forfalt, noen forfaller snart og noen ligger senere i måneden. |
+| Datamengde | 15-18 poster er nok. Det gir liv i oversikt, statistikk og filtre uten at appen ser rotete ut. |
+| Ekte data | Ikke bruk egne bankdetaljer, ekte kundenavn eller private notater i skjermbilder. |
 
-## 2. Dato-regel for test
-
-| Situasjon | Bruk denne datoen |
-|---|---|
-| Forfalt | En dato før i dag |
-| Kommende | En dato etter i dag |
-| Neste forfall | Den tidligste kommende datoen |
-| Betalt/mottatt | Dagens dato eller en dato tidligere i måneden |
-
-## 3. Testposter
-
-| Tittel | Type | Beløp | Kategori | Forfallsdato | Status | Gjentakelse | Notat |
-|---|---:|---:|---|---|---|---|---|
-| Lønn | Inntekt | 42000 | Income | 25. denne måned | Pending | Monthly | Fast månedslønn |
-| Husleie | Utgift | 14500 | Home | 1. denne måned | Pending | Monthly | Skal bli forfalt hvis datoen er passert |
-| Strøm | Utgift | 1249 | Home | I morgen | Pending | Monthly | Test neste forfall |
-| Matbutikk | Utgift | 875 | Groceries | I dag | Pending | None | Dagligvaretest |
-| Netflix | Utgift | 129 | Subscriptions | Om 5 dager | Pending | Monthly | Abonnement |
-| Telefon | Utgift | 399 | Communication | Om 7 dager | Pending | Monthly | Mobil |
-| Forsikring | Utgift | 699 | Insurance | Om 10 dager | Pending | Monthly | Forsikring |
-| Busskort | Utgift | 897 | Transport | Om 12 dager | Pending | Monthly | Transport |
-| Gave til bursdag | Utgift | 600 | Gifts / Gaver | Om 3 dager | Pending | None | Tester Gaver |
-| Lotto og tipping | Utgift | 250 | Gambling | 15. denne måned | Pending | Monthly | Tester Gambling |
-| Refusjon jobb | Inntekt | 1200 | Income | Om 2 dager | Pending | None | Tester til gode |
-| Sparekonto | Utgift | 2000 | Savings | Om 20 dager | Pending | Monthly | Sparing |
-| Lege | Utgift | 375 | Health | For 3 dager siden | Pending | None | Skal vises som forfalt |
-| Kino | Utgift | 220 | Entertainment | I dag | Paid | None | Sett betalt dato |
-| App-utvikling | Inntekt | 3500 | Developer | For 2 dager siden | Received | None | Sett mottatt dato |
-
-## 4. Oversikt
-
-| Ferdig | Kontrollpunkt |
-|---|---|
-| [ ] | Inntekter viser `Lønn`, `Refusjon jobb` og `App-utvikling` når perioden dekker datoene. |
-| [ ] | Utgifter viser alle utgifter i perioden. |
-| [ ] | Netto regnes riktig. |
-| [ ] | Forfalt viser `Husleie` og `Lege` hvis datoene er før i dag. |
-| [ ] | Neste forfall peker på den tidligste kommende posten. |
-| [ ] | Trykk på `Forfalt` og kontroller at `Poster` åpnes med riktig filter. |
-| [ ] | Trykk på `Neste forfall` og kontroller at `Poster` åpnes med riktig filter. |
-
-## 5. Poster
-
-### Filtre
-
-| Ferdig | Filter |
-|---|---|
-| [ ] | All |
-| [ ] | Overdue |
-| [ ] | Next due |
-| [ ] | Upcoming |
-| [ ] | Paid |
-| [ ] | Receivable |
-
-### Sortering
-
-| Ferdig | Sortering |
-|---|---|
-| [ ] | Due date ascending |
-| [ ] | Due date descending |
-| [ ] | Amount descending |
-| [ ] | Title ascending |
-| [ ] | Category ascending |
-| [ ] | Status ascending |
-
-### Swipe-handlinger
+## Før du legger inn data
 
 | Ferdig | Handling |
 |---|---|
-| [ ] | Marker betalt. |
-| [ ] | Rediger. |
-| [ ] | Dupliser. |
-| [ ] | Slett med bekreftelse. |
+| [ ] | Ta JSON-backup hvis du har eksisterende data. |
+| [ ] | Bruk TestFlight på en testkonto eller en trygg testdatabase. |
+| [ ] | Gå til Innstillinger og slett alle poster hvis du vil ha helt rene skjermbilder. |
+| [ ] | Sett språk til Norsk. |
+| [ ] | Legg inn postene under manuelt, eller importer fra en egen testfil hvis du lager en. |
 
-## 6. Betalt, mottatt og gjentakelse
+## Testdata for skjermbilder
+
+Bruk disse postene for å få gode tall i Oversikt, Poster, Statistikk, Til gode og AI-oppsummering.
+
+| Tittel | Type | Beløp | Kategori | Forfallsdato | Status | Gjentakelse | Notat |
+|---|---:|---:|---|---|---|---|---|
+| Lønn september | Inntekt | 42000 | Income | 25.09.2026 | Venter | Månedlig | Fast månedslønn |
+| Freelance app-design | Inntekt | 8500 | Developer | 18.09.2026 | Venter | Ingen | Prosjektbetaling |
+| Refusjon jobb | Inntekt | 1200 | Income | 17.09.2026 | Venter | Ingen | Reiserefusjon |
+| Husleie | Utgift | 14500 | Home | 01.09.2026 | Venter | Månedlig | Leilighet |
+| Strøm | Utgift | 1249 | Home | 17.09.2026 | Venter | Månedlig | Estimert strømregning |
+| Matbutikk | Utgift | 875 | Grocery | 16.09.2026 | Venter | Ingen | Ukeshandel |
+| Busskort | Utgift | 897 | Transport | 18.09.2026 | Venter | Månedlig | Månedskort |
+| Apple Developer Program | Utgift | 1290 | Developer | 19.09.2026 | Venter | Årlig | Utviklerkonto |
+| Netflix | Utgift | 129 | Subscriptions | 21.09.2026 | Venter | Månedlig | Streaming |
+| Mobilabonnement | Utgift | 399 | Communication | 22.09.2026 | Venter | Månedlig | Telefon |
+| Innboforsikring | Utgift | 699 | Insurance | 24.09.2026 | Venter | Månedlig | Forsikring |
+| Klær | Utgift | 1290 | Clothes | 23.09.2026 | Venter | Ingen | Jakke og sko |
+| Sparekonto | Utgift | 2500 | Savings | 28.09.2026 | Venter | Månedlig | Automatisk sparing |
+| Lege | Utgift | 375 | Health | 13.09.2026 | Venter | Ingen | Egenandel |
+| Kino | Utgift | 220 | Entertainment | 15.09.2026 | Betalt | Ingen | Helgetur |
+| Bursdagsgave | Utgift | 600 | Gifts | 20.09.2026 | Venter | Ingen | Gave |
+| Lotto | Utgift | 120 | Gambling | 16.09.2026 | Betalt | Ingen | Testkategori |
+| Kaffe med kunde | Utgift | 185 | Other | 16.09.2026 | Betalt | Ingen | Møte |
+
+## Forventet uttrykk i appen
+
+| Område | Hva datasettet skal vise |
+|---|---|
+| Oversikt | Inntekter, utgifter, netto og til gode får tydelige beløp. |
+| Forfalt | Husleie og Lege skal vises som forfalt hvis dagens dato er etter 13.09.2026. |
+| Neste forfall | Strøm eller Busskort bør bli neste kommende utgift, avhengig av dagens dato. |
+| Til gode | Lønn september, Freelance app-design og Refusjon jobb gir en fin tilgode-sum. |
+| Statistikk | Flere kategorier får ulike farger i grafen. Home blir størst, men ikke alene. |
+| AI-oppsummering | Kommende betalinger skal telle bare utgifter, ikke inntekter. |
+
+## Skjermbilder du bør ta
+
+Ta skjermbilder etter at alle data er lagt inn. Bruk gjerne samme iPhone-størrelse for alle bilder.
+
+| Nr. | Skjerm | Hva som bør være synlig | Hvorfor dette bildet er nyttig |
+|---:|---|---|---|
+| 1 | Oversikt | Kort for inntekter, utgifter, netto, til gode, forfalt og neste forfall. | Viser hovedverdien i appen med en gang. |
+| 2 | Oversikt med AI-oppsummering | AI-kort med kommende betalinger og ryddige tall. | Viser at appen hjelper brukeren å forstå økonomien. |
+| 3 | Poster | Liste med flere poster, typeikoner, status og filterlinje. | Viser at appen fungerer som en praktisk regningsoversikt. |
+| 4 | Poster - filter | Velg Forfalt, Neste forfall eller Til gode. | Viser at brukeren raskt kan finne viktige poster. |
+| 5 | Ny/rediger post | Skjema med tittel, beløp, type, kategori, dato og gjentakelse. | Viser hvor enkelt det er å legge inn en post. |
+| 6 | Statistikk | Kategori-graf og månedlig utvikling. | Viser innsikt og visuell oversikt. |
+| 7 | Statistikk - til gode | Rammen/grafen for tilgodebeløp nederst. | Viser at inntekter som ikke er mottatt håndteres separat. |
+| 8 | Innstillinger | Språk, varsler, backup/import/eksport. | Viser trygghet, kontroll og flerspråklighet. |
+
+## Anbefalt App Store-rekkefølge
+
+| Rekkefølge | Skjermbilde | Kort budskap |
+|---:|---|---|
+| 1 | Oversikt | Se hva som kommer, hva som er betalt og hva du har til gode. |
+| 2 | Poster | Hold orden på faste og enkeltstående betalinger. |
+| 3 | Ny post | Legg inn beløp, kategori, forfall og gjentakelse raskt. |
+| 4 | Statistikk | Forstå hvor pengene går med tydelige grafer. |
+| 5 | Til gode / inntekter | Følg med på penger du venter på å motta. |
+| 6 | Innstillinger | Backup, import, eksport, språk og varsler. |
+
+## Tekstforslag til skjermbilder
+
+Hvis du legger tekst på skjermbildene i App Store Connect-verktøy eller annet designverktøy, bruk korte tekster.
+
+| Skjerm | Norsk tekst |
+|---|---|
+| Oversikt | Full kontroll på regninger og inntekter |
+| Poster | Se hva som er betalt, forfalt og kommende |
+| Ny post | Legg inn faste betalinger på sekunder |
+| Statistikk | Se hvor pengene går |
+| Til gode | Hold oversikt over penger du venter på |
+| Innstillinger | Backup, språk og varsler på ett sted |
+
+## Kontroll før skjermbilder
 
 | Ferdig | Kontrollpunkt |
 |---|---|
-| [ ] | Åpne `Strøm` og velg `Register paid date`. |
-| [ ] | Sett dato til i dag. |
-| [ ] | Kontroller at status blir `Betalt` / `Paid`. |
-| [ ] | Kontroller at ny `Strøm`-post opprettes en måned frem i tid. |
-| [ ] | Åpne `Refusjon jobb` og velg `Register received date`. |
-| [ ] | Sett dato til i dag. |
-| [ ] | Kontroller at status blir `Mottatt` / `Received`. |
+| [ ] | Ingen ekte persondata eller private kontonavn vises. |
+| [ ] | Alle poster har ryddige titler og kategorier. |
+| [ ] | Kategorifargene i statistikk er ulike nok. |
+| [ ] | Til gode viser bare inntekter som ikke er mottatt. |
+| [ ] | Kommende betalinger viser bare utgifter. |
+| [ ] | Ingen tomme grafer eller rare nullverdier vises. |
+| [ ] | Norsk språk er aktivt for norske skjermbilder. |
+| [ ] | Klokken/batteri/statuslinje ser ryddig ut i simulator eller på enhet. |
 
-### Poster som skal lage neste forekomst
+## Tips for penere skjermbilder
 
-| Ferdig | Post | Forventning |
-|---|---|---|
-| [ ] | Lønn | Neste måned |
-| [ ] | Husleie | Neste måned |
-| [ ] | Netflix | Neste måned |
-| [ ] | Lotto og tipping | Neste måned |
-| [ ] | Sparekonto | Neste måned |
-
-Poster uten gjentakelse skal ikke lage ny post.
-
-## 7. Kategorier
-
-| Ferdig | Kontrollpunkt |
+| Tips | Hvorfor |
 |---|---|
-| [ ] | Kategorilisten er alfabetisk sortert. |
-| [ ] | `Gifts / Gaver` finnes. |
-| [ ] | `Gambling` finnes. |
-| [ ] | Automatisk kategoriforslag treffer på gave/gaver. |
-| [ ] | Automatisk kategoriforslag treffer på lotto/tipping/gambling. |
-
-## 8. Språk
-
-| Ferdig | Kontrollpunkt |
-|---|---|
-| [ ] | Bytt til `Norsk` og sjekk hovedflytene. |
-| [ ] | Bytt til `English` og sjekk hovedflytene. |
-| [ ] | Kontroller at `Register paid date` er oversatt. |
-| [ ] | Kontroller at `Register received date` er oversatt. |
-| [ ] | Kontroller at `Delete all transactions` er oversatt. |
-| [ ] | Kontroller at sortering, `Gifts` og `Gambling` vises riktig. |
-
-## 9. Import og eksport
-
-| Ferdig | Kontrollpunkt |
-|---|---|
-| [ ] | Eksporter JSON. |
-| [ ] | Eksporter CSV. |
-| [ ] | Slett alle poster. |
-| [ ] | Importer JSON og kontroller at dataene kommer tilbake. |
-| [ ] | Slett alle poster igjen. |
-| [ ] | Importer CSV og kontroller de viktigste feltene. |
-
-## 10. Minimum før TestFlight
-
-Appen bør klare dette uten feil:
-
-| Ferdig | Krav |
-|---|---|
-| [ ] | Opprette alle testpostene. |
-| [ ] | Filtrere og sortere listen. |
-| [ ] | Registrere betalt/mottatt dato. |
-| [ ] | Opprette neste gjentakende post. |
-| [ ] | Slette enkeltpost med bekreftelse. |
-| [ ] | Slette alle poster med bekreftelse. |
-| [ ] | Eksportere JSON og CSV. |
-| [ ] | Importere JSON tilbake. |
-| [ ] | Vise appen på norsk uten engelske nøkkeltekster i hovedflytene. |
+| Bruk færre, tydelige poster i listen. | En ryddig liste selger appen bedre enn en full testdatabase. |
+| Unngå veldig store eller rare beløp. | Realistiske tall bygger tillit. |
+| Ha minst én forfalt post og flere kommende poster. | Appen får vist de viktigste statusene. |
+| Ha minst tre ventende inntekter. | Til gode-funksjonen blir synlig. |
+| Ha minst seks utgiftskategorier. | Statistikkgrafen blir mer interessant. |
+| Ta skjermbilder samme dag som dataene passer. | Datoavhengige felter som forfalt og neste forfall blir riktige. |
