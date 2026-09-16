@@ -22,6 +22,7 @@ struct NotificationSettings: Equatable {
 
 enum NotificationScheduler {
     private static let identifierPrefix = "saldopilot.transaction"
+    private static let scheduledOncePrefix = "notifications.scheduledOnce"
 
     static func synchronize(transactions: [Transaction], settings: NotificationSettings) async {
         await removeSaldoPilotNotifications()
@@ -71,7 +72,7 @@ enum NotificationScheduler {
             await schedule(
                 transaction: transaction,
                 kind: "advance",
-                date: reminderDate,
+                reminder: morningReminder(for: reminderDate, transaction: transaction, kind: "advance"),
                 body: String(localized: "\(transaction.title) is due in \(settings.notificationAdvanceDays) days.")
             )
         }
@@ -81,7 +82,7 @@ enum NotificationScheduler {
             await schedule(
                 transaction: transaction,
                 kind: "tomorrow",
-                date: reminderDate,
+                reminder: morningReminder(for: reminderDate, transaction: transaction, kind: "tomorrow"),
                 body: String(localized: "\(transaction.title) is due tomorrow.")
             )
         }
@@ -90,7 +91,7 @@ enum NotificationScheduler {
             await schedule(
                 transaction: transaction,
                 kind: "today",
-                date: dueDay,
+                reminder: morningReminder(for: dueDay, transaction: transaction, kind: "today"),
                 body: String(localized: "\(transaction.title) is due today.")
             )
         }
@@ -99,7 +100,7 @@ enum NotificationScheduler {
             await schedule(
                 transaction: transaction,
                 kind: "overdue",
-                date: nextReminderDate(),
+                reminder: ReminderSchedule(date: nextReminderDate()),
                 body: String(localized: "\(transaction.title) is overdue.")
             )
         }
@@ -108,17 +109,25 @@ enum NotificationScheduler {
             await schedule(
                 transaction: transaction,
                 kind: "pendingIncome",
-                date: nextReminderDate(),
+                reminder: ReminderSchedule(date: nextReminderDate()),
                 body: String(localized: "Pending income: \(transaction.title)")
             )
         }
     }
 
-    private static func schedule(transaction: Transaction, kind: String, date: Date?, body: String) async {
-        guard let date else { return }
-
-        let triggerDate = notificationDate(for: date)
+    private static func schedule(
+        transaction: Transaction,
+        kind: String,
+        reminder: ReminderSchedule,
+        body: String
+    ) async {
+        let triggerDate = reminder.date
         guard triggerDate > .now else { return }
+        if let scheduledOnceKey = reminder.scheduledOnceKey {
+            guard !UserDefaults.standard.bool(forKey: scheduledOnceKey) else { return }
+        }
+
+        let identifier = notificationIdentifier(transaction: transaction, kind: kind, triggerDate: triggerDate)
 
         let content = UNMutableNotificationContent()
         content.title = String(localized: "SaldoPilot")
@@ -128,21 +137,53 @@ enum NotificationScheduler {
 
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-        let identifier = "\(identifierPrefix).\(transaction.id.uuidString).\(kind)"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
         do {
             try await UNUserNotificationCenter.current().add(request)
+            if let scheduledOnceKey = reminder.scheduledOnceKey {
+                UserDefaults.standard.set(true, forKey: scheduledOnceKey)
+            }
         } catch {
             return
         }
     }
 
-    private static func notificationDate(for date: Date) -> Date {
+    private static func morningReminder(for date: Date?, transaction: Transaction, kind: String) -> ReminderSchedule {
+        guard let date else { return ReminderSchedule(date: .distantPast) }
+
         var components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         components.hour = 9
         components.minute = 0
-        return Calendar.current.date(from: components) ?? date
+        let reminderDate = Calendar.current.date(from: components) ?? date
+
+        if Calendar.current.isDateInToday(reminderDate), reminderDate <= .now {
+            return ReminderSchedule(
+                date: .now.addingTimeInterval(60),
+                scheduledOnceKey: scheduledOnceKey(transaction: transaction, kind: kind, date: reminderDate)
+            )
+        }
+
+        return ReminderSchedule(date: reminderDate)
+    }
+
+    private static func notificationIdentifier(transaction: Transaction, kind: String, triggerDate: Date) -> String {
+        "\(identifierPrefix).\(transaction.id.uuidString).\(kind).\(dateCode(for: triggerDate))"
+    }
+
+    private static func scheduledOnceKey(transaction: Transaction, kind: String, date: Date) -> String {
+        "\(scheduledOncePrefix).\(transaction.id.uuidString).\(kind).\(dateCode(for: date))"
+    }
+
+    private static func dateCode(for date: Date) -> String {
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        let dateCode = String(
+            format: "%04d%02d%02d",
+            components.year ?? 0,
+            components.month ?? 0,
+            components.day ?? 0
+        )
+        return dateCode
     }
 
     private static func nextReminderDate() -> Date {
@@ -159,4 +200,9 @@ enum NotificationScheduler {
 
         return calendar.date(byAdding: .day, value: 1, to: todayEvening) ?? .now.addingTimeInterval(3600)
     }
+}
+
+private struct ReminderSchedule {
+    let date: Date
+    var scheduledOnceKey: String?
 }
