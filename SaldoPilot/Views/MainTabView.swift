@@ -1,7 +1,7 @@
 //
 //  MainTabView.swift
 //  SaldoPilot
-//
+//  Godkjent
 //  Created by Terje Moe on 12/09/2026.
 //
 
