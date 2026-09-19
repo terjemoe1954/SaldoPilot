@@ -32,6 +32,7 @@ struct SaldoPilotApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
+    @State private var proPurchaseStore = ProPurchaseStore()
 
     private let modelContainer: ModelContainer = {
         let schema = Schema(SaldoPilotSchemaV1.models)
@@ -67,6 +68,7 @@ struct SaldoPilotApp: App {
             MainTabView()
                 .preferredColorScheme(selectedAppearance.colorScheme)
                 .environment(\.locale, selectedLanguage.locale)
+                .environment(proPurchaseStore)
         }
         .modelContainer(modelContainer)
     }

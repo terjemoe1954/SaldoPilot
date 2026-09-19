@@ -1,6 +1,6 @@
 # SaldoPilot Roadmap
 
-Sist oppdatert: 2026-09-18
+Sist oppdatert: 2026-09-19
 
 Dette dokumentet brukes som felles arbeidsplan når prosjektet flyttes mellom Mac hjemme og Mac på jobb. Før videre arbeid: sync siste endringer fra GitHub, åpne dette dokumentet, og fortsett fra aktiv milepæl.
 
@@ -41,6 +41,7 @@ Anbefalt modell:
 
 - Gratis basisapp
 - Engangskjøp: SaldoPilot Pro
+- Anbefalt lav fast pris: 39 kr
 
 Mulige Pro-funksjoner:
 
@@ -53,12 +54,41 @@ Mulige Pro-funksjoner:
 
 Oppgaver:
 
-- [ ] Bestem betalingsmodell endelig
-- [ ] Definer gratis vs Pro-funksjoner
-- [ ] Lage enkel Pro-statusmodell i appen
-- [ ] Lage skjerm for Pro-informasjon
-- [ ] Vurdere StoreKit 2-oppsett
-- [ ] Ikke aktivere kjøp før funksjonsgrensen er tydelig
+- [x] App Store Connect: Agreements, Tax, and Banking
+  - [x] Gå til Agreements
+  - [x] Finn Paid Apps / Betalte apper
+  - [x] Klikk Set Up eller View and Agree
+  - [x] Godkjenn Paid Apps-avtalen
+  - [x] Legg inn bankinformasjon: IBAN og BIC/SWIFT fra nettbank
+  - [x] Fyll ut Tax Forms hvis Apple ber om det
+  - [x] For Norge: normalt W-8BEN/egenerklæring om bosted og skatteplikt
+  - [x] Ikke lagre IBAN, BIC/SWIFT eller skatteinformasjon i repoet
+- [x] App Store Connect: Gratis app og Pro-produkt
+  - [x] Kontroller at selve appen fortsatt er Free under Pricing and Availability
+  - [x] Opprett In-App Purchase for SaldoPilot Pro
+  - [x] Velg type Non-Consumable
+  - [x] Sett Pro-pris til 39 kr
+  - [x] Lagre endringer i App Store Connect
+- [x] Bestem betalingsmodell endelig
+- [x] Definer gratis vs Pro-funksjoner
+- [x] Lage enkel Pro-statusmodell i appen
+- [x] Lage skjerm for Pro-informasjon
+- [x] Vurdere StoreKit 2-oppsett
+- [x] Legge inn StoreKit 2-grunnlag i appen
+- [ ] Teste kjøp og gjenoppretting i Sandbox/TestFlight
+- [x] Ikke aktivere kjøp før funksjonsgrensen er tydelig
+
+Notat:
+
+- App Store-versjonen er testet OK på iPad og iPhone.
+- iCloud-sync fungerer mellom enheter.
+- Agreements, bankinformasjon og tax-dokumenter ble fullført i App Store Connect 2026-09-18.
+- Betalingsmodell valgt: gratis basisapp med SaldoPilot Pro som Non-Consumable In-App Purchase til 39 kr.
+- App Store Connect Pro-produkt er opprettet som non-consumable in-app purchase.
+- Planlagt StoreKit product ID: `com.terjemoe.SaldoPilot.pro`.
+- Før StoreKit-kode legges inn bør avtaler, bank, skatt og pris være ryddet i App Store Connect.
+- Pro-grunnlag i appen har enkel statusmodell, Pro-side i Innstillinger og StoreKit-kjøp/restore. Ingen funksjoner er låst ennå.
+- StoreKit 2-grunnlag er lagt inn: produktlasting, kjøp, restore og entitlement-sjekk. Kjøp må testes i Sandbox/TestFlight før funksjoner låses.
 
 ## Milestone 17 - Budsjett Og Prognose
 

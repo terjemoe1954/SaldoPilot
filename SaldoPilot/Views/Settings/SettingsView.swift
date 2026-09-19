@@ -114,6 +114,12 @@ struct SettingsView: View {
                     LabeledContent("Build", value: buildNumber)
 
                     NavigationLink {
+                        ProInfoView()
+                    } label: {
+                        Label("SaldoPilot Pro", systemImage: "star.circle")
+                    }
+
+                    NavigationLink {
                         HelpView()
                     } label: {
                         Label("Help", systemImage: "book")

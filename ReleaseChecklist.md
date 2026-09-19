@@ -1,6 +1,6 @@
 # SaldoPilot Release Checklist
 
-Sist oppdatert: 2026-09-18
+Sist oppdatert: 2026-09-19
 
 Dette dokumentet brukes for siste sjekk før release og for å samle observasjoner etter lansering.
 
@@ -73,14 +73,60 @@ Noter observasjoner her:
 - Hvor alvorlig: Ingen feil etter sync.
 - Mulig løsning: Ved treg sync: kontroller samme Apple ID, iCloud for SaldoPilot og vent til CloudKit har synkronisert.
 
+- Dato: 2026-09-19
+- Versjon/build: App Store-versjon
+- Enhet: iPad og iPhone
+- Hva skjedde: App Store-versjonen er testet OK. iCloud-sync fungerer. Prosjektet går videre til Milestone 16 - Pro-Grunnlag.
+- Hvor alvorlig: Ingen release-blokkerende feil.
+- Mulig løsning: Ikke relevant.
+
+- Dato: 2026-09-18
+- Versjon/build: App Store Connect
+- Enhet: Web
+- Hva skjedde: Paid Apps/Agreements ble håndtert. Bankinformasjon ble lagt inn, og tax-dokumenter ble godkjent/fullført.
+- Hvor alvorlig: Viktig Pro-forberedelse fullført.
+- Mulig løsning: Neste steg er å kontrollere at appen er gratis, og opprette SaldoPilot Pro som non-consumable in-app purchase til 39 kr.
+
 ## Kjente Punkter
 
 - Appen bruker iCloud privat database når tilgjengelig. Derfor kan data komme tilbake etter reinstall dersom iCloud-sync er aktiv.
 - Varsler krever at iOS har gitt SaldoPilot tillatelse under Settings > Notifications.
 - Ekstern AI bør holdes valgfri og forklares tydelig i personverntekst.
 
+## Mulige Endringer Etter Testing
+
+- Gjentakende poster: ved endring eller sletting bør appen spørre om endringen gjelder bare denne posten eller denne og fremtidige poster.
+- Statistikk og kategori: hvis en inntekt legges på en kategori som også har utgifter, bør total inntekt/netto oppdateres. Eksempel: en bruker som registrerer lotteriutgifter under Gambling vil sannsynligvis forvente at gevinster i samme kategori også kan vises. Utgiftsgrafen kan fortsatt vise bare utgifter, men appen bør enten gjøre dette tydeligere eller få egen visning for inntekt per kategori/kategori-netto.
+
 ## Neste Planlagte Arbeid
 
-1. Fullføre Milestone 15.
-2. Bestemme gratis/Pro-grense.
-3. Starte Milestone 16 når første release er stabil.
+1. Teste kjøp og restore i Sandbox/TestFlight.
+2. Bestemme hvilke funksjoner som faktisk skal kreve Pro.
+3. Låse Pro-funksjoner først etter at kjøp/restore er stabilt.
+
+## Milestone 16 - Pro-Grunnlag Sjekkliste
+
+### App Store Connect
+
+- [x] Agreements: Paid Apps er åpnet
+- [x] Paid Apps-avtalen er godkjent
+- [x] Bankinformasjon er lagt inn
+- [x] Tax Forms er fullført hvis Apple krever det
+- [x] Pricing and Availability er åpnet og appen står som Free
+- [x] SaldoPilot Pro er opprettet som non-consumable in-app purchase
+- [x] Pro-produktet er satt til 39 kr
+- [x] Save er trykket øverst til høyre
+
+### Produktvalg
+
+- [x] Betalingsmodell er endelig bestemt: gratis basisapp med SaldoPilot Pro som non-consumable in-app purchase til 39 kr
+- [x] Gratis-funksjoner er definert
+- [x] Pro-funksjoner er definert
+- [x] StoreKit 2-oppsett er vurdert
+- [x] StoreKit 2-grunnlag er lagt inn i appen
+- [ ] Kjøp fungerer i Sandbox/TestFlight
+- [ ] Restore purchases fungerer i Sandbox/TestFlight
+- [x] Ingen bank-, skatte- eller personopplysninger er lagret i repoet
+- [x] Enkel Pro-statusmodell er lagt inn i appen
+- [x] Pro-informasjonsskjerm er lagt inn i Innstillinger
+- [x] Funksjonslåsing er ikke aktivert ennå

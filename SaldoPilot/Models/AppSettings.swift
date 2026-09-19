@@ -110,6 +110,26 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     }
 }
 
+enum AppProStatus: String, CaseIterable, Identifiable {
+    case free
+    case pro
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .free:
+            "Free"
+        case .pro:
+            "SaldoPilot Pro"
+        }
+    }
+
+    var isProUnlocked: Bool {
+        self == .pro
+    }
+}
+
 enum AppSettingsKey {
     static let appearance = "settings.appearance"
     static let language = "settings.language"
@@ -125,4 +145,5 @@ enum AppSettingsKey {
     static let notificationAdvanceDays = "settings.notificationAdvanceDays"
     static let notifyPendingIncome = "settings.notifyPendingIncome"
     static let allowExternalAI = "settings.allowExternalAI"
+    static let proStatus = "settings.proStatus"
 }
