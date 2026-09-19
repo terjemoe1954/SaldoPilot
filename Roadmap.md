@@ -89,6 +89,7 @@ Notat:
 - Før StoreKit-kode legges inn bør avtaler, bank, skatt og pris være ryddet i App Store Connect.
 - Pro-grunnlag i appen har enkel statusmodell, Pro-side i Innstillinger og StoreKit-kjøp/restore. Ingen funksjoner er låst ennå.
 - StoreKit 2-grunnlag er lagt inn: produktlasting, kjøp, restore og entitlement-sjekk. Kjøp må testes i Sandbox/TestFlight før funksjoner låses.
+- Testplan for kjøp og restore ligger i `AppStore/ProTesting.md`.
 
 ## Milestone 17 - Budsjett Og Prognose
 

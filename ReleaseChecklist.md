@@ -104,6 +104,8 @@ Noter observasjoner her:
 2. Bestemme hvilke funksjoner som faktisk skal kreve Pro.
 3. Låse Pro-funksjoner først etter at kjøp/restore er stabilt.
 
+Testplan: `AppStore/ProTesting.md`
+
 ## Milestone 16 - Pro-Grunnlag Sjekkliste
 
 ### App Store Connect
