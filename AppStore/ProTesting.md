@@ -90,9 +90,13 @@ Sjekk dette først:
 |---|---|
 | Product ID | Må matche `com.terjemoe.SaldoPilot.pro` nøyaktig. |
 | IAP-status | Produktet må være opprettet og lagret i App Store Connect. |
+| Status | Hvis produktet står som `Prepare for Submission`, er det ikke klart for TestFlight-kjøp ennå. |
+| Availability | Trykk `Set Up Availability` og velg land/regioner før ny test. |
 | Build | TestFlight-builden må inneholde StoreKit-koden. |
 | Tilknytning | App Store Connect kan kreve at IAP legges til versjonen. |
 | Apple behandling | Nye produkter kan bruke litt tid før de vises i TestFlight/App Store Connect. |
+
+Første non-consumable in-app purchase må normalt sendes inn sammen med en ny appversjon. Når metadata og availability er ferdig, bruk `Add for Review` på IAP-produktet og koble det til riktig appversjon hvis App Store Connect ber om det.
 
 ## Før funksjoner låses
 
