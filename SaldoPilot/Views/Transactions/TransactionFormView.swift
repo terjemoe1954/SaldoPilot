@@ -11,6 +11,7 @@ import SwiftUI
 struct TransactionFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
 
     private let transaction: Transaction?
 
@@ -25,6 +26,7 @@ struct TransactionFormView: View {
     @State private var recurrence: RecurrenceRule
     @State private var recurrenceIntervalMonths: Int
     @State private var notes: String
+    @State private var isShowingRecurrenceScopeDialog = false
 
     init(transaction: Transaction? = nil, intent: NewTransactionIntent = .transaction) {
         self.transaction = transaction
@@ -84,10 +86,25 @@ struct TransactionFormView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        save()
+                        requestSave()
                     }
                     .disabled(!canSave)
                 }
+            }
+            .confirmationDialog(
+                "Update recurring transactions?",
+                isPresented: $isShowingRecurrenceScopeDialog,
+                titleVisibility: .visible
+            ) {
+                Button("Only this transaction") {
+                    save(scope: .single)
+                }
+                Button("This and future transactions") {
+                    save(scope: .thisAndFuture)
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Choose whether the change should apply only to this transaction or also to matching future transactions.")
             }
             .onChange(of: title) { _, newTitle in
                 updateSuggestedCategory(for: newTitle)
@@ -124,7 +141,25 @@ struct TransactionFormView: View {
         }
     }
 
-    private func save() {
+    private func requestSave() {
+        guard shouldAskForRecurringUpdate else {
+            save(scope: .single)
+            return
+        }
+
+        isShowingRecurrenceScopeDialog = true
+    }
+
+    private var shouldAskForRecurringUpdate: Bool {
+        guard let transaction, transaction.recurrence != .none else {
+            return false
+        }
+
+        let snapshot = RecurrenceService.SeriesSnapshot(transaction: transaction)
+        return !RecurrenceService.futureOccurrences(matching: snapshot, in: transactions).isEmpty
+    }
+
+    private func save(scope: RecurrenceUpdateScope) {
         guard let amount = parsedAmount else { return }
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -134,6 +169,8 @@ struct TransactionFormView: View {
         let resolvedInterval = recurrence == .everyNMonths || recurrence == .custom ? recurrenceIntervalMonths : nil
 
         if let transaction {
+            let seriesSnapshot = RecurrenceService.SeriesSnapshot(transaction: transaction)
+            let futureOccurrences = RecurrenceService.futureOccurrences(matching: seriesSnapshot, in: transactions)
             let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
             transaction.title = trimmedTitle
             transaction.amount = amount
@@ -150,6 +187,10 @@ struct TransactionFormView: View {
 
             if !wasCompleted && resolvedIsCompleted {
                 RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+            }
+
+            if scope == .thisAndFuture {
+                RecurrenceService.applyTemplate(from: transaction, toFutureOccurrences: futureOccurrences)
             }
         } else {
             let newTransaction = Transaction(
@@ -203,6 +244,11 @@ struct TransactionFormView: View {
 
         return amount
     }
+}
+
+private enum RecurrenceUpdateScope {
+    case single
+    case thisAndFuture
 }
 
 private struct TransactionBasicsSection: View {

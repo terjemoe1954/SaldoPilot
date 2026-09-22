@@ -9,6 +9,30 @@ import Foundation
 import SwiftData
 
 enum RecurrenceService {
+    struct SeriesSnapshot {
+        let id: UUID
+        let title: String
+        let amount: Decimal
+        let type: TransactionType
+        let dueDate: Date
+        let category: CategoryKind
+        let recurrence: RecurrenceRule
+        let recurrenceIntervalMonths: Int?
+        let notes: String
+
+        init(transaction: Transaction) {
+            id = transaction.id
+            title = transaction.title
+            amount = transaction.amount
+            type = transaction.type
+            dueDate = transaction.dueDate
+            category = transaction.category
+            recurrence = transaction.recurrence
+            recurrenceIntervalMonths = transaction.recurrenceIntervalMonths
+            notes = transaction.notes
+        }
+    }
+
     static func nextDueDate(
         after date: Date,
         for transaction: Transaction,
@@ -48,6 +72,47 @@ enum RecurrenceService {
 
         modelContext.insert(nextTransaction)
     }
+
+    static func futureOccurrences(
+        matching snapshot: SeriesSnapshot,
+        in transactions: [Transaction]
+    ) -> [Transaction] {
+        guard snapshot.recurrence != .none else { return [] }
+
+        return transactions
+            .filter { transaction in
+                transaction.id != snapshot.id &&
+                transaction.dueDate > snapshot.dueDate &&
+                !transaction.isArchived &&
+                transaction.status != .cancelled &&
+                !transaction.isSettled &&
+                transaction.title == snapshot.title &&
+                transaction.amount == snapshot.amount &&
+                transaction.type == snapshot.type &&
+                transaction.category == snapshot.category &&
+                transaction.recurrence == snapshot.recurrence &&
+                transaction.recurrenceIntervalMonths == snapshot.recurrenceIntervalMonths &&
+                transaction.notes == snapshot.notes
+            }
+            .sorted { $0.dueDate < $1.dueDate }
+    }
+
+    static func applyTemplate(
+        from transaction: Transaction,
+        toFutureOccurrences futureOccurrences: [Transaction]
+    ) {
+        for futureOccurrence in futureOccurrences {
+            futureOccurrence.title = transaction.title
+            futureOccurrence.amount = transaction.amount
+            futureOccurrence.type = transaction.type
+            futureOccurrence.category = transaction.category
+            futureOccurrence.recurrence = transaction.recurrence
+            futureOccurrence.recurrenceIntervalMonths = transaction.recurrenceIntervalMonths
+            futureOccurrence.notes = transaction.notes
+            futureOccurrence.markUpdated()
+        }
+    }
+
     private static func monthInterval(for transaction: Transaction) -> Int {
         switch transaction.recurrence {
         case .none:

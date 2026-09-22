@@ -20,7 +20,7 @@ struct StatisticsView: View {
                     StatisticsSummaryGrid(summary: snapshot.currentMonthSummary)
 
                     MonthlyComparisonChart(months: snapshot.months)
-                    ExpenseCategoryChart(categories: snapshot.expenseCategories)
+                    CategoryBalanceChart(categories: snapshot.categoryBalances)
                     NetTrendChart(months: snapshot.months)
                     OutstandingAmountChart(months: snapshot.outstandingMonths)
                 }
@@ -46,7 +46,7 @@ struct StatisticsView: View {
 private struct StatisticsSnapshot {
     let currentMonthSummary: StatisticsSummary
     let months: [MonthStatistics]
-    let expenseCategories: [CategoryStatistics]
+    let categoryBalances: [CategoryStatistics]
     let outstandingMonths: [OutstandingMonthStatistics]
 
     init(transactions: [Transaction], locale: Locale) {
@@ -57,7 +57,7 @@ private struct StatisticsSnapshot {
 
         currentMonthSummary = StatisticsSummary(transactions: currentMonthTransactions)
         months = Self.makeMonthStatistics(transactions: transactions, calendar: calendar)
-        expenseCategories = Self.makeExpenseCategoryStatistics(transactions: currentMonthTransactions, locale: locale)
+        categoryBalances = Self.makeCategoryBalanceStatistics(transactions: currentMonthTransactions, locale: locale)
         outstandingMonths = Self.makeOutstandingMonthStatistics(transactions: transactions, calendar: calendar)
     }
 
@@ -71,21 +71,24 @@ private struct StatisticsSnapshot {
         }
     }
 
-    private static func makeExpenseCategoryStatistics(transactions: [Transaction], locale: Locale) -> [CategoryStatistics] {
-        let expenseTransactions = transactions.filter { $0.type == .expense }
-        let groupedTransactions = Dictionary(grouping: expenseTransactions, by: \.category)
+    private static func makeCategoryBalanceStatistics(transactions: [Transaction], locale: Locale) -> [CategoryStatistics] {
+        let groupedTransactions = Dictionary(grouping: transactions, by: \.category)
 
         return groupedTransactions.map { category, transactions in
-            CategoryStatistics(
+            let income = transactions.filter { $0.type == .income }.totalAmount
+            let expenses = transactions.filter { $0.type == .expense }.totalAmount
+
+            return CategoryStatistics(
                 id: category.rawValue,
                 name: category.localizedTitle(locale: locale),
                 icon: category.systemImage,
                 tint: category.tint,
-                amount: transactions.totalAmount,
+                income: income,
+                expenses: expenses,
                 transactions: transactions.sortedByDueDate
             )
         }
-        .sorted { $0.amount > $1.amount }
+        .sorted { abs($0.amount.doubleValue) > abs($1.amount.doubleValue) }
     }
 
     private static func makeOutstandingMonthStatistics(transactions: [Transaction], calendar: Calendar) -> [OutstandingMonthStatistics] {
@@ -146,8 +149,13 @@ private struct CategoryStatistics: Identifiable {
     let name: String
     let icon: String
     let tint: Color
-    let amount: Decimal
+    let income: Decimal
+    let expenses: Decimal
     let transactions: [Transaction]
+
+    var amount: Decimal {
+        income - expenses
+    }
 }
 
 private struct OutstandingMonthStatistics: Identifiable {
@@ -239,27 +247,23 @@ private struct MonthlyComparisonChart: View {
     }
 }
 
-private struct ExpenseCategoryChart: View {
+private struct CategoryBalanceChart: View {
     let categories: [CategoryStatistics]
 
     var body: some View {
-        StatisticsChartSection(title: "Expenses per category") {
+        StatisticsChartSection(title: "Category balance this month") {
             if categories.isEmpty {
-                StatisticsEmptyChartState(text: "No expenses this month.")
+                StatisticsEmptyChartState(text: "No category activity this month.")
             } else {
                 Chart(categories) { category in
-                    SectorMark(
-                        angle: .value("Amount", category.amount.doubleValue),
-                        innerRadius: .ratio(0.58),
-                        angularInset: 2
+                    BarMark(
+                        x: .value("Net", category.amount.doubleValue),
+                        y: .value("Category", category.name)
                     )
-                    .foregroundStyle(by: .value("Category", category.name))
+                    .foregroundStyle(category.amount >= .zero ? Color.green : Color.red)
                 }
-                .chartForegroundStyleScale(
-                    domain: categories.map(\.name),
-                    range: categories.map(\.tint)
-                )
-                .frame(height: 220)
+                .chartXAxisLabel("Net")
+                .frame(height: max(220, CGFloat(categories.count) * 34))
 
                 VStack(spacing: 8) {
                     ForEach(categories) { category in
@@ -400,7 +404,7 @@ private struct StatisticsCategoryRow: View {
     var body: some View {
         StatisticsValueRow(
             title: category.name,
-            subtitle: "Expenses · \(category.transactions.count) transactions",
+            subtitle: "Net · \(category.transactions.count) transactions",
             value: category.amount,
             systemImage: category.icon
         )

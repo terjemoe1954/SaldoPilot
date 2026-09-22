@@ -1,6 +1,6 @@
 # SaldoPilot Release Checklist
 
-Sist oppdatert: 2026-09-19
+Sist oppdatert: 2026-09-22
 
 Dette dokumentet brukes for siste sjekk før release og for å samle observasjoner etter lansering.
 
@@ -95,16 +95,37 @@ Noter observasjoner her:
 
 ## Mulige Endringer Etter Testing
 
-- Gjentakende poster: ved endring eller sletting bør appen spørre om endringen gjelder bare denne posten eller denne og fremtidige poster.
-- Statistikk og kategori: hvis en inntekt legges på en kategori som også har utgifter, bør total inntekt/netto oppdateres. Eksempel: en bruker som registrerer lotteriutgifter under Gambling vil sannsynligvis forvente at gevinster i samme kategori også kan vises. Utgiftsgrafen kan fortsatt vise bare utgifter, men appen bør enten gjøre dette tydeligere eller få egen visning for inntekt per kategori/kategori-netto.
+Ingen åpne punkter i denne seksjonen akkurat nå.
+
+## Endringer Etter Testing Som Er Håndtert
+
+- 2026-09-22: Poster/filter: beløpsbanneret i Poster følger nå filtrerte poster i stedet for alle aktive poster.
+- 2026-09-22: Statistikk og kategori: kategorivisningen viser nå netto per kategori for måneden, slik at inntekt/gevinster i en utgiftskategori påvirker kategoribalansen.
+- 2026-09-22: Gjentakende poster: ved endring eller sletting av en gjentakende post får brukeren valg mellom bare denne posten eller denne og fremtidige poster.
 
 ## Neste Planlagte Arbeid
 
-1. Teste kjøp og restore i Sandbox/TestFlight.
-2. Bestemme hvilke funksjoner som faktisk skal kreve Pro.
-3. Låse Pro-funksjoner først etter at kjøp/restore er stabilt.
+1. Teste 1.0.3-endringene med ekte data på iPhone og iPad.
+2. Teste kjøp og restore i Sandbox/TestFlight.
+3. Bestemme hvilke funksjoner som faktisk skal kreve Pro.
+4. Låse Pro-funksjoner først etter at kjøp/restore er stabilt.
 
 Testplan: `AppStore/ProTesting.md`
+
+## Testplan For 1.0.3
+
+- [ ] Bygg prosjektet i Xcode uten feil
+- [ ] Opprett eller finn en gjentakende post med minst én fremtidig post
+- [ ] Endre kategori på bare denne posten og sjekk at fremtidige poster ikke endres
+- [ ] Endre kategori på denne og fremtidige poster og sjekk at fremtidige matchende poster oppdateres
+- [ ] Slett bare denne posten og sjekk at fremtidige poster blir liggende
+- [ ] Slett denne og fremtidige poster og sjekk at fremtidige matchende poster slettes
+- [ ] Endre filter i Poster og sjekk at beløpsbanneret følger filteret
+- [ ] Registrer både utgift og inntekt på samme kategori og sjekk at Statistikk viser netto kategori
+- [ ] Test norsk språk
+- [ ] Test engelsk språk
+- [ ] Test thai språk
+- [ ] Test iCloud-sync etter endring av gjentakende poster
 
 ## Milestone 16 - Pro-Grunnlag Sjekkliste
 

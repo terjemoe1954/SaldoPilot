@@ -1,13 +1,14 @@
 # SaldoPilot Roadmap
 
-Sist oppdatert: 2026-09-19
+Sist oppdatert: 2026-09-22
 
 Dette dokumentet brukes som felles arbeidsplan når prosjektet flyttes mellom Mac hjemme og Mac på jobb. Før videre arbeid: sync siste endringer fra GitHub, åpne dette dokumentet, og fortsett fra aktiv milepæl.
 
 ## Status
 
 - App Store review: Approved
-- Nåværende fokus: Milestone 16 - Pro-Grunnlag
+- Nåværende App Store-versjon: 1.0.2 build 1
+- Nåværende fokus: 1.0.3 stabilitets- og forbedringsversjon etter ekte bruk
 - Anbefalt betalingsretning: gratis basisapp med engangskjøp for SaldoPilot Pro
 
 ## Milestone 15 - Launch & Stabilitet
@@ -94,6 +95,15 @@ Notat:
 ## Milestone 17 - Budsjett Og Prognose
 
 Mål: gjøre appen mer nyttig for planlegging.
+
+Før Milestone 17:
+
+- [x] Poster/filter: beløpsbanneret følger filtrerte poster
+- [x] Statistikk: kategorioversikt viser netto per kategori for inneværende måned
+- [x] Gjentakende poster: bruker kan velge bare denne posten eller denne og fremtidige poster ved endring/sletting
+- [ ] Test 1.0.3-endringene på iPhone
+- [ ] Test 1.0.3-endringene på iPad
+- [ ] Bygg og arkiver ny App Store Connect-build når test er OK
 
 Mulige funksjoner:
 

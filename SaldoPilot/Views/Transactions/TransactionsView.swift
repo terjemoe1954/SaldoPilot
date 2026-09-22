@@ -112,14 +112,23 @@ struct TransactionsView: View {
                 isPresented: $isShowingDeleteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Delete", role: .destructive) {
-                    confirmDelete()
+                if shouldAskForRecurringDeletion {
+                    Button("Delete only this transaction", role: .destructive) {
+                        confirmDelete(scope: .single)
+                    }
+                    Button("Delete this and future transactions", role: .destructive) {
+                        confirmDelete(scope: .thisAndFuture)
+                    }
+                } else {
+                    Button("Delete", role: .destructive) {
+                        confirmDelete(scope: .single)
+                    }
                 }
                 Button("Cancel", role: .cancel) {
                     transactionPendingDeletion = nil
                 }
             } message: {
-                Text("This transaction will be permanently deleted.")
+                Text(deleteConfirmationMessage)
             }
             .sheet(isPresented: $isShowingAdvancedFilter) {
                 TransactionFilterSheet(filter: $advancedFilter)
@@ -167,7 +176,7 @@ struct TransactionsView: View {
     }
 
     private var availableAmount: Decimal {
-        activeTransactions.reduce(.zero) { result, transaction in
+        filteredTransactions.reduce(.zero) { result, transaction in
             guard transaction.isCompleted || transaction.status == .paid || transaction.status == .received else {
                 return result
             }
@@ -228,11 +237,39 @@ struct TransactionsView: View {
         isShowingDeleteConfirmation = true
     }
 
-    private func confirmDelete() {
+    private var shouldAskForRecurringDeletion: Bool {
+        guard let transactionPendingDeletion, transactionPendingDeletion.recurrence != .none else {
+            return false
+        }
+
+        let snapshot = RecurrenceService.SeriesSnapshot(transaction: transactionPendingDeletion)
+        return !RecurrenceService.futureOccurrences(matching: snapshot, in: transactions).isEmpty
+    }
+
+    private var deleteConfirmationMessage: LocalizedStringKey {
+        shouldAskForRecurringDeletion
+        ? "Choose whether to delete only this transaction or matching future transactions too."
+        : "This transaction will be permanently deleted."
+    }
+
+    private func confirmDelete(scope: RecurrenceDeletionScope) {
         guard let transactionPendingDeletion else { return }
+        if scope == .thisAndFuture {
+            let snapshot = RecurrenceService.SeriesSnapshot(transaction: transactionPendingDeletion)
+            let futureOccurrences = RecurrenceService.futureOccurrences(matching: snapshot, in: transactions)
+            for futureOccurrence in futureOccurrences {
+                modelContext.delete(futureOccurrence)
+            }
+        }
+
         modelContext.delete(transactionPendingDeletion)
         self.transactionPendingDeletion = nil
     }
+}
+
+private enum RecurrenceDeletionScope {
+    case single
+    case thisAndFuture
 }
 
 private struct TransactionAdvancedFilter: Equatable {
