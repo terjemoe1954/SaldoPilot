@@ -126,20 +126,20 @@ Noter observasjoner her:
 
 ## Neste Planlagte Arbeid
 
-1. Teste første budsjettgrunnlag på enhet med eksisterende App Store-data.
-2. Teste Pro-gate for Budsjett med gratis og Pro-status.
+1. Følge med på første budsjettgrunnlag i TestFlight/separat test før App Store-release.
+2. Teste Pro-gate for Budsjett med gratis status hvis mulig.
 3. Deretter legge til prognose for månedsslutt.
 
 ## Testplan For Milestone 17 - Budsjett
 
 - [x] Bygg prosjektet i Xcode uten feil
-- [ ] Test migrering via TestFlight eller separat testenhet før hoved-iPhone brukes igjen
-- [ ] Installer på enhet med eksisterende iCloud-data
-- [ ] Bekreft at gamle poster fortsatt vises etter SwiftData-migrering
-- [ ] Åpne Budsjett som Pro-bruker
-- [ ] Sett budsjett på minst to kategorier
-- [ ] Sjekk at totalbudsjett, brukt og igjen oppdateres
-- [ ] Registrer ny utgift i en budsjettert kategori og sjekk at brukt/igjen endres
+- [x] Test migrering via TestFlight eller separat testenhet før hoved-iPhone brukes igjen
+- [x] Installer på enhet med eksisterende iCloud-data
+- [x] Bekreft at gamle poster fortsatt vises etter SwiftData-migrering
+- [x] Åpne Budsjett som Pro-bruker
+- [x] Sett budsjett på minst to kategorier
+- [x] Sjekk at totalbudsjett, brukt og igjen oppdateres
+- [x] Registrer ny utgift i en budsjettert kategori og sjekk at brukt/igjen endres
 - [ ] Test at Budsjett viser Pro-informasjon når Pro ikke er låst opp
 - [ ] Test norsk språk
 - [ ] Test engelsk språk
