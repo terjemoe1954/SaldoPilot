@@ -1,6 +1,6 @@
 # SaldoPilot Pro - testplan for kjøp og restore
 
-Sist oppdatert: 2026-09-19
+Sist oppdatert: 2026-09-24
 
 Formål: teste at SaldoPilot Pro fungerer som non-consumable in-app purchase før funksjoner låses bak Pro.
 
@@ -18,24 +18,31 @@ Formål: teste at SaldoPilot Pro fungerer som non-consumable in-app purchase fø
 
 | Ferdig | Kontrollpunkt |
 |---|---|
-| [ ] | Appen er fortsatt gratis i Pricing and Availability. |
-| [ ] | SaldoPilot Pro finnes under In-App Purchases i App Store Connect. |
-| [ ] | Product ID er nøyaktig `com.terjemoe.SaldoPilot.pro`. |
-| [ ] | Produktet er non-consumable. |
-| [ ] | Pris er satt til 39 kr eller nærmeste tilsvarende Apple price tier. |
-| [ ] | Produktet er lagt til versjonen/builden hvis App Store Connect ber om det. |
-| [ ] | Ny TestFlight-build er lastet opp etter StoreKit-koden. |
+| [x] | Appen er fortsatt gratis i Pricing and Availability. |
+| [x] | SaldoPilot Pro finnes under In-App Purchases i App Store Connect. |
+| [x] | Product ID er nøyaktig `com.terjemoe.SaldoPilot.pro`. |
+| [x] | Produktet er non-consumable. |
+| [x] | Pris er satt til 39 kr eller nærmeste tilsvarende Apple price tier. |
+| [x] | Produktet er lagt til versjonen/builden hvis App Store Connect ber om det. |
+| [x] | Ny build med StoreKit-koden er godkjent og ligger på App Store som 1.0.3 build 1. |
+
+## Testmiljø Nå
+
+- App Store-versjon: 1.0.3 build 1
+- Pro-produkt: SaldoPilot Pro, non-consumable, 39 kr
+- Funksjoner er fortsatt ikke låst bak Pro
+- Målet er å bekrefte produktlasting, kjøp, restore og status etter restart/enhetsbytte
 
 ## Test 1 - Produkt vises
 
 | Ferdig | Kontrollpunkt |
 |---|---|
-| [ ] | Installer appen fra TestFlight. |
-| [ ] | Åpne Innstillinger. |
-| [ ] | Åpne SaldoPilot Pro. |
-| [ ] | Sjekk at nåværende plan viser Gratis. |
-| [ ] | Sjekk at pris vises. |
-| [ ] | Sjekk at kjøpsknappen vises. |
+| [x] | Installer appen fra TestFlight/App Store. |
+| [x] | Åpne Innstillinger. |
+| [x] | Åpne SaldoPilot Pro. |
+| [x] | Sjekk at nåværende plan viser Gratis før kjøp. |
+| [x] | Sjekk at pris vises. |
+| [x] | Sjekk at kjøpsknappen vises. |
 
 Forventet resultat:
 
@@ -47,11 +54,11 @@ Forventet resultat:
 
 | Ferdig | Kontrollpunkt |
 |---|---|
-| [ ] | Trykk Kjøp Pro. |
-| [ ] | Fullfør sandbox/TestFlight-kjøpet. |
-| [ ] | Sjekk at status endres til SaldoPilot Pro. |
-| [ ] | Lukk og åpne appen på nytt. |
-| [ ] | Sjekk at status fortsatt er SaldoPilot Pro. |
+| [x] | Trykk Kjøp Pro. |
+| [x] | Fullfør kjøpet. |
+| [x] | Sjekk at status endres til SaldoPilot Pro. |
+| [x] | Lukk og åpne appen på nytt. |
+| [x] | Sjekk at status fortsatt er SaldoPilot Pro. |
 
 Forventet resultat:
 
@@ -63,10 +70,10 @@ Forventet resultat:
 
 | Ferdig | Kontrollpunkt |
 |---|---|
-| [ ] | Installer appen på en annen enhet med samme Apple ID/sandbox-bruker. |
-| [ ] | Åpne Innstillinger > SaldoPilot Pro. |
-| [ ] | Trykk Gjenopprett kjøp / Restore purchases. |
-| [ ] | Sjekk at status blir SaldoPilot Pro. |
+| [x] | Installer appen på en annen enhet med samme Apple ID/sandbox-bruker. |
+| [x] | Åpne Innstillinger > SaldoPilot Pro. |
+| [x] | Trykk Gjenopprett kjøp / Restore purchases. |
+| [x] | Sjekk at status blir SaldoPilot Pro. |
 
 Forventet resultat:
 
@@ -104,12 +111,12 @@ Ikke lås funksjoner bak Pro før dette er bekreftet:
 
 | Ferdig | Krav |
 |---|---|
-| [ ] | Kjøp fungerer i TestFlight. |
-| [ ] | Restore fungerer i TestFlight. |
-| [ ] | Appen viser riktig status etter restart. |
-| [ ] | Appen viser riktig status på en annen enhet. |
-| [ ] | Gratisappen fungerer fortsatt uten kjøp. |
+| [x] | Kjøp fungerer. |
+| [x] | Restore fungerer. |
+| [x] | Appen viser riktig status etter restart. |
+| [x] | Appen viser riktig status på en annen enhet. |
+| [x] | Gratisappen fungerer fortsatt uten kjøp. |
 
 ## Foreløpig beslutning
 
-Funksjonslåsing utsettes. Først skal kjøp og restore være stabilt. Etterpå kan vi bestemme hvilke funksjoner som skal kreve Pro.
+Kjøp og restore er bekreftet. Neste beslutning er hvilke funksjoner som skal kreve Pro, og om første Pro-låsing skal vente til Budsjett/Prognose er implementert.

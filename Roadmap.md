@@ -1,14 +1,14 @@
 # SaldoPilot Roadmap
 
-Sist oppdatert: 2026-09-22
+Sist oppdatert: 2026-09-24
 
 Dette dokumentet brukes som felles arbeidsplan når prosjektet flyttes mellom Mac hjemme og Mac på jobb. Før videre arbeid: sync siste endringer fra GitHub, åpne dette dokumentet, og fortsett fra aktiv milepæl.
 
 ## Status
 
 - App Store review: Approved
-- Nåværende App Store-versjon: 1.0.2 build 1
-- Nåværende fokus: 1.0.3 stabilitets- og forbedringsversjon etter ekte bruk
+- Nåværende App Store-versjon: 1.0.3 build 1
+- Nåværende fokus: Milestone 17 - Budsjett og prognose
 - Anbefalt betalingsretning: gratis basisapp med engangskjøp for SaldoPilot Pro
 
 ## Milestone 15 - Launch & Stabilitet
@@ -53,6 +53,13 @@ Mulige Pro-funksjoner:
 - Avanserte varsler
 - Avansert eksport
 
+Beslutning 2026-09-24:
+
+- Eksisterende basisfunksjoner skal forbli gratis.
+- Første Pro-verdi skal være nye planleggingsfunksjoner i Milestone 17.
+- Budsjett per kategori og prognose markeres som første Pro-kandidater.
+- Pro-låsing innføres først når de nye funksjonene er nyttige og testet.
+
 Oppgaver:
 
 - [x] App Store Connect: Agreements, Tax, and Banking
@@ -76,7 +83,7 @@ Oppgaver:
 - [x] Lage skjerm for Pro-informasjon
 - [x] Vurdere StoreKit 2-oppsett
 - [x] Legge inn StoreKit 2-grunnlag i appen
-- [ ] Teste kjøp og gjenoppretting i Sandbox/TestFlight
+- [x] Teste kjøp og gjenoppretting i Sandbox/TestFlight/App Store-miljø
 - [x] Ikke aktivere kjøp før funksjonsgrensen er tydelig
 
 Notat:
@@ -89,21 +96,40 @@ Notat:
 - Planlagt StoreKit product ID: `com.terjemoe.SaldoPilot.pro`.
 - Før StoreKit-kode legges inn bør avtaler, bank, skatt og pris være ryddet i App Store Connect.
 - Pro-grunnlag i appen har enkel statusmodell, Pro-side i Innstillinger og StoreKit-kjøp/restore. Ingen funksjoner er låst ennå.
-- StoreKit 2-grunnlag er lagt inn: produktlasting, kjøp, restore og entitlement-sjekk. Kjøp må testes i Sandbox/TestFlight før funksjoner låses.
+- StoreKit 2-grunnlag er lagt inn: produktlasting, kjøp, restore og entitlement-sjekk.
+- Kjøp, restore og status etter restart/enhetsbytte er testet OK 2026-09-24.
 - Testplan for kjøp og restore ligger i `AppStore/ProTesting.md`.
 
 ## Milestone 17 - Budsjett Og Prognose
 
 Mål: gjøre appen mer nyttig for planlegging.
 
+Pro-retning:
+
+- Gratis: dagens oversikt, poster, statistikk, backup/import og grunnleggende gjentakelser.
+- Pro: budsjett per kategori, varsel/nivå for budsjett, og prognose for månedsslutt.
+- Første versjon bør være enkel: månedlig budsjett per kategori og en oversikt som viser brukt, igjen og forventet månedsslutt.
+
+Første budsjettgrunnlag:
+
+- [x] SwiftData-modell for månedlig kategoribudsjett
+- [x] Budsjett-tab i appen
+- [x] Pro-gate for budsjettvisning
+- [x] Sett/endre budsjettbeløp per kategori for inneværende måned
+- [x] Vis totalbudsjett, brukt og igjen
+- [ ] Test migrering/iCloud med eksisterende App Store-data på enhet før release
+- [ ] Test Pro-gate med gratis og Pro-status
+- [ ] Legg til prognose for månedsslutt
+
 Før Milestone 17:
 
 - [x] Poster/filter: beløpsbanneret følger filtrerte poster
 - [x] Statistikk: kategorioversikt viser netto per kategori for inneværende måned
 - [x] Gjentakende poster: bruker kan velge bare denne posten eller denne og fremtidige poster ved endring/sletting
-- [ ] Test 1.0.3-endringene på iPhone
-- [ ] Test 1.0.3-endringene på iPad
-- [ ] Bygg og arkiver ny App Store Connect-build når test er OK
+- [x] Test 1.0.3-endringene på iPhone
+- [x] Test 1.0.3-endringene på iPad
+- [x] Bygg og arkiver ny App Store Connect-build når test er OK
+- [x] 1.0.3 build 1 er godkjent og ligger på App Store
 
 Mulige funksjoner:
 

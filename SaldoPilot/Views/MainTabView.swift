@@ -48,6 +48,12 @@ struct MainTabView: View {
                 }
                 .tag(MainTab.statistics)
 
+            BudgetsView()
+                .tabItem {
+                    Label("Budgets", systemImage: "target")
+                }
+                .tag(MainTab.budgets)
+
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape")
@@ -116,6 +122,7 @@ private enum MainTab: Hashable {
     case dashboard
     case transactions
     case statistics
+    case budgets
     case settings
 }
 

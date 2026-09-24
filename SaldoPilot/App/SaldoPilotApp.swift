@@ -35,7 +35,7 @@ struct SaldoPilotApp: App {
     @State private var proPurchaseStore = ProPurchaseStore()
 
     private let modelContainer: ModelContainer = {
-        let schema = Schema(SaldoPilotSchemaV1.models)
+        let schema = Schema(SaldoPilotSchemaV2.models)
 
         do {
             let cloudConfiguration = ModelConfiguration(

@@ -1,6 +1,6 @@
 # SaldoPilot Release Checklist
 
-Sist oppdatert: 2026-09-22
+Sist oppdatert: 2026-09-24
 
 Dette dokumentet brukes for siste sjekk før release og for å samle observasjoner etter lansering.
 
@@ -87,6 +87,27 @@ Noter observasjoner her:
 - Hvor alvorlig: Viktig Pro-forberedelse fullført.
 - Mulig løsning: Neste steg er å kontrollere at appen er gratis, og opprette SaldoPilot Pro som non-consumable in-app purchase til 39 kr.
 
+- Dato: 2026-09-24
+- Versjon/build: 1.0.3 build 1
+- Enhet: App Store
+- Hva skjedde: Versjon 1.0.3 build 1 ble godkjent og ligger på App Store.
+- Hvor alvorlig: Stabilitets- og forbedringsversjon fullført.
+- Mulig løsning: Neste steg er Pro-test av kjøp/restore og planlegging av Milestone 17.
+
+- Dato: 2026-09-24
+- Versjon/build: 1.0.3 build 1
+- Enhet: App Store/TestFlight-miljø
+- Hva skjedde: SaldoPilot Pro-kjøp fungerte, status endret seg til Pro, status holdt etter restart, og restore fungerte.
+- Hvor alvorlig: Pro-grunnlag bekreftet.
+- Mulig løsning: Eksisterende basisfunksjoner forblir gratis. Første Pro-verdi blir nye planleggingsfunksjoner i Milestone 17.
+
+- Dato: 2026-09-24
+- Versjon/build: Xcode-build med budsjettgrunnlag
+- Enhet: iPhone med eksisterende iCloud-data
+- Hva skjedde: Etter installasjon direkte fra Xcode viste iPhone midlertidig doble beløp, mens iPad fortsatt viste riktige tall. Etter sletting av Xcode-build, restart og reinstall fra App Store ble tallene riktige igjen. SaldoPilot Pro-status vises riktig som Pro.
+- Hvor alvorlig: Viktig testobservasjon for SwiftData/iCloud-migrering.
+- Mulig løsning: Ikke test ny SwiftData-migrering videre på hoved-iPhone direkte fra Xcode. Bruk TestFlight, simulator eller separat testenhet før App Store-release.
+
 ## Kjente Punkter
 
 - Appen bruker iCloud privat database når tilgjengelig. Derfor kan data komme tilbake etter reinstall dersom iCloud-sync er aktiv.
@@ -95,7 +116,7 @@ Noter observasjoner her:
 
 ## Mulige Endringer Etter Testing
 
-Ingen åpne punkter i denne seksjonen akkurat nå.
+- JSON-import: kategori `Hjem` kommer inn som `Annet` ved restore/import fra JSON. CSV-restore fungerer riktig. Undersøk kategori-mapping for norsk kategorinavn i JSON-import.
 
 ## Endringer Etter Testing Som Er Håndtert
 
@@ -105,27 +126,41 @@ Ingen åpne punkter i denne seksjonen akkurat nå.
 
 ## Neste Planlagte Arbeid
 
-1. Teste 1.0.3-endringene med ekte data på iPhone og iPad.
-2. Teste kjøp og restore i Sandbox/TestFlight.
-3. Bestemme hvilke funksjoner som faktisk skal kreve Pro.
-4. Låse Pro-funksjoner først etter at kjøp/restore er stabilt.
+1. Teste første budsjettgrunnlag på enhet med eksisterende App Store-data.
+2. Teste Pro-gate for Budsjett med gratis og Pro-status.
+3. Deretter legge til prognose for månedsslutt.
+
+## Testplan For Milestone 17 - Budsjett
+
+- [x] Bygg prosjektet i Xcode uten feil
+- [ ] Test migrering via TestFlight eller separat testenhet før hoved-iPhone brukes igjen
+- [ ] Installer på enhet med eksisterende iCloud-data
+- [ ] Bekreft at gamle poster fortsatt vises etter SwiftData-migrering
+- [ ] Åpne Budsjett som Pro-bruker
+- [ ] Sett budsjett på minst to kategorier
+- [ ] Sjekk at totalbudsjett, brukt og igjen oppdateres
+- [ ] Registrer ny utgift i en budsjettert kategori og sjekk at brukt/igjen endres
+- [ ] Test at Budsjett viser Pro-informasjon når Pro ikke er låst opp
+- [ ] Test norsk språk
+- [ ] Test engelsk språk
+- [ ] Test thai språk
 
 Testplan: `AppStore/ProTesting.md`
 
 ## Testplan For 1.0.3
 
-- [ ] Bygg prosjektet i Xcode uten feil
-- [ ] Opprett eller finn en gjentakende post med minst én fremtidig post
-- [ ] Endre kategori på bare denne posten og sjekk at fremtidige poster ikke endres
-- [ ] Endre kategori på denne og fremtidige poster og sjekk at fremtidige matchende poster oppdateres
-- [ ] Slett bare denne posten og sjekk at fremtidige poster blir liggende
-- [ ] Slett denne og fremtidige poster og sjekk at fremtidige matchende poster slettes
-- [ ] Endre filter i Poster og sjekk at beløpsbanneret følger filteret
-- [ ] Registrer både utgift og inntekt på samme kategori og sjekk at Statistikk viser netto kategori
-- [ ] Test norsk språk
-- [ ] Test engelsk språk
-- [ ] Test thai språk
-- [ ] Test iCloud-sync etter endring av gjentakende poster
+- [x] Bygg prosjektet i Xcode uten feil
+- [x] Opprett eller finn en gjentakende post med minst én fremtidig post
+- [x] Endre kategori på bare denne posten og sjekk at fremtidige poster ikke endres
+- [x] Endre kategori på denne og fremtidige poster og sjekk at fremtidige matchende poster oppdateres
+- [x] Slett bare denne posten og sjekk at fremtidige poster blir liggende
+- [x] Slett denne og fremtidige poster og sjekk at fremtidige matchende poster slettes
+- [x] Endre filter i Poster og sjekk at beløpsbanneret følger filteret
+- [x] Registrer både utgift og inntekt på samme kategori og sjekk at Statistikk viser netto kategori
+- [x] Test norsk språk
+- [x] Test engelsk språk
+- [x] Test thai språk
+- [x] Test iCloud-sync etter endring av gjentakende poster
 
 ## Milestone 16 - Pro-Grunnlag Sjekkliste
 
@@ -147,9 +182,10 @@ Testplan: `AppStore/ProTesting.md`
 - [x] Pro-funksjoner er definert
 - [x] StoreKit 2-oppsett er vurdert
 - [x] StoreKit 2-grunnlag er lagt inn i appen
-- [ ] Kjøp fungerer i Sandbox/TestFlight
-- [ ] Restore purchases fungerer i Sandbox/TestFlight
+- [x] Kjøp fungerer i Sandbox/TestFlight/App Store-miljø
+- [x] Restore purchases fungerer i Sandbox/TestFlight/App Store-miljø
 - [x] Ingen bank-, skatte- eller personopplysninger er lagret i repoet
 - [x] Enkel Pro-statusmodell er lagt inn i appen
 - [x] Pro-informasjonsskjerm er lagt inn i Innstillinger
-- [x] Funksjonslåsing er ikke aktivert ennå
+- [x] Eksisterende basisfunksjoner skal forbli gratis
+- [x] Første Pro-verdi blir nye budsjett/prognose-funksjoner
