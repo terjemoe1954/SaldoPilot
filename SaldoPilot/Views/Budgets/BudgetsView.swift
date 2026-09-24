@@ -15,15 +15,13 @@ struct BudgetsView: View {
     @Query(sort: \Budget.monthStart) private var budgets: [Budget]
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
 
-    @State private var selectedCategory: CategoryKind?
-    @State private var selectedAmount: Decimal = .zero
-    @State private var isShowingBudgetForm = false
+    @State private var budgetDraft: BudgetDraft?
     @State private var isShowingProInfo = false
 
     var body: some View {
         NavigationStack {
             Group {
-                if proPurchaseStore.isProUnlocked {
+                if canUseBudgets {
                     budgetContent
                 } else {
                     proLockedContent
@@ -31,7 +29,7 @@ struct BudgetsView: View {
             }
             .navigationTitle("Budgets")
             .toolbar {
-                if proPurchaseStore.isProUnlocked {
+                if canUseBudgets {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             openBudgetForm(category: .home)
@@ -41,14 +39,12 @@ struct BudgetsView: View {
                     }
                 }
             }
-            .sheet(isPresented: $isShowingBudgetForm) {
-                if let selectedCategory {
-                    BudgetFormView(
-                        category: selectedCategory,
-                        amount: selectedAmount,
-                        onSave: saveBudget
-                    )
-                }
+            .sheet(item: $budgetDraft) { draft in
+                BudgetFormView(
+                    category: draft.category,
+                    amount: draft.amount,
+                    onSave: saveBudget
+                )
             }
             .sheet(isPresented: $isShowingProInfo) {
                 NavigationStack {
@@ -59,6 +55,14 @@ struct BudgetsView: View {
                 await proPurchaseStore.refresh()
             }
         }
+    }
+
+    private var canUseBudgets: Bool {
+        #if DEBUG
+        true
+        #else
+        proPurchaseStore.isProUnlocked
+        #endif
     }
 
     private var budgetContent: some View {
@@ -143,9 +147,10 @@ struct BudgetsView: View {
     }
 
     private func openBudgetForm(category: CategoryKind) {
-        selectedCategory = category
-        selectedAmount = currentMonthBudgets.first { $0.category == category }?.amount ?? .zero
-        isShowingBudgetForm = true
+        budgetDraft = BudgetDraft(
+            category: category,
+            amount: currentMonthBudgets.first { $0.category == category }?.amount ?? .zero
+        )
     }
 
     private func saveBudget(category: CategoryKind, amount: Decimal) {
@@ -161,7 +166,16 @@ struct BudgetsView: View {
                 )
             )
         }
+
+        try? modelContext.save()
     }
+}
+
+private struct BudgetDraft: Identifiable {
+    let category: CategoryKind
+    let amount: Decimal
+
+    var id: String { category.rawValue }
 }
 
 private struct BudgetSummary {

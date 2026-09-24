@@ -108,6 +108,13 @@ Noter observasjoner her:
 - Hvor alvorlig: Viktig testobservasjon for SwiftData/iCloud-migrering.
 - Mulig løsning: Ikke test ny SwiftData-migrering videre på hoved-iPhone direkte fra Xcode. Bruk TestFlight, simulator eller separat testenhet før App Store-release.
 
+- Dato: 2026-09-24
+- Versjon/build: 1.0.4 build 3
+- Enhet: TestFlight på to enheter
+- Hva skjedde: `CD_Budget` ble generert i CloudKit Development og schema ble deployet til Production. Budsjett syncer nå mellom begge enheter.
+- Hvor alvorlig: Budsjett-sync bekreftet.
+- Mulig løsning: Fortsett språk/pro-gate-test før ny review.
+
 ## Kjente Punkter
 
 - Appen bruker iCloud privat database når tilgjengelig. Derfor kan data komme tilbake etter reinstall dersom iCloud-sync er aktiv.
@@ -140,6 +147,7 @@ Noter observasjoner her:
 - [x] Sett budsjett på minst to kategorier
 - [x] Sjekk at totalbudsjett, brukt og igjen oppdateres
 - [x] Registrer ny utgift i en budsjettert kategori og sjekk at brukt/igjen endres
+- [x] Test budsjett-sync mellom to TestFlight-enheter etter eksplisitt lagring og noen minutters venting
 - [ ] Test at Budsjett viser Pro-informasjon når Pro ikke er låst opp
 - [ ] Test norsk språk
 - [ ] Test engelsk språk
