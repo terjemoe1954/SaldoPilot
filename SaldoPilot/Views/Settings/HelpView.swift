@@ -207,7 +207,7 @@ private extension HelpArticle {
                     HelpItem(
                         title: "Statistikk",
                         systemImage: "chart.bar.xaxis",
-                        body: "Statistikk viser blant annet utgifter per kategori og antall transaksjoner. Dette gjør det lettere å se hvor pengene går i valgt periode."
+                        body: "Statistikk viser inntekter og utgifter per måned, nettoutvikling, utestående beløp og kategoribalanse. Under Kategoribalanse velger du ønsket måned i månedsmenyen. Diagrammet og postlisten oppdateres automatisk."
                     ),
                     HelpItem(
                         title: "AI-oppsummering",
@@ -228,6 +228,36 @@ private extension HelpArticle {
                         title: "Tidspunkt",
                         systemImage: "clock",
                         body: "Vanlige forfallsvarsler kommer kl. 09:00. Forfalte utgifter og ventende inntekter varsles kl. 18:00. Hvis du tester forfall i dag etter kl. 09:00, kan appen legge et testnært varsel omtrent ett minutt frem i tid."
+                    )
+                ]
+            ),
+            HelpSection(
+                title: "Rapporter og utskrift",
+                items: [
+                    HelpItem(
+                        title: "1. Åpne Rapporter",
+                        systemImage: "1.circle",
+                        body: "Gå til Innstillinger og trykk Rapporter under Administrer."
+                    ),
+                    HelpItem(
+                        title: "2. Velg rapporttype og måned",
+                        systemImage: "2.circle",
+                        body: "Velg Forfallsdato for en planlagt månedsrapport med postene som forfaller i måneden. Velg Betalt dato for en kontantbasert rapport med inntekter som faktisk er mottatt og utgifter som faktisk er betalt i måneden. Velg deretter ønsket måned."
+                    ),
+                    HelpItem(
+                        title: "3. Velg hvilke poster som skal med",
+                        systemImage: "3.circle",
+                        body: "Slå på Inkluder arkiverte poster eller Inkluder kansellerte poster hvis disse skal være med. La valgene være av for en vanlig rapport."
+                    ),
+                    HelpItem(
+                        title: "4. Opprett PDF",
+                        systemImage: "4.circle",
+                        body: "Trykk Opprett PDF-rapport. SaldoPilot lager en A4-rapport med postliste, status, kategori og oppsummering. Lange rapporter får automatisk flere sider."
+                    ),
+                    HelpItem(
+                        title: "5. Del eller skriv ut",
+                        systemImage: "5.circle",
+                        body: "Trykk Del PDF for å lagre eller sende filen. Trykk Skriv ut rapport for å velge skriver, antall kopier og sider i iOS-utskriftsdialogen."
                     )
                 ]
             ),
@@ -303,7 +333,7 @@ private extension HelpArticle {
                 title: "Overview and statistics",
                 items: [
                     HelpItem(title: "Overview", systemImage: "chart.pie", body: "The front page is for quick control: what has arrived, what has been paid, what is due soon, and what is missing. Use it before paying bills."),
-                    HelpItem(title: "Statistics", systemImage: "chart.bar.xaxis", body: "Statistics shows expenses by category and transaction count. This helps you see where money goes in the selected period."),
+                    HelpItem(title: "Statistics", systemImage: "chart.bar.xaxis", body: "Statistics shows monthly income and expenses, net development, receivables, and category balance. Under Category balance, choose a month from the month menu. The chart and transaction list update automatically."),
                     HelpItem(title: "AI summary", systemImage: "sparkles", body: "AI summary can explain the numbers in simple text. External AI can be enabled or disabled in Settings.")
                 ]
             ),
@@ -312,6 +342,16 @@ private extension HelpArticle {
                 items: [
                     HelpItem(title: "Enable notifications", systemImage: "bell", body: "Go to Settings > Notifications and enable due today, due tomorrow, due in advance, or pending income. iOS must also allow notifications for SaldoPilot."),
                     HelpItem(title: "Timing", systemImage: "clock", body: "Normal due reminders arrive at 09:00. Overdue expenses and pending income are reminded at 18:00. If testing due today after 09:00, the app may schedule a near test reminder about one minute ahead.")
+                ]
+            ),
+            HelpSection(
+                title: "Reports and printing",
+                items: [
+                    HelpItem(title: "1. Open Reports", systemImage: "1.circle", body: "Go to Settings and tap Reports under Manage."),
+                    HelpItem(title: "2. Choose report type and month", systemImage: "2.circle", body: "Choose Due date for a planned monthly report containing transactions due that month. Choose Paid date for a cash-based report containing income actually received and expenses actually paid that month. Then choose the month."),
+                    HelpItem(title: "3. Choose which transactions to include", systemImage: "3.circle", body: "Enable Include archived transactions or Include cancelled transactions when needed. Leave both options off for a standard report."),
+                    HelpItem(title: "4. Create the PDF", systemImage: "4.circle", body: "Tap Create PDF report. SaldoPilot creates an A4 report with transactions, status, category, and a summary. Long reports continue automatically on additional pages."),
+                    HelpItem(title: "5. Share or print", systemImage: "5.circle", body: "Tap Share PDF to save or send the file. Tap Print report to choose a printer, copies, and pages in the iOS print dialog.")
                 ]
             ),
             HelpSection(
@@ -370,7 +410,7 @@ private extension HelpArticle {
                 title: "ภาพรวมและสถิติ",
                 items: [
                     HelpItem(title: "ภาพรวม", systemImage: "chart.pie", body: "หน้าแรกใช้ตรวจสอบอย่างรวดเร็วว่าอะไรเข้ามาแล้ว อะไรจ่ายแล้ว อะไรใกล้ครบกำหนด และอะไรยังขาดอยู่ ใช้ก่อนจ่ายบิลได้ดี"),
-                    HelpItem(title: "สถิติ", systemImage: "chart.bar.xaxis", body: "สถิติแสดงรายจ่ายตามหมวดหมู่และจำนวนรายการ ช่วยให้เห็นว่าเงินถูกใช้ไปที่ไหนในช่วงเวลาที่เลือก"),
+                    HelpItem(title: "สถิติ", systemImage: "chart.bar.xaxis", body: "สถิติแสดงรายรับและรายจ่ายรายเดือน แนวโน้มยอดสุทธิ ยอดค้างรับ และยอดสุทธิตามหมวดหมู่ ในส่วนยอดสุทธิตามหมวดหมู่ ให้เลือกเดือนจากเมนูเดือน แล้วแผนภูมิและรายการจะอัปเดตโดยอัตโนมัติ"),
                     HelpItem(title: "สรุปด้วย AI", systemImage: "sparkles", body: "สรุปด้วย AI สามารถอธิบายตัวเลขเป็นข้อความง่าย ๆ สามารถเปิดหรือปิดการใช้ AI ภายนอกได้ในการตั้งค่า")
                 ]
             ),
@@ -379,6 +419,16 @@ private extension HelpArticle {
                 items: [
                     HelpItem(title: "เปิดการแจ้งเตือน", systemImage: "bell", body: "ไปที่การตั้งค่า > การแจ้งเตือน แล้วเปิดรายการที่ต้องการ เช่น ครบกำหนดวันนี้ พรุ่งนี้ แจ้งล่วงหน้า หรือรายรับที่รอรับ iOS ต้องอนุญาตการแจ้งเตือนให้ SaldoPilot ด้วย"),
                     HelpItem(title: "เวลาแจ้งเตือน", systemImage: "clock", body: "การแจ้งเตือนครบกำหนดปกติมาเวลา 09:00 รายจ่ายค้างชำระและรายรับที่รอรับเตือนเวลา 18:00 หากทดสอบครบกำหนดวันนี้หลัง 09:00 แอปอาจตั้งการแจ้งเตือนทดสอบประมาณหนึ่งนาทีถัดไป")
+                ]
+            ),
+            HelpSection(
+                title: "รายงานและการพิมพ์",
+                items: [
+                    HelpItem(title: "1. เปิดรายงาน", systemImage: "1.circle", body: "ไปที่การตั้งค่า แล้วแตะรายงานในส่วนจัดการ"),
+                    HelpItem(title: "2. เลือกประเภทรายงานและเดือน", systemImage: "2.circle", body: "เลือกวันครบกำหนดเพื่อสร้างรายงานตามแผนที่รวมรายการซึ่งครบกำหนดในเดือนนั้น หรือเลือกวันที่ชำระเพื่อสร้างรายงานตามกระแสเงินสดที่รวมรายรับที่ได้รับจริงและรายจ่ายที่ชำระจริงในเดือนนั้น จากนั้นเลือกเดือนที่ต้องการ"),
+                    HelpItem(title: "3. เลือกรายการที่จะรวม", systemImage: "3.circle", body: "เปิดรวมรายการที่เก็บถาวรหรือรวมรายการที่ยกเลิกเมื่อต้องการ หากเป็นรายงานทั่วไปให้ปิดทั้งสองตัวเลือก"),
+                    HelpItem(title: "4. สร้าง PDF", systemImage: "4.circle", body: "แตะสร้างรายงาน PDF SaldoPilot จะสร้างรายงานขนาด A4 พร้อมรายการ สถานะ หมวดหมู่ และสรุป หากเนื้อหายาว ระบบจะแบ่งหน้าให้อัตโนมัติ"),
+                    HelpItem(title: "5. แชร์หรือพิมพ์", systemImage: "5.circle", body: "แตะแชร์ PDF เพื่อบันทึกหรือส่งไฟล์ แตะพิมพ์รายงานเพื่อเลือกเครื่องพิมพ์ จำนวนสำเนา และหน้าในหน้าต่างพิมพ์ของ iOS")
                 ]
             ),
             HelpSection(

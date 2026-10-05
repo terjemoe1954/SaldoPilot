@@ -12,6 +12,7 @@ import SwiftUI
 struct StatisticsView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
+    @State private var selectedCategoryMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
 
     var body: some View {
         NavigationStack {
@@ -20,7 +21,11 @@ struct StatisticsView: View {
                     StatisticsSummaryGrid(summary: snapshot.currentMonthSummary)
 
                     MonthlyComparisonChart(months: snapshot.months)
-                    CategoryBalanceChart(categories: snapshot.categoryBalances)
+                    CategoryBalanceChart(
+                        categories: snapshot.categoryBalances,
+                        months: snapshot.months,
+                        selectedMonth: $selectedCategoryMonth
+                    )
                     NetTrendChart(months: snapshot.months)
                     OutstandingAmountChart(months: snapshot.outstandingMonths)
                 }
@@ -35,7 +40,11 @@ struct StatisticsView: View {
     }
 
     private var snapshot: StatisticsSnapshot {
-        StatisticsSnapshot(transactions: activeTransactions, locale: selectedLanguage.locale)
+        StatisticsSnapshot(
+            transactions: activeTransactions,
+            locale: selectedLanguage.locale,
+            selectedCategoryMonth: selectedCategoryMonth
+        )
     }
 
     private var selectedLanguage: AppLanguage {
@@ -49,15 +58,18 @@ private struct StatisticsSnapshot {
     let categoryBalances: [CategoryStatistics]
     let outstandingMonths: [OutstandingMonthStatistics]
 
-    init(transactions: [Transaction], locale: Locale) {
+    init(transactions: [Transaction], locale: Locale, selectedCategoryMonth: Date) {
         let calendar = Calendar.current
         let now = Date.now
         let currentMonthInterval = calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: now, duration: 0)
         let currentMonthTransactions = transactions.filter { currentMonthInterval.contains($0.dueDate) }
+        let categoryMonthInterval = calendar.dateInterval(of: .month, for: selectedCategoryMonth)
+            ?? DateInterval(start: selectedCategoryMonth, duration: 0)
+        let categoryMonthTransactions = transactions.filter { categoryMonthInterval.contains($0.dueDate) }
 
         currentMonthSummary = StatisticsSummary(transactions: currentMonthTransactions)
         months = Self.makeMonthStatistics(transactions: transactions, calendar: calendar)
-        categoryBalances = Self.makeCategoryBalanceStatistics(transactions: currentMonthTransactions, locale: locale)
+        categoryBalances = Self.makeCategoryBalanceStatistics(transactions: categoryMonthTransactions, locale: locale)
         outstandingMonths = Self.makeOutstandingMonthStatistics(transactions: transactions, calendar: calendar)
     }
 
@@ -249,11 +261,22 @@ private struct MonthlyComparisonChart: View {
 
 private struct CategoryBalanceChart: View {
     let categories: [CategoryStatistics]
+    let months: [MonthStatistics]
+    @Binding var selectedMonth: Date
 
     var body: some View {
-        StatisticsChartSection(title: "Category balance this month") {
+        StatisticsChartSection(title: "Category balance") {
+            Picker("Month", selection: $selectedMonth) {
+                ForEach(months) { month in
+                    Text(month.monthStart, format: .dateTime.month(.wide).year())
+                        .tag(month.monthStart)
+                }
+            }
+            .pickerStyle(.menu)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             if categories.isEmpty {
-                StatisticsEmptyChartState(text: "No category activity this month.")
+                StatisticsEmptyChartState(text: "No category activity in the selected month.")
             } else {
                 Chart(categories) { category in
                     BarMark(

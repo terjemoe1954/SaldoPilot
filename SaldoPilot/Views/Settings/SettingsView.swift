@@ -101,6 +101,12 @@ struct SettingsView: View {
                         Label("Backup and export", systemImage: "externaldrive")
                     }
 
+                    NavigationLink {
+                        ReportsView()
+                    } label: {
+                        Label("Reports", systemImage: "printer")
+                    }
+
                     Button(role: .destructive) {
                         isShowingDeleteAllConfirmation = true
                     } label: {
@@ -122,7 +128,7 @@ struct SettingsView: View {
                     NavigationLink {
                         HelpView()
                     } label: {
-                        Label("Help", systemImage: "book")
+                        Label("User Guide", systemImage: "book")
                     }
 
                     Link(destination: privacyURL) {
