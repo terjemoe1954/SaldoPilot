@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<title>SaldoPilot - testdata og skjermbilder</title>
+<style>
+@page { size: A4 landscape; margin: 12mm; }
+body {
+    color: #17202a;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 10px;
+    line-height: 1.35;
+    margin: 0;
+}
+h1 { color: #0f3d5c; font-size: 24px; margin: 0 0 4px; }
+h2 { border-bottom: 1px solid #cfd8e3; color: #0f3d5c; font-size: 15px; margin: 18px 0 8px; padding-bottom: 4px; }
+p { margin: 0 0 8px; }
+.meta { color: #566573; font-size: 10px; margin-bottom: 10px; }
+.note { background: #eef7f4; border-left: 4px solid #2a9d8f; margin: 8px 0 12px; padding: 8px 10px; }
+table { border-collapse: collapse; margin: 8px 0 14px; width: 100%; page-break-inside: avoid; }
+th { background: #173f5f; color: white; font-weight: 700; text-align: left; }
+th, td { border: 1px solid #cfd8e3; padding: 5px 6px; vertical-align: top; }
+tr:nth-child(even) td { background: #f6f8fa; }
+.amount { text-align: right; white-space: nowrap; }
+.narrow { width: 1%; white-space: nowrap; }
+.small { font-size: 9px; }
+.page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+<h1>SaldoPilot - testdata og skjermbilder til App Store Connect</h1>
+<p class="meta">Dato: 16. september 2026 · Norsk skjermbildesett · TestFlight/App Store Connect</p>
+<p class="note">Bruk disse dataene for pene og realistiske skjermbilder. Ta JSON-backup før du sletter eller importerer data.</p>
+
+<h2>Anbefalt oppsett</h2>
+<table>
+<tr><th>Punkt</th><th>Anbefaling</th></tr>
+<tr><td>Språk</td><td>Norsk for første skjermbildesett. Ta eventuelt egne sett på engelsk og thai senere.</td></tr>
+<tr><td>Valuta</td><td>NOK / norske beløp.</td></tr>
+<tr><td>Dato</td><td>Datasettet er laget for september 2026. Hvis du tester senere, flytt datoene relativt slik at noen poster er forfalt, noen forfaller snart og noen ligger senere i måneden.</td></tr>
+<tr><td>Datamengde</td><td>15-18 poster er nok. Det gir liv i oversikt, statistikk og filtre uten at appen ser rotete ut.</td></tr>
+</table>
+
+<h2>Testdata</h2>
+<table class="small">
+<tr><th>Tittel</th><th>Type</th><th>Beløp</th><th>Kategori</th><th>Forfall</th><th>Status</th><th>Gjentakelse</th><th>Notat</th></tr>
+<tr><td>Lønn september</td><td>Inntekt</td><td class="amount">42 000</td><td>Income</td><td>25.09.2026</td><td>Venter</td><td>Månedlig</td><td>Fast månedslønn</td></tr>
+<tr><td>Freelance app-design</td><td>Inntekt</td><td class="amount">8 500</td><td>Developer</td><td>18.09.2026</td><td>Venter</td><td>Ingen</td><td>Prosjektbetaling</td></tr>
+<tr><td>Refusjon jobb</td><td>Inntekt</td><td class="amount">1 200</td><td>Income</td><td>17.09.2026</td><td>Venter</td><td>Ingen</td><td>Reiserefusjon</td></tr>
+<tr><td>Husleie</td><td>Utgift</td><td class="amount">14 500</td><td>Home</td><td>01.09.2026</td><td>Venter</td><td>Månedlig</td><td>Leilighet</td></tr>
+<tr><td>Strøm</td><td>Utgift</td><td class="amount">1 249</td><td>Home</td><td>17.09.2026</td><td>Venter</td><td>Månedlig</td><td>Estimert strømregning</td></tr>
+<tr><td>Matbutikk</td><td>Utgift</td><td class="amount">875</td><td>Grocery</td><td>16.09.2026</td><td>Venter</td><td>Ingen</td><td>Ukeshandel</td></tr>
+<tr><td>Busskort</td><td>Utgift</td><td class="amount">897</td><td>Transport</td><td>18.09.2026</td><td>Venter</td><td>Månedlig</td><td>Månedskort</td></tr>
+<tr><td>Apple Developer Program</td><td>Utgift</td><td class="amount">1 290</td><td>Developer</td><td>19.09.2026</td><td>Venter</td><td>Årlig</td><td>Utviklerkonto</td></tr>
+<tr><td>Netflix</td><td>Utgift</td><td class="amount">129</td><td>Subscriptions</td><td>21.09.2026</td><td>Venter</td><td>Månedlig</td><td>Streaming</td></tr>
+<tr><td>Mobilabonnement</td><td>Utgift</td><td class="amount">399</td><td>Communication</td><td>22.09.2026</td><td>Venter</td><td>Månedlig</td><td>Telefon</td></tr>
+<tr><td>Innboforsikring</td><td>Utgift</td><td class="amount">699</td><td>Insurance</td><td>24.09.2026</td><td>Venter</td><td>Månedlig</td><td>Forsikring</td></tr>
+<tr><td>Klær</td><td>Utgift</td><td class="amount">1 290</td><td>Clothes</td><td>23.09.2026</td><td>Venter</td><td>Ingen</td><td>Jakke og sko</td></tr>
+<tr><td>Sparekonto</td><td>Utgift</td><td class="amount">2 500</td><td>Savings</td><td>28.09.2026</td><td>Venter</td><td>Månedlig</td><td>Automatisk sparing</td></tr>
+<tr><td>Lege</td><td>Utgift</td><td class="amount">375</td><td>Health</td><td>13.09.2026</td><td>Venter</td><td>Ingen</td><td>Egenandel</td></tr>
+<tr><td>Kino</td><td>Utgift</td><td class="amount">220</td><td>Entertainment</td><td>15.09.2026</td><td>Betalt</td><td>Ingen</td><td>Helgetur</td></tr>
+<tr><td>Bursdagsgave</td><td>Utgift</td><td class="amount">600</td><td>Gifts</td><td>20.09.2026</td><td>Venter</td><td>Ingen</td><td>Gave</td></tr>
+<tr><td>Lotto</td><td>Utgift</td><td class="amount">120</td><td>Gambling</td><td>16.09.2026</td><td>Betalt</td><td>Ingen</td><td>Testkategori</td></tr>
+<tr><td>Kaffe med kunde</td><td>Utgift</td><td class="amount">185</td><td>Other</td><td>16.09.2026</td><td>Betalt</td><td>Ingen</td><td>Møte</td></tr>
+</table>
+
+<h2>Forventet uttrykk i appen</h2>
+<table>
+<tr><th>Område</th><th>Hva datasettet skal vise</th></tr>
+<tr><td>Oversikt</td><td>Inntekter, utgifter, netto og til gode får tydelige beløp.</td></tr>
+<tr><td>Forfalt</td><td>Husleie og Lege skal vises som forfalt hvis dagens dato er etter 13.09.2026.</td></tr>
+<tr><td>Neste forfall</td><td>Strøm eller Busskort bør bli neste kommende utgift, avhengig av dagens dato.</td></tr>
+<tr><td>Til gode</td><td>Lønn september, Freelance app-design og Refusjon jobb gir en fin tilgode-sum.</td></tr>
+<tr><td>Statistikk</td><td>Flere kategorier får ulike farger i grafen. Home blir størst, men ikke alene.</td></tr>
+<tr><td>AI-oppsummering</td><td>Kommende betalinger skal telle bare utgifter, ikke inntekter.</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h2>Skjermbilder du bør ta</h2>
+<table>
+<tr><th class="narrow">Nr.</th><th>Skjerm</th><th>Hva som bør være synlig</th><th>Hvorfor bildet er nyttig</th></tr>
+<tr><td>1</td><td>Oversikt</td><td>Kort for inntekter, utgifter, netto, til gode, forfalt og neste forfall.</td><td>Viser hovedverdien i appen med en gang.</td></tr>
+<tr><td>2</td><td>Oversikt med AI-oppsummering</td><td>AI-kort med kommende betalinger og ryddige tall.</td><td>Viser at appen hjelper brukeren å forstå økonomien.</td></tr>
+<tr><td>3</td><td>Poster</td><td>Liste med flere poster, typeikoner, status og filterlinje.</td><td>Viser at appen fungerer som en praktisk regningsoversikt.</td></tr>
+<tr><td>4</td><td>Poster - filter</td><td>Velg Forfalt, Neste forfall eller Til gode.</td><td>Viser at brukeren raskt kan finne viktige poster.</td></tr>
+<tr><td>5</td><td>Ny/rediger post</td><td>Skjema med tittel, beløp, type, kategori, dato og gjentakelse.</td><td>Viser hvor enkelt det er å legge inn en post.</td></tr>
+<tr><td>6</td><td>Statistikk</td><td>Kategori-graf og månedlig utvikling.</td><td>Viser innsikt og visuell oversikt.</td></tr>
+<tr><td>7</td><td>Statistikk - til gode</td><td>Rammen/grafen for tilgodebeløp nederst.</td><td>Viser at inntekter som ikke er mottatt håndteres separat.</td></tr>
+<tr><td>8</td><td>Innstillinger</td><td>Språk, varsler, backup/import/eksport.</td><td>Viser trygghet, kontroll og flerspråklighet.</td></tr>
+</table>
+
+<h2>Anbefalt App Store-rekkefølge</h2>
+<table>
+<tr><th>Rekkefølge</th><th>Skjermbilde</th><th>Kort budskap</th></tr>
+<tr><td>1</td><td>Oversikt</td><td>Se hva som kommer, hva som er betalt og hva du har til gode.</td></tr>
+<tr><td>2</td><td>Poster</td><td>Hold orden på faste og enkeltstående betalinger.</td></tr>
+<tr><td>3</td><td>Ny post</td><td>Legg inn beløp, kategori, forfall og gjentakelse raskt.</td></tr>
+<tr><td>4</td><td>Statistikk</td><td>Forstå hvor pengene går med tydelige grafer.</td></tr>
+<tr><td>5</td><td>Til gode / inntekter</td><td>Følg med på penger du venter på å motta.</td></tr>
+<tr><td>6</td><td>Innstillinger</td><td>Backup, import, eksport, språk og varsler.</td></tr>
+</table>
+
+<h2>Tekstforslag til skjermbilder</h2>
+<table>
+<tr><th>Skjerm</th><th>Norsk tekst</th></tr>
+<tr><td>Oversikt</td><td>Full kontroll på regninger og inntekter</td></tr>
+<tr><td>Poster</td><td>Se hva som er betalt, forfalt og kommende</td></tr>
+<tr><td>Ny post</td><td>Legg inn faste betalinger på sekunder</td></tr>
+<tr><td>Statistikk</td><td>Se hvor pengene går</td></tr>
+<tr><td>Til gode</td><td>Hold oversikt over penger du venter på</td></tr>
+<tr><td>Innstillinger</td><td>Backup, språk og varsler på ett sted</td></tr>
+</table>
+
+<h2>Kontroll før skjermbilder</h2>
+<table>
+<tr><th>Ferdig</th><th>Kontrollpunkt</th></tr>
+<tr><td>[ ]</td><td>Ingen ekte persondata eller private kontonavn vises.</td></tr>
+<tr><td>[ ]</td><td>Alle poster har ryddige titler og kategorier.</td></tr>
+<tr><td>[ ]</td><td>Kategorifargene i statistikk er ulike nok.</td></tr>
+<tr><td>[ ]</td><td>Til gode viser bare inntekter som ikke er mottatt.</td></tr>
+<tr><td>[ ]</td><td>Kommende betalinger viser bare utgifter.</td></tr>
+<tr><td>[ ]</td><td>Ingen tomme grafer eller rare nullverdier vises.</td></tr>
+<tr><td>[ ]</td><td>Norsk språk er aktivt for norske skjermbilder.</td></tr>
+</table>
+</body>
+</html>
