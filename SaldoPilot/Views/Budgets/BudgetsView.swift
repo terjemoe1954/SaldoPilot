@@ -53,6 +53,7 @@ struct BudgetsView: View {
             }
             .task {
                 await proPurchaseStore.refresh()
+                carryForwardBudgetsIfNeeded()
             }
         }
     }
@@ -117,11 +118,10 @@ struct BudgetsView: View {
         budgets.filter { Calendar.current.isDate($0.monthStart, equalTo: currentMonthStart, toGranularity: .month) }
     }
 
-    private var currentMonthExpenses: [Transaction] {
+    private var currentMonthTransactions: [Transaction] {
         transactions.filter { transaction in
             !transaction.isArchived &&
             transaction.status != .cancelled &&
-            transaction.type == .expense &&
             currentMonthInterval.contains(transaction.dueDate)
         }
     }
@@ -129,15 +129,20 @@ struct BudgetsView: View {
     private var budgetRows: [BudgetCategoryRow] {
         CategoryKind.sortedForDisplay(locale: locale).map { category in
             let budget = currentMonthBudgets.first { $0.category == category }
-            let spent = currentMonthExpenses
-                .filter { $0.category == category }
+            let categoryTransactions = currentMonthTransactions.filter { $0.category == category }
+            let income = categoryTransactions
+                .filter { $0.type == .income }
+                .totalAmount
+            let expenses = categoryTransactions
+                .filter { $0.type == .expense }
                 .totalAmount
             return BudgetCategoryRow(
                 category: category,
                 categoryTitle: category.localizedTitle(locale: locale),
                 systemImage: category.systemImage,
                 budgetAmount: budget?.amount ?? .zero,
-                spentAmount: spent
+                incomeAmount: income,
+                expenseAmount: expenses
             )
         }
     }
@@ -169,6 +174,41 @@ struct BudgetsView: View {
 
         try? modelContext.save()
     }
+
+    @MainActor
+    private func carryForwardBudgetsIfNeeded() {
+        guard canUseBudgets else { return }
+
+        let calendar = Calendar.current
+        let earlierBudgets = budgets.filter { $0.monthStart < currentMonthStart }
+        guard let sourceMonthStart = earlierBudgets.compactMap({ budget in
+            calendar.dateInterval(of: .month, for: budget.monthStart)?.start
+        }).max() else {
+            return
+        }
+
+        let sourceBudgets = earlierBudgets.filter {
+            calendar.isDate($0.monthStart, equalTo: sourceMonthStart, toGranularity: .month)
+        }
+        var currentCategories = Set(currentMonthBudgets.map(\.category))
+        var copiedBudget = false
+
+        for sourceBudget in sourceBudgets where !currentCategories.contains(sourceBudget.category) {
+            modelContext.insert(
+                Budget(
+                    category: sourceBudget.category,
+                    monthStart: currentMonthStart,
+                    amount: sourceBudget.amount
+                )
+            )
+            currentCategories.insert(sourceBudget.category)
+            copiedBudget = true
+        }
+
+        if copiedBudget {
+            try? modelContext.save()
+        }
+    }
 }
 
 private struct BudgetDraft: Identifiable {
@@ -180,15 +220,17 @@ private struct BudgetDraft: Identifiable {
 
 private struct BudgetSummary {
     let totalBudget: Decimal
-    let totalSpent: Decimal
+    let totalIncome: Decimal
+    let totalExpenses: Decimal
 
     init(rows: [BudgetCategoryRow]) {
         totalBudget = rows.reduce(.zero) { $0 + $1.budgetAmount }
-        totalSpent = rows.reduce(.zero) { $0 + $1.spentAmount }
+        totalIncome = rows.reduce(.zero) { $0 + $1.incomeAmount }
+        totalExpenses = rows.reduce(.zero) { $0 + $1.expenseAmount }
     }
 
     var remaining: Decimal {
-        totalBudget - totalSpent
+        totalBudget + totalIncome - totalExpenses
     }
 }
 
@@ -197,13 +239,15 @@ private struct BudgetCategoryRow: Identifiable {
     let categoryTitle: String
     let systemImage: String
     let budgetAmount: Decimal
-    let spentAmount: Decimal
+    let incomeAmount: Decimal
+    let expenseAmount: Decimal
 
     var id: String { category.rawValue }
-    var remainingAmount: Decimal { budgetAmount - spentAmount }
+    var netSpentAmount: Decimal { expenseAmount - incomeAmount }
+    var remainingAmount: Decimal { budgetAmount - netSpentAmount }
     var progress: Double {
         guard budgetAmount > .zero else { return 0 }
-        let spent = NSDecimalNumber(decimal: spentAmount).doubleValue
+        let spent = NSDecimalNumber(decimal: max(netSpentAmount, .zero)).doubleValue
         let budget = NSDecimalNumber(decimal: budgetAmount).doubleValue
         return min(max(spent / budget, 0), 1)
     }
@@ -215,7 +259,8 @@ private struct BudgetSummarySection: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
             BudgetMetricCard(title: "Budget", value: summary.totalBudget, systemImage: "target", tint: .blue)
-            BudgetMetricCard(title: "Spent", value: summary.totalSpent, systemImage: "creditcard", tint: .red)
+            BudgetMetricCard(title: "Income", value: summary.totalIncome, systemImage: "arrow.down.circle", tint: .green)
+            BudgetMetricCard(title: "Expenses", value: summary.totalExpenses, systemImage: "creditcard", tint: .red)
             BudgetMetricCard(title: "Remaining", value: summary.remaining, systemImage: "banknote", tint: summary.remaining >= .zero ? .green : .red)
         }
     }
@@ -260,7 +305,10 @@ private struct BudgetCategoryRowView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(row.categoryTitle)
                         .font(.subheadline.weight(.semibold))
-                    Text("Spent \(row.spentAmount.formattedCurrency) of \(row.budgetAmount.formattedCurrency)")
+                    Text("Income: \(row.incomeAmount.formattedCurrency)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Expenses: \(row.expenseAmount.formattedCurrency) · Budget: \(row.budgetAmount.formattedCurrency)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
