@@ -1,6 +1,6 @@
 //
 //  AIQueryView.swift
-//  SaldoPilot
+//   SaldoPilot
 //
 //  Created by Terje Moe on 13/09/2026.
 //
