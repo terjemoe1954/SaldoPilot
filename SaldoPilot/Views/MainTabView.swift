@@ -109,6 +109,7 @@ struct MainTabView: View {
     }
 
     private func synchronizeNotifications() async {
+        guard !AppLaunchConfiguration.usesIsolatedTestStore else { return }
         await NotificationScheduler.synchronize(transactions: transactions, settings: notificationSettings)
     }
 

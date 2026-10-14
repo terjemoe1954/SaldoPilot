@@ -12,6 +12,8 @@ struct TransactionFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
+    @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
 
     private let transaction: Transaction?
 
@@ -27,6 +29,9 @@ struct TransactionFormView: View {
     @State private var recurrenceIntervalMonths: Int
     @State private var notes: String
     @State private var isShowingRecurrenceScopeDialog = false
+    @State private var isShowingCoverageWarning = false
+    @State private var pendingCoverageScope: RecurrenceUpdateScope?
+    @State private var allowsInsufficientCoverage = false
 
     init(transaction: Transaction? = nil, intent: NewTransactionIntent = .transaction) {
         self.transaction = transaction
@@ -106,6 +111,23 @@ struct TransactionFormView: View {
             } message: {
                 Text("Choose whether the change should apply only to this transaction or also to matching future transactions.")
             }
+            .confirmationDialog(
+                "Not enough registered balance",
+                isPresented: $isShowingCoverageWarning,
+                titleVisibility: .visible
+            ) {
+                Button("Keep pending", role: .cancel) {
+                    pendingCoverageScope = nil
+                }
+                Button("Register as paid anyway", role: .destructive) {
+                    guard let pendingCoverageScope else { return }
+                    allowsInsufficientCoverage = true
+                    save(scope: pendingCoverageScope)
+                    self.pendingCoverageScope = nil
+                }
+            } message: {
+                Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
+            }
             .onChange(of: title) { _, newTitle in
                 updateSuggestedCategory(for: newTitle)
             }
@@ -121,6 +143,11 @@ struct TransactionFormView: View {
             .onChange(of: status) { _, newStatus in
                 if newStatus == .paid || newStatus == .received {
                     hasPaidDate = true
+                }
+            }
+            .onChange(of: hasPaidDate) { _, newValue in
+                if !newValue && (status == .paid || status == .received) {
+                    status = .pending
                 }
             }
         }
@@ -164,8 +191,27 @@ struct TransactionFormView: View {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedPaidDate = hasPaidDate ? paidDate : nil
-        let resolvedStatus = resolvedPaidDate == nil ? status : completedStatus(for: type)
+        let resolvedStatus: TransactionStatus
+        if resolvedPaidDate != nil {
+            resolvedStatus = completedStatus(for: type)
+        } else if status == .paid || status == .received {
+            resolvedStatus = .pending
+        } else {
+            resolvedStatus = status
+        }
         let resolvedIsCompleted = resolvedStatus == .paid || resolvedStatus == .received
+
+        if !allowsInsufficientCoverage,
+           resolvedIsCompleted,
+           type == .expense,
+           transaction?.isSettled != true,
+           let availableBalance,
+           amount > availableBalance {
+            pendingCoverageScope = scope
+            isShowingCoverageWarning = true
+            return
+        }
+
         let resolvedInterval = recurrence == .everyNMonths || recurrence == .custom ? recurrenceIntervalMonths : nil
 
         if let transaction {
@@ -216,6 +262,14 @@ struct TransactionFormView: View {
         dismiss()
     }
 
+    private var availableBalance: Decimal? {
+        AccountBalanceCalculator.availableBalance(
+            openingBalanceText: openingBalanceAmountText,
+            openingBalanceDate: Date(timeIntervalSince1970: openingBalanceDateTimestamp),
+            transactions: transactions
+        )
+    }
+
     private func completedStatus(for type: TransactionType) -> TransactionStatus {
         type == .income ? .received : .paid
     }
@@ -228,21 +282,7 @@ struct TransactionFormView: View {
     }()
 
     private static func parseAmount(_ value: String) -> Decimal? {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-
-        let decimalSeparator = Locale.current.decimalSeparator ?? "."
-        let groupingSeparator = Locale.current.groupingSeparator ?? ","
-        let normalized = trimmed
-            .replacingOccurrences(of: groupingSeparator, with: "")
-            .replacingOccurrences(of: decimalSeparator, with: ".")
-            .replacingOccurrences(of: ",", with: ".")
-
-        guard let amount = Decimal(string: normalized), amount > .zero else {
-            return nil
-        }
-
-        return amount
+        Decimal.currencyAmount(from: value)
     }
 }
 

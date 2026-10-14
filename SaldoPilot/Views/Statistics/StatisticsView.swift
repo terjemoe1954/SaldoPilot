@@ -62,10 +62,10 @@ private struct StatisticsSnapshot {
         let calendar = Calendar.current
         let now = Date.now
         let currentMonthInterval = calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: now, duration: 0)
-        let currentMonthTransactions = transactions.filter { currentMonthInterval.contains($0.dueDate) }
+        let currentMonthTransactions = transactions.filter { currentMonthInterval.containsHalfOpen($0.dueDate) }
         let categoryMonthInterval = calendar.dateInterval(of: .month, for: selectedCategoryMonth)
             ?? DateInterval(start: selectedCategoryMonth, duration: 0)
-        let categoryMonthTransactions = transactions.filter { categoryMonthInterval.contains($0.dueDate) }
+        let categoryMonthTransactions = transactions.filter { categoryMonthInterval.containsHalfOpen($0.dueDate) }
 
         currentMonthSummary = StatisticsSummary(transactions: currentMonthTransactions)
         months = Self.makeMonthStatistics(transactions: transactions, calendar: calendar)
@@ -78,7 +78,7 @@ private struct StatisticsSnapshot {
 
         return monthStarts.map { monthStart in
             let interval = calendar.dateInterval(of: .month, for: monthStart) ?? DateInterval(start: monthStart, duration: 0)
-            let monthTransactions = transactions.filter { interval.contains($0.dueDate) }
+            let monthTransactions = transactions.filter { interval.containsHalfOpen($0.dueDate) }
             return MonthStatistics(monthStart: monthStart, transactions: monthTransactions)
         }
     }
@@ -113,7 +113,7 @@ private struct StatisticsSnapshot {
 
         return monthStarts.compactMap { monthStart in
             let interval = calendar.dateInterval(of: .month, for: monthStart) ?? DateInterval(start: monthStart, duration: 0)
-            let monthTransactions = outstandingTransactions.filter { interval.contains($0.dueDate) }
+            let monthTransactions = outstandingTransactions.filter { interval.containsHalfOpen($0.dueDate) }
             guard !monthTransactions.isEmpty else { return nil }
             return OutstandingMonthStatistics(monthStart: monthStart, transactions: monthTransactions)
         }

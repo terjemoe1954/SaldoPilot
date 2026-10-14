@@ -45,41 +45,45 @@ Opprett SALDOPILOT_FUNN.md i prosjektets dokumentasjonsmappe. Hvert funn skal ha
 
 ## M0 – trygg oppstart og kartlegging
 
-- [ ] Les prosjektreglene og noter aktiv versjon/build, plattformkrav og datalagring.
-- [ ] Kartlegg modeller, summeringslogikk, gjentakelse, betalingshistorikk, iCloud, eksport og eventuell backup.
-- [ ] Kontroller git-status og bevar brukerens uferdige endringer.
-- [ ] Bygg dagens prosjekt og noter eksisterende feil og relevante advarsler.
-- [ ] Etabler separat testdatasett og skriv ned hvordan det holdes adskilt fra ekte data.
-- [ ] Dokumenter tilgjengelig backup, hva den inkluderer og om gjenoppretting er verifisert på en kopi.
-- [ ] Lag oversikt over skjermbilder og hovedflyt uten å endre funksjoner.
+- [x] Les prosjektreglene og noter aktiv versjon/build, plattformkrav og datalagring.
+- [x] Kartlegg modeller, summeringslogikk, gjentakelse, betalingshistorikk, iCloud, eksport og eventuell backup.
+- [x] Kontroller git-status og bevar brukerens uferdige endringer.
+- [x] Bygg dagens prosjekt og noter eksisterende feil og relevante advarsler.
+- [x] Etabler separat testdatasett og skriv ned hvordan det holdes adskilt fra ekte data.
+- [x] Dokumenter tilgjengelig backup, hva den inkluderer og om gjenoppretting er verifisert på en kopi.
+- [x] Lag oversikt over skjermbilder og hovedflyt uten å endre funksjoner.
+
+Status: Ferdig 14. oktober 2026. Se `Documentation/SALDOPILOT_FUNN.md`. Transaksjonsbackup er gjenopprettet og feltsammenlignet mellom to isolerte minnelagre; full appbackup finnes fortsatt ikke. Skjermkontroll er uttrykkelig merket «må testes på enhet». Aktiv database ble ikke brukt.
 
 Ferdig når: Dagens tilstand er dokumentert og videre testing kan utføres uten å endre brukerens aktive data.
 
 ## M1 – gjennomgang med en ny brukers øyne
 
-- [ ] Gå gjennom førstegangsbruk, tom database og bruk med mange poster.
-- [ ] Undersøk om en ny bruker forstår inntekt, utgift, saldo, forfall og betalt uten forklaring.
-- [ ] Kontroller opprette, redigere, slette, registrere betaling, finne historikk og filtrere.
-- [ ] Undersøk om aktive filtre, periode og valgt datotype er synlige i resultatet.
-- [ ] Kontroller tydelige titler, konsekvente begreper og forskjellen mellom «ingen poster» og «ingen treff».
-- [ ] Vurder om kategorier er konsekvent navngitt; ikke bytt interne modellnavn bare for å endre en visningstekst.
-- [ ] Kontroller om tilbakeknapp, avbryt og lagre oppfører seg forventet, også med ulagrede endringer.
-- [ ] Registrer funn med prioritet og skill subjektive ønsker fra reproduserbare feil.
+- [x] Gå gjennom førstegangsbruk, tom database og bruk med mange poster.
+- [x] Undersøk om en ny bruker forstår inntekt, utgift, saldo, forfall og betalt uten forklaring.
+- [x] Kontroller opprette, redigere, slette, registrere betaling, finne historikk og filtrere.
+- [x] Undersøk om aktive filtre, periode og valgt datotype er synlige i resultatet.
+- [x] Kontroller tydelige titler, konsekvente begreper og forskjellen mellom «ingen poster» og «ingen treff».
+- [x] Vurder om kategorier er konsekvent navngitt; ikke bytt interne modellnavn bare for å endre en visningstekst.
+- [x] Kontroller om tilbakeknapp, avbryt og lagre oppfører seg forventet, også med ulagrede endringer.
+- [x] Registrer funn med prioritet og skill subjektive ønsker fra reproduserbare feil.
+
+Status: Ferdig ved statisk gjennomgang 14. oktober 2026. Visuell kontroll, stor datamengde og gestbasert avbryt må testes på iPhone med isolert lager.
 
 Ferdig når: Alle hovedskjermer og brukerflyter er gjennomgått, og funnlisten viser de viktigste tiltakene først.
 
 ## M2 – beløp, datoer og betaling må være riktige
 
-- [ ] Verifiser fortegn, inntekt/utgift, avrunding og summering mot manuelt beregnede fasiter.
-- [ ] Undersøk desimalhåndtering og unngå at binær flyttallsavrunding gir feil økonomiske resultater.
-- [ ] Kontroller desimalkomma, desimalpunkt, limte beløp, null og store beløp. Definer hva som er gyldig input.
-- [ ] Kontroller periodegrenser, inkludert første/siste dag, månedsskifte, årsskifte og skuddår.
-- [ ] Kontroller datoer rundt tidssoner og sommertid slik at poster ikke flytter kalenderdag utilsiktet.
-- [ ] Avklar og dokumenter hva saldo betyr: perioderesultat, faktisk kontosaldo eller noe annet. Ikke endre betydningen uten avklaring.
+- [x] Verifiser fortegn, inntekt/utgift, avrunding og summering mot manuelt beregnede fasiter. (Syntetisk oktoberfasit: 10 000,10 − 1 234,55 = 8 765,55; annullerte, arkiverte og neste periodes poster utelatt.)
+- [x] Undersøk desimalhåndtering og unngå at binær flyttallsavrunding gir feil økonomiske resultater. (`Decimal`/`NSDecimalNumber` brukes nå gjennom parsing og valutavisning.)
+- [x] Kontroller desimalkomma, desimalpunkt, limte beløp, null og store beløp. Definert gyldig postbeløp: positivt, maksimalt to desimaler; vanlige norske/engelske skilletegn og valgfritt NOK/kr godtas.
+- [x] Kontroller periodegrenser, inkludert første/siste dag, månedsskifte, årsskifte og skuddår. (SP-012 rettet: sluttpunktet er nå eksklusivt.)
+- [x] Kontroller datoer rundt tidssoner og sommertid slik at poster ikke flytter kalenderdag utilsiktet. (Halvåpen periode kontrollert i `Europe/Oslo`, inkludert den 25 timer lange 25.10.2026.)
+- [x] Avklar og dokumenter hva saldo betyr: «Tilgjengelig» er startsaldo + mottatte inntekter − betalte utgifter fra valgt startsaldodato. «Netto» er perioderesultat for planlagte poster.
 - [ ] Kontroller om filtrering på forfallsdato og betalingsdato gir riktige og forståelige resultater.
 - [ ] Verifiser at betaling av en gjentakende post bevarer den betalte forekomstens beløp og dato når neste forfall beregnes.
-- [ ] Test intervallene appen faktisk støtter, spesielt dato 29., 30. og 31. og betaling lenge etter forfall.
-- [ ] Kontroller dobbelttrykk på «Betalt», redigering av betalt post og eventuell angre-funksjon.
+- [ ] Test intervallene appen faktisk støtter, spesielt dato 29., 30. og 31. og betaling lenge etter forfall. (Delvis: P1-datodrift etter februar bekreftet som SP-011; sen betaling gjenstår.)
+- [x] Kontroller dobbelttrykk på «Betalt», redigering av betalt post og eventuell angre-funksjon. (Idempotens og redigeringskonsistens rettet; angre finnes ikke og er registrert for senere vurdering.)
 - [ ] Avklar om manglende eldre betalingshistorikk skyldes dagens modell. Ikke konstruer historikk fra en nåværende forfallsdato.
 - [ ] Skriv målrettede tester for feil som rettes og økonomisk logikk med høy konsekvens.
 

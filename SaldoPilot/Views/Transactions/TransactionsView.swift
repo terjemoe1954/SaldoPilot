@@ -15,6 +15,8 @@ struct TransactionsView: View {
     @AppStorage(AppSettingsKey.showSettledTransactions) private var showSettledTransactions = true
     @AppStorage(AppSettingsKey.defaultPeriod) private var defaultPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.defaultDateType) private var defaultDateTypeRawValue = AppDefaultDateType.dueDate.rawValue
+    @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
+    @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
 
     @State private var selectedFilter: TransactionListFilter = .all
     @State private var advancedFilter = TransactionAdvancedFilter()
@@ -22,6 +24,8 @@ struct TransactionsView: View {
     @State private var transactionPendingDeletion: Transaction?
     @State private var isShowingAdvancedFilter = false
     @State private var isShowingDeleteConfirmation = false
+    @State private var transactionPendingCoverageConfirmation: Transaction?
+    @State private var isShowingCoverageWarning = false
 
     private let initialFilter: TransactionListFilter
     private var newTransactionAction: (() -> Void)?
@@ -55,12 +59,14 @@ struct TransactionsView: View {
                                 )
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button {
-                                    markCompleted(transaction)
-                                } label: {
-                                    Label("Mark paid", systemImage: "checkmark.circle")
+                                if !transaction.isSettled {
+                                    Button {
+                                        markCompleted(transaction)
+                                    } label: {
+                                        Label("Mark paid", systemImage: "checkmark.circle")
+                                    }
+                                    .tint(.green)
                                 }
-                                .tint(.green)
                             }
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
@@ -133,6 +139,23 @@ struct TransactionsView: View {
             .sheet(isPresented: $isShowingAdvancedFilter) {
                 TransactionFilterSheet(filter: $advancedFilter)
             }
+            .confirmationDialog(
+                "Not enough registered balance",
+                isPresented: $isShowingCoverageWarning,
+                titleVisibility: .visible
+            ) {
+                Button("Keep pending", role: .cancel) {
+                    transactionPendingCoverageConfirmation = nil
+                }
+                Button("Register as paid anyway", role: .destructive) {
+                    if let transactionPendingCoverageConfirmation {
+                        complete(transactionPendingCoverageConfirmation)
+                    }
+                    self.transactionPendingCoverageConfirmation = nil
+                }
+            } message: {
+                Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
+            }
             .onAppear {
                 applyDefaultFiltersIfNeeded()
             }
@@ -175,19 +198,12 @@ struct TransactionsView: View {
         return !transaction.isSettled
     }
 
-    private var availableAmount: Decimal {
-        filteredTransactions.reduce(.zero) { result, transaction in
-            guard transaction.isCompleted || transaction.status == .paid || transaction.status == .received else {
-                return result
-            }
-
-            switch transaction.type {
-            case .income:
-                return result + transaction.amount
-            case .expense:
-                return result - transaction.amount
-            }
-        }
+    private var availableAmount: Decimal? {
+        AccountBalanceCalculator.availableBalance(
+            openingBalanceText: openingBalanceAmountText,
+            openingBalanceDate: Date(timeIntervalSince1970: openingBalanceDateTimestamp),
+            transactions: transactions
+        )
     }
 
     private func applyDefaultFiltersIfNeeded() {
@@ -199,15 +215,25 @@ struct TransactionsView: View {
     }
 
     private func markCompleted(_ transaction: Transaction) {
-        let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
+        guard !transaction.isSettled else { return }
+
+        if transaction.type == .expense,
+           let availableAmount,
+           transaction.amount > availableAmount {
+            transactionPendingCoverageConfirmation = transaction
+            isShowingCoverageWarning = true
+            return
+        }
+
+        complete(transaction)
+    }
+
+    private func complete(_ transaction: Transaction) {
         transaction.paidDate = .now
         transaction.isCompleted = true
         transaction.status = transaction.type == .income ? .received : .paid
         transaction.markUpdated()
-
-        if !wasCompleted {
-            RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
-        }
+        RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
     }
 
     private func duplicate(_ transaction: Transaction) {
@@ -216,14 +242,11 @@ struct TransactionsView: View {
             amount: transaction.amount,
             type: transaction.type,
             dueDate: transaction.dueDate,
-            paidDate: transaction.paidDate,
-            status: transaction.status,
+            status: .pending,
             category: transaction.category,
             recurrence: transaction.recurrence,
             recurrenceIntervalMonths: transaction.recurrenceIntervalMonths,
-            notes: transaction.notes,
-            isCompleted: transaction.isCompleted,
-            isArchived: transaction.isArchived
+            notes: transaction.notes
         )
         modelContext.insert(copy)
     }
@@ -362,19 +385,7 @@ private struct TransactionAdvancedFilter: Equatable {
     }
 
     private func parseAmount(_ value: String) -> Decimal? {
-        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedValue.isEmpty else { return nil }
-
-        let formatter = NumberFormatter()
-        formatter.locale = .current
-        formatter.numberStyle = .decimal
-
-        if let number = formatter.number(from: trimmedValue) {
-            return number.decimalValue
-        }
-
-        let normalizedValue = trimmedValue.replacingOccurrences(of: ",", with: ".")
-        return Decimal(string: normalizedValue, locale: Locale(identifier: "en_US_POSIX"))
+        Decimal.localizedValue(from: value)
     }
 }
 
@@ -486,7 +497,7 @@ private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
             return true
         case .thisMonth, .previousMonth, .thisYear, .custom:
             guard let date else { return false }
-            return dateInterval.contains(date)
+            return dateInterval.containsHalfOpen(date)
         }
     }
 
@@ -598,24 +609,29 @@ private enum TransactionFilterType: String, CaseIterable, Identifiable {
 }
 
 private struct AvailableAmountBanner: View {
-    let amount: Decimal
+    let amount: Decimal?
 
     var body: some View {
         HStack {
             Spacer(minLength: 0)
 
             HStack(spacing: 8) {
-                Image(systemName: amount < .zero ? "minus.circle.fill" : "checkmark.circle.fill")
+                Image(systemName: systemImage)
                     .font(.caption.weight(.semibold))
                     .accessibilityHidden(true)
 
-                Text("Available")
-                    .font(.caption.weight(.semibold))
+                if let amount {
+                    Text("Available")
+                        .font(.caption.weight(.semibold))
 
-                Text(amount.formattedCurrency)
-                    .font(.subheadline.weight(.bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    Text(amount.formattedCurrency)
+                        .font(.subheadline.weight(.bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                } else {
+                    Text("Set opening balance in Settings")
+                        .font(.caption.weight(.semibold))
+                }
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 14)
@@ -630,8 +646,14 @@ private struct AvailableAmountBanner: View {
         .background(.bar)
     }
 
+    private var systemImage: String {
+        guard let amount else { return "exclamationmark.circle.fill" }
+        return amount < .zero ? "minus.circle.fill" : "checkmark.circle.fill"
+    }
+
     private var tint: Color {
-        amount < .zero ? .red : .green
+        guard let amount else { return .orange }
+        return amount < .zero ? .red : .green
     }
 }
 
@@ -1117,10 +1139,15 @@ private struct TransactionDetailView: View {
 
 private struct RegisterCompletionDateView: View {
     @Environment(\.dismiss) private var dismiss
+    @Query private var transactions: [Transaction]
+    @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
+    @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
 
     let transaction: Transaction
     @Binding var completionDate: Date
     let modelContext: ModelContext
+
+    @State private var isShowingCoverageWarning = false
 
     var body: some View {
         NavigationStack {
@@ -1145,6 +1172,18 @@ private struct RegisterCompletionDateView: View {
                     }
                 }
             }
+            .confirmationDialog(
+                "Not enough registered balance",
+                isPresented: $isShowingCoverageWarning,
+                titleVisibility: .visible
+            ) {
+                Button("Keep pending", role: .cancel) { }
+                Button("Register as paid anyway", role: .destructive) {
+                    completeRegistration()
+                }
+            } message: {
+                Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
+            }
         }
     }
 
@@ -1161,7 +1200,27 @@ private struct RegisterCompletionDateView: View {
     }
 
     private func registerCompletion() {
-        let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
+        if !transaction.isSettled,
+           transaction.type == .expense,
+           let availableBalance,
+           transaction.amount > availableBalance {
+            isShowingCoverageWarning = true
+            return
+        }
+
+        completeRegistration()
+    }
+
+    private var availableBalance: Decimal? {
+        AccountBalanceCalculator.availableBalance(
+            openingBalanceText: openingBalanceAmountText,
+            openingBalanceDate: Date(timeIntervalSince1970: openingBalanceDateTimestamp),
+            transactions: transactions
+        )
+    }
+
+    private func completeRegistration() {
+        let wasCompleted = transaction.isSettled
         transaction.paidDate = completionDate
         transaction.status = transaction.type == .income ? .received : .paid
         transaction.isCompleted = true
@@ -1185,7 +1244,7 @@ private extension TransactionDatePeriod {
         let endDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: customEndDate)) ?? customEndDate
         let lowerBound = min(startDate, endDate)
         let upperBound = max(startDate, endDate)
-        return DateInterval(start: lowerBound, end: upperBound).contains(date)
+        return DateInterval(start: lowerBound, end: upperBound).containsHalfOpen(date)
     }
 }
 

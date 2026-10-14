@@ -96,7 +96,7 @@ struct DashboardView: View {
     }
 
     private var periodTransactions: [Transaction] {
-        activeTransactions.filter { periodInterval.contains($0.dueDate) }
+        activeTransactions.filter { periodInterval.containsHalfOpen($0.dueDate) }
     }
 
     private var summary: DashboardSummary {
@@ -148,7 +148,7 @@ struct DashboardView: View {
             $0.type == .income &&
             $0.status == .pending &&
             !$0.isCompleted &&
-            periodInterval.contains($0.dueDate)
+            periodInterval.containsHalfOpen($0.dueDate)
         }
 
         var items: [DashboardAttentionItem] = []

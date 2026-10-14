@@ -67,7 +67,7 @@ enum AIQueryEngine {
         let matches = transactions.filter { transaction in
             transaction.type == .expense &&
             transaction.category == category &&
-            interval?.contains(transaction.dueDate) == true
+            interval?.containsHalfOpen(transaction.dueDate) == true
         }.sortedByDueDate
 
         let categoryName = localizedResource(category.title, locale: locale)
@@ -88,8 +88,8 @@ enum AIQueryEngine {
         }
 
         let changes = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, difference: Decimal, matches: [Transaction])? in
-            let current = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.contains($0.dueDate) }
-            let previous = transactions.filter { $0.type == .expense && $0.category == category && previousMonth.contains($0.dueDate) }
+            let current = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.containsHalfOpen($0.dueDate) }
+            let previous = transactions.filter { $0.type == .expense && $0.category == category && previousMonth.containsHalfOpen($0.dueDate) }
             let difference = current.totalAmount - previous.totalAmount
             guard difference > 0 else { return nil }
             return (category, difference, current.sortedByDueDate)
@@ -117,7 +117,7 @@ enum AIQueryEngine {
         }
 
         let categoryTotals = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, amount: Decimal, matches: [Transaction])? in
-            let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.contains($0.dueDate) }
+            let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.containsHalfOpen($0.dueDate) }
             guard !matches.isEmpty else { return nil }
             return (category, matches.totalAmount, matches.sortedByDueDate)
         }
@@ -166,7 +166,7 @@ enum AIQueryEngine {
             return AIQueryResult(title: localizedValue("AI answer", locale: locale), answer: localizedValue("I could not read the current period.", locale: locale), transactions: [])
         }
 
-        let currentTransactions = transactions.filter { currentMonth.contains($0.dueDate) }
+        let currentTransactions = transactions.filter { currentMonth.containsHalfOpen($0.dueDate) }
         let income = currentTransactions.filter { $0.type == .income }.totalAmount
         let expenses = currentTransactions.filter { $0.type == .expense }.totalAmount
         let net = income - expenses

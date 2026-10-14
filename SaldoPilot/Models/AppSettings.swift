@@ -146,4 +146,10 @@ enum AppSettingsKey {
     static let notifyPendingIncome = "settings.notifyPendingIncome"
     static let allowExternalAI = "settings.allowExternalAI"
     static let proStatus = "settings.proStatus"
+    static let openingBalanceAmount = AppLaunchConfiguration.usesIsolatedTestStore
+        ? "settings.test.openingBalanceAmount"
+        : "settings.openingBalanceAmount"
+    static let openingBalanceDate = AppLaunchConfiguration.usesIsolatedTestStore
+        ? "settings.test.openingBalanceDate"
+        : "settings.openingBalanceDate"
 }

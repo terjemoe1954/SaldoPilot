@@ -122,7 +122,7 @@ struct BudgetsView: View {
         transactions.filter { transaction in
             !transaction.isArchived &&
             transaction.status != .cancelled &&
-            currentMonthInterval.contains(transaction.dueDate)
+            currentMonthInterval.containsHalfOpen(transaction.dueDate)
         }
     }
 

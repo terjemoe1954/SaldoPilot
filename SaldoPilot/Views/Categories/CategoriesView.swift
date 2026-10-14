@@ -97,7 +97,7 @@ private enum CategoryPeriod: String, CaseIterable, Identifiable {
 
     func includes(_ date: Date, interval: DateInterval?) -> Bool {
         guard let interval else { return true }
-        return interval.contains(date)
+        return interval.containsHalfOpen(date)
     }
 }
 

@@ -85,7 +85,7 @@ enum AIInsightEngine {
     private static func financialSituationInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
         let now = Date.now
         guard let currentMonth = calendar.dateInterval(of: .month, for: now) else { return nil }
-        let currentTransactions = transactions.filter { currentMonth.contains($0.dueDate) }
+        let currentTransactions = transactions.filter { currentMonth.containsHalfOpen($0.dueDate) }
         guard !currentTransactions.isEmpty else { return nil }
 
         let income = currentTransactions.filter { $0.type == .income }.totalAmount
@@ -116,8 +116,8 @@ enum AIInsightEngine {
             let previousMonth = calendar.dateInterval(of: .month, for: previousMonthDate)
         else { return nil }
 
-        let currentExpenses = transactions.filter { $0.type == .expense && currentMonth.contains($0.dueDate) }.totalAmount
-        let previousExpenses = transactions.filter { $0.type == .expense && previousMonth.contains($0.dueDate) }.totalAmount
+        let currentExpenses = transactions.filter { $0.type == .expense && currentMonth.containsHalfOpen($0.dueDate) }.totalAmount
+        let previousExpenses = transactions.filter { $0.type == .expense && previousMonth.containsHalfOpen($0.dueDate) }.totalAmount
         guard currentExpenses > 0 || previousExpenses > 0 else { return nil }
 
         let difference = currentExpenses - previousExpenses
@@ -230,7 +230,7 @@ enum AIInsightEngine {
     private static func savingsInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
         guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else { return nil }
         let categoryTotals = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, amount: Decimal)? in
-            let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.contains($0.dueDate) }
+            let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.containsHalfOpen($0.dueDate) }
             guard !matches.isEmpty else { return nil }
             return (category, matches.totalAmount)
         }

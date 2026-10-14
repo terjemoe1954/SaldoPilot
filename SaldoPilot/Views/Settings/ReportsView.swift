@@ -118,7 +118,7 @@ struct ReportsView: View {
                 || transaction.effectiveStatus == .paid
                 || transaction.effectiveStatus == .received
 
-            return interval.contains(date)
+            return interval.containsHalfOpen(date)
                 && (hasReportableStatus || (includeCancelled && transaction.status == .cancelled))
                 && (includeArchived || !transaction.isArchived)
                 && (includeCancelled || transaction.status != .cancelled)
