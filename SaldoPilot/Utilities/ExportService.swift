@@ -9,11 +9,18 @@ import Foundation
 
 @MainActor
 enum ExportService {
-    static func makeJSONBackup(transactions: [Transaction]) throws -> URL {
+    static func makeJSONBackup(
+        transactions: [Transaction],
+        budgets: [Budget] = [],
+        settings: BackupAppSettings? = nil
+    ) throws -> URL {
         let payload = ExportPayload(
+            formatVersion: 4,
             exportedAt: .now,
             categories: CategoryKind.allCases.map(ExportCategory.init),
-            transactions: transactions.map(ExportTransaction.init)
+            transactions: transactions.map(ExportTransaction.init),
+            budgets: budgets.map(ExportBudget.init),
+            settings: settings
         )
 
         let encoder = JSONEncoder()
@@ -69,7 +76,9 @@ enum ExportService {
 
         let csv = ([headers.joined(separator: ",")] + rows).joined(separator: "\n")
         let url = exportURL(prefix: "SaldoPilot-Transactions", extension: "csv")
-        try Data(csv.utf8).write(to: url, options: .atomic)
+        var data = Data([0xEF, 0xBB, 0xBF])
+        data.append(contentsOf: csv.utf8)
+        try data.write(to: url, options: .atomic)
         return url
     }
 
@@ -90,15 +99,43 @@ enum ExportService {
     }
 
     private static func csvEscaped(_ value: String) -> String {
-        let escapedValue = value.replacingOccurrences(of: "\"", with: "\"\"")
+        let safeValue: String
+        let firstMeaningfulCharacter = value.drop(while: { $0 == " " }).first
+        if let firstMeaningfulCharacter, "=+-@\t\r".contains(firstMeaningfulCharacter) {
+            safeValue = "'" + value
+        } else {
+            safeValue = value
+        }
+        let escapedValue = safeValue.replacingOccurrences(of: "\"", with: "\"\"")
         return "\"\(escapedValue)\""
     }
 }
 
 private struct ExportPayload: Encodable {
+    let formatVersion: Int
     let exportedAt: Date
     let categories: [ExportCategory]
     let transactions: [ExportTransaction]
+    let budgets: [ExportBudget]
+    let settings: BackupAppSettings?
+}
+
+private struct ExportBudget: Encodable {
+    let id: UUID
+    let category: String
+    let monthStart: Date
+    let amount: String
+    let createdAt: Date
+    let updatedAt: Date
+
+    init(budget: Budget) {
+        id = budget.id
+        category = budget.category.rawValue
+        monthStart = budget.monthStart
+        amount = budget.amount.description
+        createdAt = budget.createdAt
+        updatedAt = budget.updatedAt
+    }
 }
 
 private struct ExportCategory: Encodable {
@@ -124,6 +161,8 @@ private struct ExportTransaction: Encodable {
     let category: String
     let recurrence: String
     let recurrenceIntervalMonths: String?
+    let recurrenceSeriesID: UUID?
+    let recurrenceAnchorDay: Int?
     let notes: String
     let createdAt: Date
     let updatedAt: Date
@@ -141,6 +180,8 @@ private struct ExportTransaction: Encodable {
         category = transaction.category.rawValue
         recurrence = transaction.recurrence.rawValue
         recurrenceIntervalMonths = transaction.recurrenceIntervalMonths?.formatted()
+        recurrenceSeriesID = transaction.recurrenceSeriesID
+        recurrenceAnchorDay = transaction.recurrenceAnchorDay
         notes = transaction.notes
         createdAt = transaction.createdAt
         updatedAt = transaction.updatedAt

@@ -177,7 +177,7 @@ private extension HelpArticle {
                     HelpItem(
                         title: "Finne riktig post",
                         systemImage: "line.3.horizontal.decrease.circle",
-                        body: "Bruk hurtigfiltrene øverst for alle, forfalt, neste forfall, kommende, betalt eller tilgode. Filterknappen gir flere valg som periode, dato-type, status, type, kategori og beløp."
+                        body: "Søk etter navn, notat eller kategori. Bruk hurtigfiltrene for alle, forfalt, neste forfall, kommende, betalt eller til gode. Filterknappen gir blant annet Neste 7 dager, Neste 30 dager, datotype, status, kategori og beløp."
                     ),
                     HelpItem(
                         title: "Sortering",
@@ -192,7 +192,7 @@ private extension HelpArticle {
                     HelpItem(
                         title: "Tilgjengelig beløp",
                         systemImage: "creditcard",
-                        body: "Øverst i Poster vises et kapsel-felt med tilgjengelig beløp. Grønt betyr at mottatte inntekter er større enn betalte utgifter. Rødt betyr minus."
+                        body: "Tilgjengelig beløp beregnes fra startsaldoen og oppgjorte poster fra valgt startdato: mottatte inntekter legges til og betalte utgifter trekkes fra. Beløpet endres ikke av listefiltrene. Hvis en betaling er større enn tilgjengelig beløp, foreslår SaldoPilot at posten beholdes som ventende."
                     )
                 ]
             ),
@@ -242,12 +242,12 @@ private extension HelpArticle {
                     HelpItem(
                         title: "2. Velg rapporttype og måned",
                         systemImage: "2.circle",
-                        body: "Velg Forfallsdato for en planlagt månedsrapport med postene som forfaller i måneden. Velg Betalt dato for en kontantbasert rapport med inntekter som faktisk er mottatt og utgifter som faktisk er betalt i måneden. Velg deretter ønsket måned."
+                        body: "Velg rapporttype, måned og datotype. Forfallsdato viser planlagte poster i måneden. Betalingsdato viser inntekter som faktisk er mottatt og utgifter som faktisk er betalt."
                     ),
                     HelpItem(
                         title: "3. Velg hvilke poster som skal med",
                         systemImage: "3.circle",
-                        body: "Slå på Inkluder arkiverte poster eller Inkluder kansellerte poster hvis disse skal være med. La valgene være av for en vanlig rapport."
+                        body: "Velg Gjeldende utvalg for en vanlig rapport, eller Alle transaksjoner i perioden for hele perioden. For gjeldende utvalg kan du også ta med arkiverte eller kansellerte poster."
                     ),
                     HelpItem(
                         title: "4. Opprett PDF",
@@ -323,10 +323,10 @@ private extension HelpArticle {
             HelpSection(
                 title: "Transactions list",
                 items: [
-                    HelpItem(title: "Find the right transaction", systemImage: "line.3.horizontal.decrease.circle", body: "Use the quick filters at the top for all, overdue, next due, upcoming, paid, or receivable. The filter button gives more choices such as period, date type, status, type, category, and amount."),
+                    HelpItem(title: "Find the right transaction", systemImage: "line.3.horizontal.decrease.circle", body: "Search by title, note, or category. Use the quick filters for all, overdue, next due, upcoming, paid, or receivable. The filter button includes Next 7 days, Next 30 days, date type, status, category, and amount."),
                     HelpItem(title: "Sorting", systemImage: "arrow.up.arrow.down", body: "In the filter view, sort by due date, paid date, amount, title, category, or status. This is useful when paying several bills on the same day."),
                     HelpItem(title: "Edit, duplicate, and delete", systemImage: "slider.horizontal.3", body: "Swipe a transaction for actions. Edit changes details, Duplicate is useful for similar transactions, and Delete requires confirmation."),
-                    HelpItem(title: "Available amount", systemImage: "creditcard", body: "At the top of Transactions, the capsule shows available amount. Green means received income is greater than paid expenses. Red means negative.")
+                    HelpItem(title: "Available amount", systemImage: "creditcard", body: "The available amount uses the opening balance and settled transactions from the selected start date: received income is added and paid expenses are subtracted. List filters do not change it. If a payment exceeds the available amount, SaldoPilot suggests keeping the transaction pending.")
                 ]
             ),
             HelpSection(
@@ -348,8 +348,8 @@ private extension HelpArticle {
                 title: "Reports and printing",
                 items: [
                     HelpItem(title: "1. Open Reports", systemImage: "1.circle", body: "Go to Settings and tap Reports under Manage."),
-                    HelpItem(title: "2. Choose report type and month", systemImage: "2.circle", body: "Choose Due date for a planned monthly report containing transactions due that month. Choose Paid date for a cash-based report containing income actually received and expenses actually paid that month. Then choose the month."),
-                    HelpItem(title: "3. Choose which transactions to include", systemImage: "3.circle", body: "Enable Include archived transactions or Include cancelled transactions when needed. Leave both options off for a standard report."),
+                    HelpItem(title: "2. Choose report type and month", systemImage: "2.circle", body: "Choose the report type, month, and date type. Due date shows planned transactions in the month. Paid date shows income actually received and expenses actually paid."),
+                    HelpItem(title: "3. Choose which transactions to include", systemImage: "3.circle", body: "Choose Current selection for a standard report, or All transactions in period for the complete period. For the current selection, you can also include archived or cancelled transactions."),
                     HelpItem(title: "4. Create the PDF", systemImage: "4.circle", body: "Tap Create PDF report. SaldoPilot creates an A4 report with transactions, status, category, and a summary. Long reports continue automatically on additional pages."),
                     HelpItem(title: "5. Share or print", systemImage: "5.circle", body: "Tap Share PDF to save or send the file. Tap Print report to choose a printer, copies, and pages in the iOS print dialog.")
                 ]
@@ -400,10 +400,10 @@ private extension HelpArticle {
             HelpSection(
                 title: "หน้ารายการ",
                 items: [
-                    HelpItem(title: "ค้นหารายการ", systemImage: "line.3.horizontal.decrease.circle", body: "ใช้ตัวกรองด่วนด้านบนเพื่อดูทั้งหมด ค้างชำระ ครบกำหนดถัดไป รายการที่จะมาถึง จ่ายแล้ว หรือรอรับเงิน ปุ่มตัวกรองมีตัวเลือกเพิ่มเติม เช่น ช่วงเวลา ประเภทวันที่ สถานะ ประเภท หมวดหมู่ และจำนวนเงิน"),
+                    HelpItem(title: "ค้นหารายการ", systemImage: "line.3.horizontal.decrease.circle", body: "ค้นหาด้วยชื่อ บันทึก หรือหมวดหมู่ ใช้ตัวกรองด่วนเพื่อดูทั้งหมด ค้างชำระ ครบกำหนดถัดไป รายการที่จะมาถึง จ่ายแล้ว หรือรอรับเงิน ปุ่มตัวกรองมีตัวเลือก 7 วันข้างหน้า 30 วันข้างหน้า ประเภทวันที่ สถานะ หมวดหมู่ และจำนวนเงิน"),
                     HelpItem(title: "การเรียงลำดับ", systemImage: "arrow.up.arrow.down", body: "ในหน้าตัวกรอง สามารถเรียงตามวันครบกำหนด วันที่จ่าย จำนวนเงิน ชื่อ หมวดหมู่ หรือสถานะ มีประโยชน์เมื่อจ่ายหลายบิลในวันเดียวกัน"),
                     HelpItem(title: "แก้ไข ทำซ้ำ และลบ", systemImage: "slider.horizontal.3", body: "ปัดรายการเพื่อดูการทำงาน แก้ไขใช้เปลี่ยนรายละเอียด ทำซ้ำใช้กับรายการที่คล้ายกัน และการลบต้องยืนยันก่อน"),
-                    HelpItem(title: "ยอดที่พร้อมใช้", systemImage: "creditcard", body: "ด้านบนของหน้ารายการจะแสดงยอดที่พร้อมใช้ในรูปแบบแคปซูล สีเขียวหมายถึงรายรับที่ได้รับมากกว่ารายจ่ายที่จ่ายแล้ว สีแดงหมายถึงติดลบ")
+                    HelpItem(title: "ยอดที่พร้อมใช้", systemImage: "creditcard", body: "ยอดที่พร้อมใช้คำนวณจากยอดคงเหลือเริ่มต้นและรายการที่ชำระแล้วนับจากวันที่เริ่มต้นที่เลือก โดยบวกรายรับที่ได้รับแล้วและหักรายจ่ายที่ชำระแล้ว ตัวกรองรายการจะไม่เปลี่ยนยอดนี้ หากยอดชำระสูงกว่ายอดที่พร้อมใช้ SaldoPilot จะแนะนำให้คงรายการไว้เป็นรอดำเนินการ")
                 ]
             ),
             HelpSection(
@@ -425,8 +425,8 @@ private extension HelpArticle {
                 title: "รายงานและการพิมพ์",
                 items: [
                     HelpItem(title: "1. เปิดรายงาน", systemImage: "1.circle", body: "ไปที่การตั้งค่า แล้วแตะรายงานในส่วนจัดการ"),
-                    HelpItem(title: "2. เลือกประเภทรายงานและเดือน", systemImage: "2.circle", body: "เลือกวันครบกำหนดเพื่อสร้างรายงานตามแผนที่รวมรายการซึ่งครบกำหนดในเดือนนั้น หรือเลือกวันที่ชำระเพื่อสร้างรายงานตามกระแสเงินสดที่รวมรายรับที่ได้รับจริงและรายจ่ายที่ชำระจริงในเดือนนั้น จากนั้นเลือกเดือนที่ต้องการ"),
-                    HelpItem(title: "3. เลือกรายการที่จะรวม", systemImage: "3.circle", body: "เปิดรวมรายการที่เก็บถาวรหรือรวมรายการที่ยกเลิกเมื่อต้องการ หากเป็นรายงานทั่วไปให้ปิดทั้งสองตัวเลือก"),
+                    HelpItem(title: "2. เลือกประเภทรายงานและเดือน", systemImage: "2.circle", body: "เลือกประเภทรายงาน เดือน และประเภทวันที่ วันครบกำหนดจะแสดงรายการตามแผนในเดือนนั้น ส่วนวันที่ชำระจะแสดงรายรับที่ได้รับจริงและรายจ่ายที่ชำระจริง"),
+                    HelpItem(title: "3. เลือกรายการที่จะรวม", systemImage: "3.circle", body: "เลือกตัวเลือกปัจจุบันสำหรับรายงานทั่วไป หรือเลือกรายการทั้งหมดในช่วงเวลาเพื่อรวมทั้งช่วง สำหรับตัวเลือกปัจจุบันสามารถรวมรายการที่เก็บถาวรหรือยกเลิกได้"),
                     HelpItem(title: "4. สร้าง PDF", systemImage: "4.circle", body: "แตะสร้างรายงาน PDF SaldoPilot จะสร้างรายงานขนาด A4 พร้อมรายการ สถานะ หมวดหมู่ และสรุป หากเนื้อหายาว ระบบจะแบ่งหน้าให้อัตโนมัติ"),
                     HelpItem(title: "5. แชร์หรือพิมพ์", systemImage: "5.circle", body: "แตะแชร์ PDF เพื่อบันทึกหรือส่งไฟล์ แตะพิมพ์รายงานเพื่อเลือกเครื่องพิมพ์ จำนวนสำเนา และหน้าในหน้าต่างพิมพ์ของ iOS")
                 ]

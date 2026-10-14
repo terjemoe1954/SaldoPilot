@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ExportDataView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \Budget.monthStart) private var budgets: [Budget]
 
     @State private var backupURL: URL?
     @State private var csvURL: URL?
@@ -18,7 +19,7 @@ struct ExportDataView: View {
     var body: some View {
         Form {
             Section("JSON backup") {
-                Text("Creates a backup with categories, transactions, notes and recurrence rules.")
+                Text("Creates a backup with transactions, budgets, settings, notes and recurrence rules. Purchase status and external AI consent are not included.")
                     .foregroundStyle(.secondary)
 
                 Button {
@@ -76,7 +77,11 @@ struct ExportDataView: View {
         exportError = nil
 
         do {
-            backupURL = try ExportService.makeJSONBackup(transactions: transactions)
+            backupURL = try ExportService.makeJSONBackup(
+                transactions: transactions,
+                budgets: budgets,
+                settings: BackupAppSettings.capture()
+            )
         } catch {
             exportError = error.localizedDescription
         }

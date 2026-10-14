@@ -1,4 +1,6 @@
 import Foundation
+import PDFKit
+import SwiftData
 import Testing
 @testable import SaldoPilot
 
@@ -29,6 +31,63 @@ struct SaldoPilotTests {
         #expect(Decimal.currencyAmount(from: "-10") == nil)
         #expect(Decimal.currencyAmount(from: "12,3456") == nil)
         #expect(Decimal.currencyAmount(from: "tekst") == nil)
+    }
+
+    @Test("CSV export is UTF-8 and prevents spreadsheet formula execution")
+    func safeCSVExport() throws {
+        let transaction = Transaction(
+            title: "=2+2",
+            amount: 100,
+            type: .expense,
+            dueDate: try #require(date(year: 2026, month: 10, day: 14)),
+            notes: "@SUM(A1:A2)"
+        )
+        let url = try ExportService.makeCSVExport(transactions: [transaction])
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let data = try Data(contentsOf: url)
+        #expect(data.starts(with: [0xEF, 0xBB, 0xBF]))
+        let text = try #require(String(data: data, encoding: .utf8))
+        #expect(text.contains("\"'=2+2\""))
+        #expect(text.contains("\"'@SUM(A1:A2)\""))
+    }
+
+    @Test("PDF reports handle boundary-sized synthetic datasets")
+    func reportPDFBoundarySizes() throws {
+        let monthStart = try #require(date(year: 2026, month: 10, day: 1))
+
+        for count in [0, 1, 50, 1_000] {
+            let reportTransactions = (0..<count).map { index in
+                let transaction = Transaction(
+                    title: index == count - 1
+                        ? "Boundary item \(index) with a long descriptive title"
+                        : "Boundary item \(index)",
+                    amount: index == count - 1 ? Decimal(string: "999999999.99")! : Decimal(index + 1),
+                    type: index.isMultiple(of: 2) ? .income : .expense,
+                    dueDate: monthStart,
+                    notes: index == count - 1
+                        ? String(repeating: "Long report note ", count: 80)
+                        : ""
+                )
+                return ReportTransaction(transaction: transaction, transactionDate: monthStart)
+            }
+
+            let url = try ReportPDFService.makeMonthlyReport(
+                transactions: reportTransactions,
+                monthStart: monthStart,
+                locale: Locale(identifier: "en_NO"),
+                dateType: .dueDate,
+                reportTitle: "Boundary report",
+                selectionDescription: "Synthetic local test data"
+            )
+            defer { try? FileManager.default.removeItem(at: url) }
+
+            let document = try #require(PDFDocument(url: url))
+            let text = document.string ?? ""
+            #expect(document.pageCount > 0)
+            #expect(text.contains("Count: \(count)"))
+            #expect((try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0)
+        }
     }
 
     @Test("Available balance uses only settled activity from the opening date")
@@ -130,6 +189,138 @@ struct SaldoPilotTests {
         )
 
         #expect(result == expectedDate)
+    }
+
+    @Test("Monthly recurrence returns to the anchored day after a short month")
+    func monthlyRecurrencePreservesAnchorDay() throws {
+        let february = try #require(date(year: 2024, month: 2, day: 29))
+        let march = try #require(date(year: 2024, month: 3, day: 31))
+        #expect(
+            RecurrenceService.nextDueDate(
+                after: february,
+                anchorDay: 31,
+                monthInterval: 1,
+                calendar: calendar
+            ) == march
+        )
+    }
+
+    @Test("A local test store preserves transactions after reopening")
+    func persistentLocalTestStore() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let storeURL = directory.appending(path: "PersistenceTest.store", directoryHint: .notDirectory)
+        let schema = Schema(SaldoPilotSchemaV3.models)
+
+        do {
+            let configuration = ModelConfiguration(
+                "PersistenceTest",
+                schema: schema,
+                url: storeURL,
+                cloudKitDatabase: .none
+            )
+            let container = try ModelContainer(
+                for: schema,
+                migrationPlan: SaldoPilotMigrationPlan.self,
+                configurations: [configuration]
+            )
+            let transaction = Transaction(
+                title: "Restart test",
+                amount: 321,
+                type: .expense,
+                dueDate: try #require(date(year: 2026, month: 10, day: 14))
+            )
+            container.mainContext.insert(transaction)
+            try container.mainContext.save()
+        }
+
+        let configuration = ModelConfiguration(
+            "PersistenceTest",
+            schema: schema,
+            url: storeURL,
+            cloudKitDatabase: .none
+        )
+        let reopenedContainer = try ModelContainer(
+            for: schema,
+            migrationPlan: SaldoPilotMigrationPlan.self,
+            configurations: [configuration]
+        )
+        let reopenedTransactions = try reopenedContainer.mainContext.fetch(FetchDescriptor<Transaction>())
+
+        #expect(reopenedTransactions.count == 1)
+        #expect(reopenedTransactions.first?.title == "Restart test")
+        #expect(reopenedTransactions.first?.amount == Decimal(321))
+    }
+
+    @Test("A copied V2 store upgrades to V3 without changing financial data")
+    func migratesCopiedV2StoreToV3() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let storeURL = directory.appending(path: "MigrationTest.store", directoryHint: .notDirectory)
+        let firstID = UUID()
+        let secondID = UUID()
+
+        do {
+            let oldSchema = Schema(SaldoPilotSchemaV2.models)
+            let configuration = ModelConfiguration(
+                "MigrationTest",
+                schema: oldSchema,
+                url: storeURL,
+                cloudKitDatabase: .none
+            )
+            let oldContainer = try ModelContainer(
+                for: oldSchema,
+                configurations: [configuration]
+            )
+            oldContainer.mainContext.insert(SaldoPilotSchemaV2.Transaction(
+                id: firstID,
+                title: "Old expense",
+                amount: Decimal(string: "123.45")!,
+                type: .expense,
+                dueDate: try #require(date(year: 2026, month: 1, day: 31)),
+                recurrence: .monthly
+            ))
+            oldContainer.mainContext.insert(SaldoPilotSchemaV2.Transaction(
+                id: secondID,
+                title: "Old income",
+                amount: Decimal(string: "500.00")!,
+                type: .income,
+                dueDate: try #require(date(year: 2026, month: 2, day: 1))
+            ))
+            oldContainer.mainContext.insert(SaldoPilotSchemaV2.Budget(
+                category: .home,
+                monthStart: try #require(date(year: 2026, month: 1, day: 1)),
+                amount: Decimal(string: "9000.00")!
+            ))
+            try oldContainer.mainContext.save()
+        }
+
+        let currentSchema = Schema(SaldoPilotSchemaV3.models)
+        let configuration = ModelConfiguration(
+            "MigrationTest",
+            schema: currentSchema,
+            url: storeURL,
+            cloudKitDatabase: .none
+        )
+        let upgradedContainer = try ModelContainer(
+            for: currentSchema,
+            migrationPlan: SaldoPilotMigrationPlan.self,
+            configurations: [configuration]
+        )
+        let transactions = try upgradedContainer.mainContext.fetch(FetchDescriptor<Transaction>())
+        let budgets = try upgradedContainer.mainContext.fetch(FetchDescriptor<Budget>())
+
+        #expect(transactions.count == 2)
+        #expect(Set(transactions.map(\.id)) == [firstID, secondID])
+        #expect(transactions.reduce(Decimal.zero) { $0 + $1.amount } == Decimal(string: "623.45")!)
+        #expect(budgets.count == 1)
+        #expect(budgets.first?.amount == Decimal(string: "9000.00")!)
+        #expect(transactions.allSatisfy { $0.recurrenceSeriesID == nil })
+        #expect(transactions.allSatisfy { $0.recurrenceAnchorDay == nil })
     }
 
     private func transaction(

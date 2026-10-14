@@ -10,6 +10,7 @@ import SwiftUI
 
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.locale) private var locale
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @AppStorage(AppSettingsKey.showCompletedStatus) private var showCompletedStatus = true
     @AppStorage(AppSettingsKey.showSettledTransactions) private var showSettledTransactions = true
@@ -20,10 +21,13 @@ struct TransactionsView: View {
 
     @State private var selectedFilter: TransactionListFilter = .all
     @State private var advancedFilter = TransactionAdvancedFilter()
+    @State private var searchText = ""
     @State private var editingTransaction: Transaction?
     @State private var transactionPendingDeletion: Transaction?
     @State private var isShowingAdvancedFilter = false
     @State private var isShowingDeleteConfirmation = false
+    @State private var isShowingDeletionError = false
+    @State private var isShowingSaveError = false
     @State private var transactionPendingCoverageConfirmation: Transaction?
     @State private var isShowingCoverageWarning = false
 
@@ -38,12 +42,20 @@ struct TransactionsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                AvailableAmountBanner(amount: availableAmount)
+                AvailableAmountBanner(
+                    amount: availableAmount,
+                    showsCalculationBasis: availableAmount != nil
+                )
                 TransactionFilterPicker(selectedFilter: $selectedFilter)
 
                 if advancedFilter.hasActiveFilters {
                     TransactionActiveFilterChips(filter: $advancedFilter)
                 }
+
+                TransactionSelectionSummary(
+                    shownCount: filteredTransactions.count,
+                    totalCount: activeTransactions.count
+                )
 
                 if filteredTransactions.isEmpty {
                     TransactionEmptyState(filter: selectedFilter)
@@ -95,6 +107,7 @@ struct TransactionsView: View {
                 }
             }
             .navigationTitle("Transactions")
+            .searchable(text: $searchText, prompt: "Search transactions")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -135,6 +148,16 @@ struct TransactionsView: View {
                 }
             } message: {
                 Text(deleteConfirmationMessage)
+            }
+            .alert("Could not delete transaction", isPresented: $isShowingDeletionError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("The deletion was not saved. The transaction has been restored. Check the connection and try again.")
+            }
+            .alert("Could not save transaction", isPresented: $isShowingSaveError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("The changes were not saved. Check the connection and try again.")
             }
             .sheet(isPresented: $isShowingAdvancedFilter) {
                 TransactionFilterSheet(filter: $advancedFilter)
@@ -184,7 +207,8 @@ struct TransactionsView: View {
         let filteredTransactions = activeTransactions.filter { transaction in
             selectedFilter.includes(transaction, nextDueDate: nextDueDate) &&
             advancedFilter.includes(transaction) &&
-            includesSettledTransaction(transaction)
+            includesSettledTransaction(transaction) &&
+            includesSearch(transaction)
         }
 
         return advancedFilter.sort(filteredTransactions)
@@ -196,6 +220,15 @@ struct TransactionsView: View {
         }
 
         return !transaction.isSettled
+    }
+
+    private func includesSearch(_ transaction: Transaction) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+
+        return transaction.title.localizedStandardContains(query)
+            || transaction.notes.localizedStandardContains(query)
+            || transaction.category.localizedTitle(locale: locale).localizedStandardContains(query)
     }
 
     private var availableAmount: Decimal? {
@@ -234,6 +267,7 @@ struct TransactionsView: View {
         transaction.status = transaction.type == .income ? .received : .paid
         transaction.markUpdated()
         RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+        saveChanges()
     }
 
     private func duplicate(_ transaction: Transaction) {
@@ -249,6 +283,7 @@ struct TransactionsView: View {
             notes: transaction.notes
         )
         modelContext.insert(copy)
+        saveChanges()
     }
 
     private func edit(_ transaction: Transaction) {
@@ -287,6 +322,21 @@ struct TransactionsView: View {
 
         modelContext.delete(transactionPendingDeletion)
         self.transactionPendingDeletion = nil
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            isShowingDeletionError = true
+        }
+    }
+
+    private func saveChanges() {
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            isShowingSaveError = true
+        }
     }
 }
 
@@ -456,6 +506,8 @@ private enum TransactionSortDirection: String, CaseIterable, Identifiable {
 
 private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
     case all
+    case next7Days
+    case next30Days
     case thisMonth
     case previousMonth
     case thisYear
@@ -480,6 +532,10 @@ private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
         switch self {
         case .all:
             "All"
+        case .next7Days:
+            "Next 7 days"
+        case .next30Days:
+            "Next 30 days"
         case .thisMonth:
             "This month"
         case .previousMonth:
@@ -495,7 +551,7 @@ private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
         switch self {
         case .all:
             return true
-        case .thisMonth, .previousMonth, .thisYear, .custom:
+        case .next7Days, .next30Days, .thisMonth, .previousMonth, .thisYear, .custom:
             guard let date else { return false }
             return dateInterval.containsHalfOpen(date)
         }
@@ -508,6 +564,10 @@ private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
         switch self {
         case .all:
             return DateInterval(start: .distantPast, end: .distantFuture)
+        case .next7Days:
+            return upcomingDateInterval(dayCount: 7, calendar: calendar, now: now)
+        case .next30Days:
+            return upcomingDateInterval(dayCount: 30, calendar: calendar, now: now)
         case .thisMonth:
             return calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: .distantPast, end: .distantFuture)
         case .previousMonth:
@@ -519,6 +579,12 @@ private enum TransactionDatePeriod: String, CaseIterable, Identifiable {
         case .custom:
             return DateInterval(start: .distantPast, end: .distantFuture)
         }
+    }
+
+    private func upcomingDateInterval(dayCount: Int, calendar: Calendar, now: Date) -> DateInterval {
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: dayCount, to: start) ?? start
+        return DateInterval(start: start, end: end)
     }
 }
 
@@ -610,36 +676,47 @@ private enum TransactionFilterType: String, CaseIterable, Identifiable {
 
 private struct AvailableAmountBanner: View {
     let amount: Decimal?
+    let showsCalculationBasis: Bool
 
     var body: some View {
-        HStack {
-            Spacer(minLength: 0)
+        VStack(spacing: 4) {
+            HStack {
+                Spacer(minLength: 0)
 
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.caption.weight(.semibold))
-                    .accessibilityHidden(true)
-
-                if let amount {
-                    Text("Available")
+                HStack(spacing: 8) {
+                    Image(systemName: systemImage)
                         .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
 
-                    Text(amount.formattedCurrency)
-                        .font(.subheadline.weight(.bold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                } else {
-                    Text("Set opening balance in Settings")
-                        .font(.caption.weight(.semibold))
+                    if let amount {
+                        Text("Available")
+                            .font(.caption.weight(.semibold))
+
+                        Text(amount.formattedCurrency)
+                            .font(.subheadline.weight(.bold))
+                    } else {
+                        Text("Set opening balance in Settings")
+                            .font(.caption.weight(.semibold))
+                    }
                 }
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(tint.gradient, in: Capsule())
-            .accessibilityElement(children: .combine)
+                .foregroundStyle(.black)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(tint, in: Capsule())
+                .accessibilityElement(children: .combine)
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
+
+            if showsCalculationBasis {
+                Text(
+                    "Based on opening balance and settled transactions, independent of filters",
+                    comment: "Short explanation below the available account balance in the transaction list."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -654,6 +731,24 @@ private struct AvailableAmountBanner: View {
     private var tint: Color {
         guard let amount else { return .orange }
         return amount < .zero ? .red : .green
+    }
+}
+
+private struct TransactionSelectionSummary: View {
+    let shownCount: Int
+    let totalCount: Int
+
+    var body: some View {
+        Text(
+            "Visible: \(shownCount) of \(totalCount)",
+            comment: "Summary below transaction filters. The first number is visible transactions and the second is all active transactions."
+        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(.bar)
     }
 }
 
@@ -711,14 +806,38 @@ private struct TransactionFilterPicker: View {
     @Binding var selectedFilter: TransactionListFilter
 
     var body: some View {
-        Picker("Filter", selection: $selectedFilter) {
-            ForEach(TransactionListFilter.allCases) { filter in
-                Text(filter.title).tag(filter)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(TransactionListFilter.allCases) { filter in
+                    let isSelected = selectedFilter == filter
+
+                    Button {
+                        selectedFilter = filter
+                    } label: {
+                        Text(filter.title)
+                            .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 44)
+                            .foregroundStyle(
+                                isSelected
+                                    ? AnyShapeStyle(.background)
+                                    : AnyShapeStyle(.primary)
+                            )
+                            .background(
+                                isSelected
+                                    ? AnyShapeStyle(.primary)
+                                    : AnyShapeStyle(Color.secondary.opacity(0.16)),
+                                in: Capsule()
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
             }
+            .padding(.horizontal)
         }
-        .pickerStyle(.segmented)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
+        .contentMargins(.vertical, 6, for: .scrollContent)
         .background(.bar)
     }
 }
@@ -923,7 +1042,6 @@ private struct TransactionRowView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(transaction.title)
                     .font(.headline)
-                    .lineLimit(2)
 
                 HStack(spacing: 6) {
                     Label(transaction.category.localizedTitle(locale: locale), systemImage: transaction.category.systemImage)
@@ -931,7 +1049,6 @@ private struct TransactionRowView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
 
                 if showsCompletedStatus {
                     VStack(alignment: .leading, spacing: 4) {
@@ -953,12 +1070,10 @@ private struct TransactionRowView: View {
                             }
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
                         } else {
                             Label("One-time", systemImage: "calendar")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
-                                .lineLimit(1)
                         }
                     }
                 }
@@ -968,9 +1083,7 @@ private struct TransactionRowView: View {
 
             Text(transaction.amount.formattedCurrency)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(transaction.type == .income ? .green : .primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .foregroundStyle(.primary)
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
@@ -996,7 +1109,7 @@ private struct TransactionTypeIcon: View {
     var body: some View {
         Image(systemName: type == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
             .font(.title2)
-            .foregroundStyle(type == .income ? .green : .red)
+            .foregroundStyle(.primary)
             .frame(width: 32, height: 32)
             .accessibilityHidden(true)
     }
@@ -1010,7 +1123,7 @@ private struct TransactionStatusBadge: View {
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .foregroundStyle(status.tint)
+            .foregroundStyle(.primary)
             .background(status.tint.opacity(0.12))
             .clipShape(Capsule())
     }
@@ -1067,6 +1180,7 @@ private struct TransactionDetailView: View {
     let transaction: Transaction
 
     @State private var isShowingCompletionSheet = false
+    @State private var isShowingCompletionConfirmation = false
     @State private var completionDate = Date.now
 
     var body: some View {
@@ -1119,8 +1233,14 @@ private struct TransactionDetailView: View {
             RegisterCompletionDateView(
                 transaction: transaction,
                 completionDate: $completionDate,
-                modelContext: modelContext
+                modelContext: modelContext,
+                onSaved: {
+                    isShowingCompletionConfirmation = true
+                }
             )
+        }
+        .alert(completionConfirmationTitle, isPresented: $isShowingCompletionConfirmation) {
+            Button("OK", role: .cancel) {}
         }
     }
 
@@ -1135,6 +1255,10 @@ private struct TransactionDetailView: View {
             transaction.type == .income ? "Change received date" : "Change paid date"
         }
     }
+
+    private var completionConfirmationTitle: LocalizedStringKey {
+        transaction.type == .income ? "Income registered" : "Payment registered"
+    }
 }
 
 private struct RegisterCompletionDateView: View {
@@ -1146,8 +1270,10 @@ private struct RegisterCompletionDateView: View {
     let transaction: Transaction
     @Binding var completionDate: Date
     let modelContext: ModelContext
+    let onSaved: () -> Void
 
     @State private var isShowingCoverageWarning = false
+    @State private var isShowingSaveError = false
 
     var body: some View {
         NavigationStack {
@@ -1183,6 +1309,11 @@ private struct RegisterCompletionDateView: View {
                 }
             } message: {
                 Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
+            }
+            .alert("Could not save transaction", isPresented: $isShowingSaveError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("The changes were not saved. Check the connection and try again.")
             }
         }
     }
@@ -1230,7 +1361,14 @@ private struct RegisterCompletionDateView: View {
             RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
         }
 
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+            onSaved()
+        } catch {
+            modelContext.rollback()
+            isShowingSaveError = true
+        }
     }
 }
 
@@ -1240,10 +1378,10 @@ private extension TransactionDatePeriod {
         guard let date else { return false }
 
         let calendar = Calendar.current
-        let startDate = calendar.startOfDay(for: customStartDate)
-        let endDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: customEndDate)) ?? customEndDate
-        let lowerBound = min(startDate, endDate)
-        let upperBound = max(startDate, endDate)
+        let firstDay = calendar.startOfDay(for: min(customStartDate, customEndDate))
+        let lastDay = calendar.startOfDay(for: max(customStartDate, customEndDate))
+        let upperBound = calendar.date(byAdding: .day, value: 1, to: lastDay) ?? lastDay
+        let lowerBound = firstDay
         return DateInterval(start: lowerBound, end: upperBound).containsHalfOpen(date)
     }
 }

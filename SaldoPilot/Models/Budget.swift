@@ -8,6 +8,9 @@
 import Foundation
 import SwiftData
 
+typealias Budget = SaldoPilotSchemaV3.Budget
+
+extension SaldoPilotSchemaV3 {
 @Model
 final class Budget {
     var id: UUID = UUID()
@@ -36,4 +39,5 @@ final class Budget {
     func markUpdated(at date: Date = .now) {
         updatedAt = date
     }
+}
 }

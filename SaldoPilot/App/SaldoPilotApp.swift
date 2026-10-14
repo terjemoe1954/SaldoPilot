@@ -5,18 +5,44 @@
 //  Created by Terje Moe on 12/09/2026.
 //
 
+import CoreData
 import SwiftData
 import SwiftUI
 import UIKit
 import UserNotifications
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    private var cloudKitEventObserver: NSObjectProtocol?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        if AppLaunchConfiguration.usesIsolatedCloudTestStore {
+            cloudKitEventObserver = NotificationCenter.default.addObserver(
+                forName: NSPersistentCloudKitContainer.eventChangedNotification,
+                object: nil,
+                queue: .main
+            ) { notification in
+                guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
+                        as? NSPersistentCloudKitContainer.Event else { return }
+                let state = event.endDate == nil
+                    ? "started"
+                    : (event.succeeded ? "succeeded" : "failed")
+                print(
+                    "CloudKit test event type=\(event.type.rawValue) "
+                    + "state=\(state) error=\(event.error?.localizedDescription ?? "none")"
+                )
+            }
+        }
         return true
+    }
+
+    deinit {
+        if let cloudKitEventObserver {
+            NotificationCenter.default.removeObserver(cloudKitEventObserver)
+        }
     }
 
     func userNotificationCenter(
@@ -28,19 +54,88 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 }
 
 enum AppLaunchConfiguration {
-    static let usesIsolatedTestStore: Bool = {
-        let normalizedArguments = ProcessInfo.processInfo.arguments.map {
-            $0.trimmingCharacters(in: .whitespacesAndNewlines)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-                .lowercased()
-        }
-        let environmentValue = ProcessInfo.processInfo.environment["SALDOPILOT_USE_TEST_STORE"]?.lowercased()
+    private static let persistedTestStoreModeKey = "SaldoPilot.persistedTestStoreMode"
 
-        return normalizedArguments.contains("saldopilotuseteststore")
-            || environmentValue == "1"
-            || environmentValue == "yes"
-            || environmentValue == "true"
+    private static let allowsIsolatedTestStores: Bool = {
+#if DEBUG
+        true
+#else
+        false
+#endif
     }()
+
+    private static let normalizedArguments = ProcessInfo.processInfo.arguments.map {
+        $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+            .lowercased()
+    }
+
+    private static let explicitlyUsesProductionStore = !allowsIsolatedTestStores
+        || normalizedArguments.contains("saldopilotuseproductionstore")
+        || environmentFlag(named: "SALDOPILOT_USE_PRODUCTION_STORE")
+
+    static let usesIsolatedCloudTestStore: Bool = {
+        if explicitlyUsesProductionStore {
+            UserDefaults.standard.removeObject(forKey: persistedTestStoreModeKey)
+            return false
+        }
+
+        if normalizedArguments.contains("saldopilotusecloudteststore")
+            || environmentFlag(named: "SALDOPILOT_USE_CLOUD_TEST_STORE") {
+            UserDefaults.standard.set("cloud", forKey: persistedTestStoreModeKey)
+            return true
+        }
+
+        return UserDefaults.standard.string(forKey: persistedTestStoreModeKey) == "cloud"
+    }()
+
+    static let usesLocalIsolatedTestStore: Bool = {
+        guard !explicitlyUsesProductionStore, !usesIsolatedCloudTestStore else { return false }
+
+        if normalizedArguments.contains("saldopilotuseteststore")
+            || environmentFlag(named: "SALDOPILOT_USE_TEST_STORE") {
+            UserDefaults.standard.set("local", forKey: persistedTestStoreModeKey)
+            return true
+        }
+
+        return UserDefaults.standard.string(forKey: persistedTestStoreModeKey) == "local"
+    }()
+
+    static var usesIsolatedTestStore: Bool {
+        usesLocalIsolatedTestStore || usesIsolatedCloudTestStore
+    }
+
+    static let simulatesICloudUnavailable = usesIsolatedCloudTestStore
+        && (normalizedArguments.contains("saldopilotsimulateicloudunavailable")
+            || environmentFlag(named: "SALDOPILOT_SIMULATE_ICLOUD_UNAVAILABLE"))
+
+    static var activeCloudContainerIdentifier: String? {
+        guard !usesLocalIsolatedTestStore else { return nil }
+        return usesIsolatedCloudTestStore
+            ? "iCloud.com.terjemoe.SaldoPilot.Test"
+            : "iCloud.com.terjemoe.SaldoPilot"
+    }
+
+    static var isolatedTestStoreURL: URL {
+        URL.applicationSupportDirectory
+            .appending(path: "SaldoPilot-Isolated-Test.store", directoryHint: .notDirectory)
+    }
+
+    static var isolatedCloudTestStoreURL: URL {
+        URL.applicationSupportDirectory
+            .appending(path: "SaldoPilot-Isolated-Cloud-Test.store", directoryHint: .notDirectory)
+    }
+
+    static let syntheticTransactionCount: Int = {
+        guard usesLocalIsolatedTestStore, !usesIsolatedCloudTestStore else { return 0 }
+        let value = ProcessInfo.processInfo.environment["SALDOPILOT_SYNTHETIC_TRANSACTION_COUNT"]
+        return min(max(Int(value ?? "") ?? 0, 0), 10_000)
+    }()
+
+    private static func environmentFlag(named name: String) -> Bool {
+        guard let value = ProcessInfo.processInfo.environment[name]?.lowercased() else { return false }
+        return value == "1" || value == "yes" || value == "true"
+    }
 }
 
 @main
@@ -49,23 +144,49 @@ struct SaldoPilotApp: App {
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @State private var proPurchaseStore = ProPurchaseStore()
+    @State private var networkStatusMonitor = NetworkStatusMonitor()
 
     private let modelContainer: ModelContainer = {
-        let schema = Schema(SaldoPilotSchemaV2.models)
+        let schema = Schema(SaldoPilotSchemaV3.models)
 
-        if AppLaunchConfiguration.usesIsolatedTestStore {
-            let testConfiguration = ModelConfiguration(
+        if AppLaunchConfiguration.usesIsolatedCloudTestStore {
+            let testCloudConfiguration = ModelConfiguration(
+                "SaldoPilotIsolatedCloudTest",
                 schema: schema,
-                isStoredInMemoryOnly: true,
-                cloudKitDatabase: .none
+                url: AppLaunchConfiguration.isolatedCloudTestStoreURL,
+                cloudKitDatabase: .private("iCloud.com.terjemoe.SaldoPilot.Test")
             )
 
             do {
                 return try ModelContainer(
                     for: schema,
                     migrationPlan: SaldoPilotMigrationPlan.self,
+                    configurations: [testCloudConfiguration]
+                )
+            } catch {
+                fatalError("Could not create isolated CloudKit test container: \(error)")
+            }
+        }
+
+        if AppLaunchConfiguration.usesLocalIsolatedTestStore {
+            let testConfiguration = ModelConfiguration(
+                "SaldoPilotIsolatedTest",
+                schema: schema,
+                url: AppLaunchConfiguration.isolatedTestStoreURL,
+                cloudKitDatabase: .none
+            )
+
+            do {
+                let container = try ModelContainer(
+                    for: schema,
+                    migrationPlan: SaldoPilotMigrationPlan.self,
                     configurations: [testConfiguration]
                 )
+                try SampleData.ensureSyntheticTransactions(
+                    count: AppLaunchConfiguration.syntheticTransactionCount,
+                    in: container.mainContext
+                )
+                return container
             } catch {
                 fatalError("Could not create isolated test model container: \(error)")
             }
@@ -101,18 +222,51 @@ struct SaldoPilotApp: App {
         WindowGroup {
             MainTabView()
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    if AppLaunchConfiguration.usesIsolatedTestStore {
-                        Label("ISOLATED TEST DATA", systemImage: "checkmark.shield.fill")
+                    VStack(spacing: 0) {
+                        if AppLaunchConfiguration.usesIsolatedTestStore {
+                            Label {
+                                if AppLaunchConfiguration.usesIsolatedCloudTestStore {
+                                    Text("ISOLATED ICLOUD TEST DATA")
+                                } else {
+                                    Text("ISOLATED TEST DATA")
+                                }
+                            } icon: {
+                                Image(systemName: "checkmark.shield.fill")
+                            }
                             .font(.caption.bold())
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
                             .foregroundStyle(.white)
                             .background(.orange)
+                        }
+
+                        if networkStatusMonitor.isICloudUnavailable {
+                            Label("ICLOUD UNAVAILABLE — CHANGES ARE SAVED ON THIS DEVICE", systemImage: "icloud.slash")
+                                .font(.caption.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .foregroundStyle(.white)
+                                .background(.red)
+                        } else if !AppLaunchConfiguration.usesLocalIsolatedTestStore,
+                                  networkStatusMonitor.isOffline {
+                            Label("OFFLINE — CHANGES WILL SYNC WHEN CONNECTED", systemImage: "wifi.slash")
+                                .font(.caption.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .foregroundStyle(.white)
+                                .background(.red)
+                        }
                     }
                 }
                 .preferredColorScheme(selectedAppearance.colorScheme)
                 .environment(\.locale, selectedLanguage.locale)
                 .environment(proPurchaseStore)
+                .task {
+                    networkStatusMonitor.start(
+                        cloudContainerIdentifier: AppLaunchConfiguration.activeCloudContainerIdentifier,
+                        simulatesICloudUnavailable: AppLaunchConfiguration.simulatesICloudUnavailable
+                    )
+                }
         }
         .modelContainer(modelContainer)
     }

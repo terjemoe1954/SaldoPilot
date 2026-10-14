@@ -58,7 +58,18 @@ enum NotificationScheduler {
             .filter { $0.hasPrefix(identifierPrefix) }
 
         guard !identifiers.isEmpty else { return }
+        for identifier in identifiers {
+            if let key = schedulingMarkerKey(forPendingNotificationIdentifier: identifier) {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
+    }
+
+    static func schedulingMarkerKey(forPendingNotificationIdentifier identifier: String) -> String? {
+        let notificationPrefix = identifierPrefix + "."
+        guard identifier.hasPrefix(notificationPrefix) else { return nil }
+        return scheduledOncePrefix + "." + identifier.dropFirst(notificationPrefix.count)
     }
 
     private static func scheduleNotifications(for transaction: Transaction, settings: NotificationSettings) async {

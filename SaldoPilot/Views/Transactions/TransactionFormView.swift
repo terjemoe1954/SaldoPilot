@@ -32,6 +32,7 @@ struct TransactionFormView: View {
     @State private var isShowingCoverageWarning = false
     @State private var pendingCoverageScope: RecurrenceUpdateScope?
     @State private var allowsInsufficientCoverage = false
+    @State private var isShowingSaveError = false
 
     init(transaction: Transaction? = nil, intent: NewTransactionIntent = .transaction) {
         self.transaction = transaction
@@ -127,6 +128,11 @@ struct TransactionFormView: View {
                 }
             } message: {
                 Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
+            }
+            .alert("Could not save transaction", isPresented: $isShowingSaveError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("The changes were not saved. Check the connection and try again.")
             }
             .onChange(of: title) { _, newTitle in
                 updateSuggestedCategory(for: newTitle)
@@ -259,7 +265,13 @@ struct TransactionFormView: View {
             }
         }
 
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            isShowingSaveError = true
+        }
     }
 
     private var availableBalance: Decimal? {

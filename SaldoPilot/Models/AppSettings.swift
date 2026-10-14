@@ -131,25 +131,27 @@ enum AppProStatus: String, CaseIterable, Identifiable {
 }
 
 enum AppSettingsKey {
-    static let appearance = "settings.appearance"
-    static let language = "settings.language"
-    static let showNameOnDashboard = "settings.showNameOnDashboard"
-    static let displayName = "settings.displayName"
-    static let showCompletedStatus = "settings.showCompletedStatus"
-    static let showSettledTransactions = "settings.showSettledTransactions"
-    static let defaultPeriod = "settings.defaultPeriod"
-    static let defaultDateType = "settings.defaultDateType"
-    static let notifyDueToday = "settings.notifyDueToday"
-    static let notifyDueTomorrow = "settings.notifyDueTomorrow"
-    static let notifyDueInAdvance = "settings.notifyDueInAdvance"
-    static let notificationAdvanceDays = "settings.notificationAdvanceDays"
-    static let notifyPendingIncome = "settings.notifyPendingIncome"
-    static let allowExternalAI = "settings.allowExternalAI"
-    static let proStatus = "settings.proStatus"
-    static let openingBalanceAmount = AppLaunchConfiguration.usesIsolatedTestStore
-        ? "settings.test.openingBalanceAmount"
-        : "settings.openingBalanceAmount"
-    static let openingBalanceDate = AppLaunchConfiguration.usesIsolatedTestStore
-        ? "settings.test.openingBalanceDate"
-        : "settings.openingBalanceDate"
+    static let appearance = key("appearance")
+    static let language = key("language")
+    static let showNameOnDashboard = key("showNameOnDashboard")
+    static let displayName = key("displayName")
+    static let showCompletedStatus = key("showCompletedStatus")
+    static let showSettledTransactions = key("showSettledTransactions")
+    static let defaultPeriod = key("defaultPeriod")
+    static let defaultDateType = key("defaultDateType")
+    static let notifyDueToday = key("notifyDueToday")
+    static let notifyDueTomorrow = key("notifyDueTomorrow")
+    static let notifyDueInAdvance = key("notifyDueInAdvance")
+    static let notificationAdvanceDays = key("notificationAdvanceDays")
+    static let notifyPendingIncome = key("notifyPendingIncome")
+    static let allowExternalAI = key("allowExternalAI")
+    static let proStatus = key("proStatus")
+    static let openingBalanceAmount = key("openingBalanceAmount")
+    static let openingBalanceDate = key("openingBalanceDate")
+
+    private static func key(_ name: String) -> String {
+        AppLaunchConfiguration.usesIsolatedTestStore
+            ? "settings.test.\(name)"
+            : "settings.\(name)"
+    }
 }

@@ -20,6 +20,19 @@
                ReferencedContainer = "container:SaldoPilot.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A8541DCA307F7C580076B8B6"
+               BuildableName = "SaldoPilotTests.xctest"
+               ReferencedContainer = "container:SaldoPilot.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -28,6 +41,24 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SALDOPILOT_USE_TEST_STORE"
+            value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A8541DCA307F7C580076B8B6"
+               BuildableName = "SaldoPilotTests.xctest"
+               ReferencedContainer = "container:SaldoPilot.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -56,6 +87,21 @@
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SALDOPILOT_SIMULATE_ICLOUD_UNAVAILABLE"
+            value = "1"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SALDOPILOT_USE_CLOUD_TEST_STORE"
+            value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SALDOPILOT_SYNTHETIC_TRANSACTION_COUNT"
+            value = "10000"
+            isEnabled = "YES">
+         </EnvironmentVariable>
          <EnvironmentVariable
             key = "SALDOPILOT_USE_TEST_STORE"
             value = "1"

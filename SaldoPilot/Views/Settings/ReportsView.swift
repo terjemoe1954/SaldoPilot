@@ -6,6 +6,8 @@ struct ReportsView: View {
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
 
     @State private var selectedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+    @State private var selectedReportType = ReportType.transactionList
+    @State private var selectedScope = ReportScope.currentSelection
     @State private var selectedDateType = AppDefaultDateType.paidDate
     @State private var includeArchived = false
     @State private var includeCancelled = false
@@ -15,10 +17,30 @@ struct ReportsView: View {
     var body: some View {
         Form {
             Section("Report options") {
-                Picker("Date", selection: $selectedDateType) {
-                    ForEach(AppDefaultDateType.allCases) { dateType in
-                        Text(dateType.title)
-                            .tag(dateType)
+                Picker("Report type", selection: $selectedReportType) {
+                    ForEach(ReportType.allCases) { reportType in
+                        Text(reportType.title)
+                            .tag(reportType)
+                    }
+                }
+
+                Picker("Scope", selection: $selectedScope) {
+                    ForEach(ReportScope.allCases) { scope in
+                        Text(scope.title)
+                            .tag(scope)
+                    }
+                }
+
+                if selectedReportType.allowsDateTypeSelection {
+                    Picker("Date", selection: $selectedDateType) {
+                        ForEach(AppDefaultDateType.allCases) { dateType in
+                            Text(dateType.title)
+                                .tag(dateType)
+                        }
+                    }
+                } else {
+                    LabeledContent("Date") {
+                        Text(effectiveDateType.title)
                     }
                 }
 
@@ -29,15 +51,26 @@ struct ReportsView: View {
                     }
                 }
 
-                Toggle("Include archived transactions", isOn: $includeArchived)
-                Toggle("Include cancelled transactions", isOn: $includeCancelled)
+                if selectedScope == .currentSelection {
+                    Toggle("Include archived transactions", isOn: $includeArchived)
+                    Toggle("Include cancelled transactions", isOn: $includeCancelled)
+                } else {
+                    Text("All transactions in the selected period are included, including archived and cancelled transactions.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             ReportSummaryView(
+                reportType: selectedReportType,
+                selectedMonth: selectedMonth,
                 transactionCount: reportTransactions.count,
                 income: reportTransactions.filter { $0.type == .income }.totalAmount,
                 expenses: reportTransactions.filter { $0.type == .expense }.totalAmount,
-                dateType: selectedDateType
+                dateType: effectiveDateType,
+                scope: selectedScope,
+                includeArchived: includeArchived,
+                includeCancelled: includeCancelled
             )
 
             Section {
@@ -73,6 +106,12 @@ struct ReportsView: View {
         .navigationTitle("Reports")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: selectedMonth) {
+            reportURL = nil
+        }
+        .onChange(of: selectedReportType) {
+            reportURL = nil
+        }
+        .onChange(of: selectedScope) {
             reportURL = nil
         }
         .onChange(of: selectedDateType) {
@@ -114,24 +153,44 @@ struct ReportsView: View {
 
         return transactions.filter { transaction in
             guard let date = transactionDate(for: transaction) else { return false }
-            let hasReportableStatus = selectedDateType == .dueDate
+            let hasReportableStatus = effectiveDateType == .dueDate
                 || transaction.effectiveStatus == .paid
                 || transaction.effectiveStatus == .received
 
+            let matchesReportType: Bool
+            switch selectedReportType {
+            case .periodOverview, .transactionList:
+                matchesReportType = true
+            case .overdueAndUpcoming:
+                matchesReportType = transaction.type == .expense
+                    && !transaction.isSettled
+                    && (transaction.effectiveStatus == .overdue || transaction.status == .pending)
+            case .paymentHistory:
+                matchesReportType = transaction.isSettled
+            }
+
+            let includesArchived = selectedScope == .allTransactions || includeArchived
+            let includesCancelled = selectedScope == .allTransactions || includeCancelled
+
             return interval.containsHalfOpen(date)
-                && (hasReportableStatus || (includeCancelled && transaction.status == .cancelled))
-                && (includeArchived || !transaction.isArchived)
-                && (includeCancelled || transaction.status != .cancelled)
+                && matchesReportType
+                && (hasReportableStatus || (includesCancelled && transaction.status == .cancelled))
+                && (includesArchived || !transaction.isArchived)
+                && (includesCancelled || transaction.status != .cancelled)
         }
     }
 
     private func transactionDate(for transaction: Transaction) -> Date? {
-        switch selectedDateType {
+        switch effectiveDateType {
         case .dueDate:
             transaction.dueDate
         case .paidDate:
             transaction.paidDate
         }
+    }
+
+    private var effectiveDateType: AppDefaultDateType {
+        selectedReportType.fixedDateType ?? selectedDateType
     }
 
     private var selectedLanguage: AppLanguage {
@@ -149,14 +208,7 @@ struct ReportsView: View {
     }
 
     private var reportTitle: String {
-        switch selectedLanguage {
-        case .norwegian:
-            "SaldoPilot Bilagsrapport"
-        case .thai:
-            "รายงานรายการ SaldoPilot"
-        case .system, .english:
-            "SaldoPilot Transaction Report"
-        }
+        selectedReportType.title(for: selectedLanguage)
     }
 
     private var isShowingError: Binding<Bool> {
@@ -183,22 +235,121 @@ struct ReportsView: View {
                 transactions: reportItems,
                 monthStart: selectedMonth,
                 locale: selectedLanguage.locale,
-                dateType: selectedDateType
+                dateType: effectiveDateType,
+                reportTitle: reportTitle,
+                selectionDescription: reportSelectionDescription
             )
         } catch {
             errorMessage = error.localizedDescription
         }
     }
+
+    private var reportSelectionDescription: String {
+        switch (selectedLanguage, selectedScope) {
+        case (.norwegian, .currentSelection):
+            "Omfang: Gjeldende utvalg · Arkiverte: \(includeArchived ? "Ja" : "Nei") · Kansellerte: \(includeCancelled ? "Ja" : "Nei")"
+        case (.norwegian, .allTransactions):
+            "Omfang: Alle poster i perioden · Arkiverte og kansellerte inkludert"
+        case (.thai, .currentSelection):
+            "ขอบเขต: รายการที่เลือก · เก็บถาวร: \(includeArchived ? "ใช่" : "ไม่") · ยกเลิก: \(includeCancelled ? "ใช่" : "ไม่")"
+        case (.thai, .allTransactions):
+            "ขอบเขต: รายการทั้งหมดในช่วงเวลา · รวมรายการเก็บถาวรและยกเลิก"
+        case (_, .currentSelection):
+            "Scope: Current selection · Archived: \(includeArchived ? "Yes" : "No") · Cancelled: \(includeCancelled ? "Yes" : "No")"
+        case (_, .allTransactions):
+            "Scope: All transactions in period · Archived and cancelled included"
+        }
+    }
+}
+
+private enum ReportType: String, CaseIterable, Identifiable {
+    case periodOverview
+    case transactionList
+    case overdueAndUpcoming
+    case paymentHistory
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringResource {
+        switch self {
+        case .periodOverview: "Period overview"
+        case .transactionList: "Transaction list"
+        case .overdueAndUpcoming: "Overdue and upcoming"
+        case .paymentHistory: "Payment history"
+        }
+    }
+
+    var fixedDateType: AppDefaultDateType? {
+        switch self {
+        case .periodOverview, .transactionList: nil
+        case .overdueAndUpcoming: .dueDate
+        case .paymentHistory: .paidDate
+        }
+    }
+
+    var allowsDateTypeSelection: Bool { fixedDateType == nil }
+
+    func title(for language: AppLanguage) -> String {
+        switch (language, self) {
+        case (.norwegian, .periodOverview): "SaldoPilot Periodeoversikt"
+        case (.norwegian, .transactionList): "SaldoPilot Bilagsliste"
+        case (.norwegian, .overdueAndUpcoming): "SaldoPilot Forfalte og kommende poster"
+        case (.norwegian, .paymentHistory): "SaldoPilot Betalingshistorikk"
+        case (.thai, .periodOverview): "ภาพรวมช่วงเวลา SaldoPilot"
+        case (.thai, .transactionList): "รายการธุรกรรม SaldoPilot"
+        case (.thai, .overdueAndUpcoming): "รายการเกินกำหนดและที่กำลังจะมาถึง SaldoPilot"
+        case (.thai, .paymentHistory): "ประวัติการชำระเงิน SaldoPilot"
+        case (_, .periodOverview): "SaldoPilot Period Overview"
+        case (_, .transactionList): "SaldoPilot Transaction List"
+        case (_, .overdueAndUpcoming): "SaldoPilot Overdue and Upcoming Transactions"
+        case (_, .paymentHistory): "SaldoPilot Payment History"
+        }
+    }
+}
+
+private enum ReportScope: String, CaseIterable, Identifiable {
+    case currentSelection
+    case allTransactions
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringResource {
+        switch self {
+        case .currentSelection: "Current selection"
+        case .allTransactions: "All transactions in period"
+        }
+    }
 }
 
 private struct ReportSummaryView: View {
+    let reportType: ReportType
+    let selectedMonth: Date
     let transactionCount: Int
     let income: Decimal
     let expenses: Decimal
     let dateType: AppDefaultDateType
+    let scope: ReportScope
+    let includeArchived: Bool
+    let includeCancelled: Bool
 
     var body: some View {
         Section("Preview") {
+            LabeledContent("Report type") {
+                Text(reportType.title)
+            }
+            LabeledContent("Period") {
+                Text(selectedMonth, format: .dateTime.month(.wide).year())
+            }
+            LabeledContent("Date") {
+                Text(dateType.title)
+            }
+            LabeledContent("Scope") {
+                Text(scope.title)
+            }
+            if scope == .currentSelection {
+                LabeledContent("Include archived transactions", value: includeArchived ? String(localized: "Yes") : String(localized: "No"))
+                LabeledContent("Include cancelled transactions", value: includeCancelled ? String(localized: "Yes") : String(localized: "No"))
+            }
             LabeledContent("Transactions", value: transactionCount.formatted())
             LabeledContent(incomeTitle, value: income.formattedCurrency)
             LabeledContent(expensesTitle, value: expenses.formattedCurrency)

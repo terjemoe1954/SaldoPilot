@@ -18,6 +18,7 @@ enum RecurrenceService {
         let category: CategoryKind
         let recurrence: RecurrenceRule
         let recurrenceIntervalMonths: Int?
+        let recurrenceSeriesID: UUID?
         let notes: String
 
         init(transaction: Transaction) {
@@ -29,6 +30,7 @@ enum RecurrenceService {
             category = transaction.category
             recurrence = transaction.recurrence
             recurrenceIntervalMonths = transaction.recurrenceIntervalMonths
+            recurrenceSeriesID = transaction.recurrenceSeriesID
             notes = transaction.notes
         }
     }
@@ -42,11 +44,31 @@ enum RecurrenceService {
             return nil
         }
 
-        return calendar.date(
-            byAdding: .month,
-            value: monthInterval(for: transaction),
-            to: date
+        return nextDueDate(
+            after: date,
+            anchorDay: transaction.recurrenceAnchorDay ?? calendar.component(.day, from: date),
+            monthInterval: monthInterval(for: transaction),
+            calendar: calendar
         )
+    }
+
+    static func nextDueDate(
+        after date: Date,
+        anchorDay: Int,
+        monthInterval: Int,
+        calendar: Calendar = .current
+    ) -> Date? {
+        guard let targetMonth = calendar.date(
+            byAdding: .month,
+            value: monthInterval,
+            to: date
+        ), let dayRange = calendar.range(of: .day, in: .month, for: targetMonth) else {
+            return nil
+        }
+
+        var components = calendar.dateComponents([.era, .year, .month, .hour, .minute, .second, .nanosecond], from: targetMonth)
+        components.day = min(max(anchorDay, dayRange.lowerBound), dayRange.upperBound - 1)
+        return calendar.date(from: components)
     }
 
     static func insertNextOccurrenceIfNeeded(
@@ -54,6 +76,7 @@ enum RecurrenceService {
         in modelContext: ModelContext,
         calendar: Calendar = .current
     ) {
+        establishSeriesMetadata(for: transaction, in: modelContext, calendar: calendar)
         guard let nextDueDate = nextDueDate(after: transaction.dueDate, for: transaction, calendar: calendar) else {
             return
         }
@@ -67,6 +90,8 @@ enum RecurrenceService {
             category: transaction.category,
             recurrence: transaction.recurrence,
             recurrenceIntervalMonths: transaction.recurrenceIntervalMonths,
+            recurrenceSeriesID: transaction.recurrenceSeriesID,
+            recurrenceAnchorDay: transaction.recurrenceAnchorDay,
             notes: transaction.notes
         )
 
@@ -86,13 +111,14 @@ enum RecurrenceService {
                 !transaction.isArchived &&
                 transaction.status != .cancelled &&
                 !transaction.isSettled &&
+                (snapshot.recurrenceSeriesID.map { transaction.recurrenceSeriesID == $0 } ?? (
                 transaction.title == snapshot.title &&
                 transaction.amount == snapshot.amount &&
                 transaction.type == snapshot.type &&
                 transaction.category == snapshot.category &&
                 transaction.recurrence == snapshot.recurrence &&
                 transaction.recurrenceIntervalMonths == snapshot.recurrenceIntervalMonths &&
-                transaction.notes == snapshot.notes
+                transaction.notes == snapshot.notes))
             }
             .sorted { $0.dueDate < $1.dueDate }
     }
@@ -108,6 +134,8 @@ enum RecurrenceService {
             futureOccurrence.category = transaction.category
             futureOccurrence.recurrence = transaction.recurrence
             futureOccurrence.recurrenceIntervalMonths = transaction.recurrenceIntervalMonths
+            futureOccurrence.recurrenceSeriesID = transaction.recurrenceSeriesID
+            futureOccurrence.recurrenceAnchorDay = transaction.recurrenceAnchorDay
             futureOccurrence.notes = transaction.notes
             futureOccurrence.markUpdated()
         }
@@ -127,6 +155,37 @@ enum RecurrenceService {
             6
         case .yearly:
             12
+        }
+    }
+
+    private static func establishSeriesMetadata(
+        for transaction: Transaction,
+        in modelContext: ModelContext,
+        calendar: Calendar
+    ) {
+        guard transaction.recurrence != .none else { return }
+
+        let candidates = (try? modelContext.fetch(FetchDescriptor<Transaction>()))?
+            .filter {
+                $0.title == transaction.title &&
+                $0.amount == transaction.amount &&
+                $0.type == transaction.type &&
+                $0.category == transaction.category &&
+                $0.recurrence == transaction.recurrence &&
+                $0.recurrenceIntervalMonths == transaction.recurrenceIntervalMonths &&
+                $0.notes == transaction.notes
+            } ?? [transaction]
+        let seriesID = transaction.recurrenceSeriesID
+            ?? candidates.compactMap(\.recurrenceSeriesID).first
+            ?? UUID()
+        let anchorDay = transaction.recurrenceAnchorDay
+            ?? candidates.compactMap(\.recurrenceAnchorDay).max()
+            ?? candidates.map { calendar.component(.day, from: $0.dueDate) }.max()
+            ?? calendar.component(.day, from: transaction.dueDate)
+
+        for candidate in candidates {
+            candidate.recurrenceSeriesID = seriesID
+            candidate.recurrenceAnchorDay = anchorDay
         }
     }
 }

@@ -12,14 +12,25 @@ struct ImportSummary: Equatable {
     let categorizedRows: Int
     let transactionsCreated: Int
     let replacedTransactions: Int
+    let budgetsCreated: Int
+    let replacedBudgets: Int
+    let settingsRestored: Bool
     let skippedRows: Int
 
     var message: String {
-        if replacedTransactions > 0 {
+        let transactionMessage = if replacedTransactions > 0 {
             String(localized: "Imported \(transactionsCreated) transactions. Replaced \(replacedTransactions) existing transactions. Matched categories for \(categorizedRows) rows. Skipped \(skippedRows) rows.")
         } else {
             String(localized: "Imported \(transactionsCreated) transactions. Matched categories for \(categorizedRows) rows. Skipped \(skippedRows) rows.")
         }
+        var messages = [transactionMessage]
+        if budgetsCreated > 0 || replacedBudgets > 0 {
+            messages.append(String(localized: "Imported \(budgetsCreated) budgets. Replaced \(replacedBudgets) existing budgets."))
+        }
+        if settingsRestored {
+            messages.append(String(localized: "Restored app settings."))
+        }
+        return messages.joined(separator: " ")
     }
 }
 
@@ -32,7 +43,8 @@ enum ImportService {
     static func importFile(
         at url: URL,
         mode: ImportMode = .merge,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        userDefaults: UserDefaults = .standard
     ) throws -> ImportSummary {
         let didStartAccessing = url.startAccessingSecurityScopedResource()
         defer {
@@ -53,22 +65,46 @@ enum ImportService {
         }
 
         var replacedTransactions = 0
+        var replacedBudgets = 0
         if mode == .replaceExisting {
             let existingTransactions = try modelContext.fetch(FetchDescriptor<Transaction>())
             for transaction in existingTransactions {
                 modelContext.delete(transaction)
             }
             replacedTransactions = existingTransactions.count
+
+            if importResult.includesBudgets {
+                let existingBudgets = try modelContext.fetch(FetchDescriptor<Budget>())
+                for budget in existingBudgets {
+                    modelContext.delete(budget)
+                }
+                replacedBudgets = existingBudgets.count
+            }
         }
 
         for transaction in importResult.transactions {
             modelContext.insert(transaction)
         }
+        for budget in importResult.budgets {
+            modelContext.insert(budget)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
+        }
+
+        importResult.settings?.apply(to: userDefaults)
 
         return ImportSummary(
             categorizedRows: importResult.categorizedRows,
             transactionsCreated: importResult.transactions.count,
             replacedTransactions: replacedTransactions,
+            budgetsCreated: importResult.budgets.count,
+            replacedBudgets: replacedBudgets,
+            settingsRestored: importResult.settings != nil,
             skippedRows: importResult.skippedRows
         )
     }
@@ -81,6 +117,7 @@ enum ImportService {
         let categoryLookup = CategoryImportLookup(categories: payload.categories ?? [])
         var categorizedRows = 0
         var transactions: [Transaction] = []
+        var budgets: [Budget] = []
         var skippedRows = 0
 
         for importedTransaction in payload.transactions ?? [] {
@@ -96,8 +133,19 @@ enum ImportService {
             transactions.append(transaction)
         }
 
+        for importedBudget in payload.budgets {
+            guard let budget = makeBudget(from: importedBudget, categoryLookup: categoryLookup) else {
+                skippedRows += 1
+                continue
+            }
+            budgets.append(budget)
+        }
+
         return PreparedImportResult(
             transactions: transactions,
+            budgets: budgets,
+            includesBudgets: payload.includesBudgets,
+            settings: payload.settings,
             categorizedRows: categorizedRows,
             skippedRows: skippedRows
         )
@@ -110,7 +158,7 @@ enum ImportService {
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
         guard let headerRow = rows.first else {
-            return PreparedImportResult(transactions: [], categorizedRows: 0, skippedRows: 0)
+            return PreparedImportResult(transactions: [], budgets: [], includesBudgets: false, settings: nil, categorizedRows: 0, skippedRows: 0)
         }
 
         let headers = parseCSVRow(headerRow).map { $0.normalizedImportKey }
@@ -153,6 +201,9 @@ enum ImportService {
 
         return PreparedImportResult(
             transactions: transactions,
+            budgets: [],
+            includesBudgets: false,
+            settings: nil,
             categorizedRows: categorizedRows,
             skippedRows: skippedRows
         )
@@ -194,11 +245,35 @@ enum ImportService {
             category: category,
             recurrence: recurrence,
             recurrenceIntervalMonths: intervalMonths,
+            recurrenceSeriesID: importedTransaction.recurrenceSeriesID.flatMap(UUID.init(uuidString:)),
+            recurrenceAnchorDay: importedTransaction.recurrenceAnchorDay.flatMap(Int.init),
             notes: importedTransaction.notes ?? "",
             createdAt: Date(importValue: importedTransaction.createdAt) ?? .now,
             updatedAt: Date(importValue: importedTransaction.updatedAt) ?? .now,
             isCompleted: isCompleted,
             isArchived: isArchived
+        )
+    }
+
+    private static func makeBudget(
+        from importedBudget: ImportBudget,
+        categoryLookup: CategoryImportLookup
+    ) -> Budget? {
+        guard
+            let amount = Decimal(importAmount: importedBudget.amount),
+            amount > .zero,
+            let monthStart = Date(importValue: importedBudget.monthStart)
+        else {
+            return nil
+        }
+
+        return Budget(
+            id: importedBudget.id.flatMap(UUID.init(uuidString:)) ?? UUID(),
+            category: categoryLookup.category(for: importedBudget.category),
+            monthStart: monthStart,
+            amount: amount,
+            createdAt: Date(importValue: importedBudget.createdAt) ?? .now,
+            updatedAt: Date(importValue: importedBudget.updatedAt) ?? .now
         )
     }
 
@@ -238,6 +313,9 @@ enum ImportService {
 private struct ImportPayload: Decodable {
     let categories: [ImportCategory]?
     let transactions: [ImportTransaction]?
+    let budgets: [ImportBudget]
+    let includesBudgets: Bool
+    let settings: BackupAppSettings?
 
     enum CodingKeys: String, CodingKey {
         case categories
@@ -246,18 +324,26 @@ private struct ImportPayload: Decodable {
         case poster
         case records
         case items
+        case budgets
+        case settings
     }
 
     init(from decoder: Decoder) throws {
         if let transactions = try? [ImportTransaction](from: decoder) {
             categories = []
             self.transactions = transactions
+            budgets = []
+            includesBudgets = false
+            settings = nil
             return
         }
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
         categories = (try? container.decodeIfPresent([ImportCategory].self, forKey: .categories)) ?? []
         transactions = Self.decodeTransactions(from: container)
+        includesBudgets = container.contains(.budgets)
+        budgets = (try? container.decodeIfPresent([ImportBudget].self, forKey: .budgets)) ?? []
+        settings = try? container.decodeIfPresent(BackupAppSettings.self, forKey: .settings)
     }
 
     private static func decodeTransactions(from container: KeyedDecodingContainer<CodingKeys>) -> [ImportTransaction] {
@@ -273,8 +359,39 @@ private struct ImportPayload: Decodable {
 
 private struct PreparedImportResult {
     let transactions: [Transaction]
+    let budgets: [Budget]
+    let includesBudgets: Bool
+    let settings: BackupAppSettings?
     let categorizedRows: Int
     let skippedRows: Int
+}
+
+private struct ImportBudget: Decodable {
+    let id: String?
+    let category: String?
+    let monthStart: String?
+    let amount: String
+    let createdAt: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case category
+        case monthStart
+        case amount
+        case createdAt
+        case updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeFlexibleString(forKeys: [.id])
+        category = try container.decodeFlexibleString(forKeys: [.category])
+        monthStart = try container.decodeFlexibleString(forKeys: [.monthStart])
+        amount = try container.decodeFlexibleString(forKeys: [.amount]) ?? ""
+        createdAt = try container.decodeFlexibleString(forKeys: [.createdAt])
+        updatedAt = try container.decodeFlexibleString(forKeys: [.updatedAt])
+    }
 }
 
 private struct ImportCategory: Decodable {
@@ -317,6 +434,8 @@ private struct ImportTransaction: Decodable {
     let category: String?
     let recurrence: String?
     let recurrenceIntervalMonths: String?
+    let recurrenceSeriesID: String?
+    let recurrenceAnchorDay: String?
     let notes: String?
     let createdAt: String?
     let updatedAt: String?
@@ -363,6 +482,8 @@ private struct ImportTransaction: Decodable {
         case `repeat`
         case gjentakelse
         case recurrenceIntervalMonths
+        case recurrenceSeriesID
+        case recurrenceAnchorDay
         case intervalMonths
         case recurrenceInterval
         case gjentakelseIntervall
@@ -398,6 +519,8 @@ private struct ImportTransaction: Decodable {
         category: String?,
         recurrence: String?,
         recurrenceIntervalMonths: String?,
+        recurrenceSeriesID: String? = nil,
+        recurrenceAnchorDay: String? = nil,
         notes: String?,
         createdAt: String? = nil,
         updatedAt: String? = nil,
@@ -414,6 +537,8 @@ private struct ImportTransaction: Decodable {
         self.category = category
         self.recurrence = recurrence
         self.recurrenceIntervalMonths = recurrenceIntervalMonths
+        self.recurrenceSeriesID = recurrenceSeriesID
+        self.recurrenceAnchorDay = recurrenceAnchorDay
         self.notes = notes
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -433,6 +558,8 @@ private struct ImportTransaction: Decodable {
         category = try container.decodeFlexibleString(forKeys: [.category, .categoryId, .kategori, .kategoriId, .client, .clientId, .klient, .klientId])
         recurrence = try container.decodeFlexibleString(forKeys: [.recurrence, .recurrenceRule, .repeat, .gjentakelse])
         recurrenceIntervalMonths = try container.decodeFlexibleString(forKeys: [.recurrenceIntervalMonths, .intervalMonths, .recurrenceInterval, .gjentakelseIntervall, .intervallManeder])
+        recurrenceSeriesID = try container.decodeFlexibleString(forKeys: [.recurrenceSeriesID])
+        recurrenceAnchorDay = try container.decodeFlexibleString(forKeys: [.recurrenceAnchorDay])
         notes = try container.decodeFlexibleString(forKeys: [.notes, .note, .comment, .notat, .kommentar])
         createdAt = try container.decodeFlexibleString(forKeys: [.createdAt, .created, .opprettet])
         updatedAt = try container.decodeFlexibleString(forKeys: [.updatedAt, .updated, .endret])

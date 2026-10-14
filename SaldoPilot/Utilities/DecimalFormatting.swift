@@ -12,7 +12,7 @@ extension Decimal {
         let formatter = NumberFormatter()
         formatter.locale = .current
         formatter.numberStyle = .currency
-        formatter.currencyCode = Locale.current.currency?.identifier ?? "NOK"
+        formatter.currencyCode = "NOK"
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         formatter.roundingMode = .halfUp
