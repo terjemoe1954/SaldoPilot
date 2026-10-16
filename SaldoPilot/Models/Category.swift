@@ -12,6 +12,7 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case communication
     case deduction
     case developer
+    case diningOut
     case entertainment
     case payrollDeduction
     case gifts
@@ -30,15 +31,17 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     var title: LocalizedStringResource {
         switch self {
         case .clothing:
-            "Clothing"
+            "Clothing and shoes"
         case .communication:
-            "Communication"
+            "Phone and internet"
         case .deduction:
-            "Deduction"
+            "Taxes and fees"
         case .developer:
-            "Developer"
+            "App development"
+        case .diningOut:
+            "Dining out"
         case .entertainment:
-            "Entertainment"
+            "Leisure and travel"
         case .payrollDeduction:
             "Gambling"
         case .gifts:
@@ -48,7 +51,7 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             "Health"
         case .home:
-            "Home"
+            "Housing and electricity"
         case .income:
             "Income"
         case .insurance:
@@ -74,6 +77,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             "minus.circle"
         case .developer:
             "curlybraces"
+        case .diningOut:
+            "fork.knife"
         case .entertainment:
             "popcorn"
         case .payrollDeduction:
@@ -111,6 +116,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             .brown
         case .developer:
             .black
+        case .diningOut:
+            .orange
         case .entertainment:
             .yellow
         case .payrollDeduction:
@@ -196,9 +203,11 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .deduction:
             "Deduction"
         case .developer:
-            "Developer"
+            "App development"
+        case .diningOut:
+            "Dining out"
         case .entertainment:
-            "Entertainment"
+            "Leisure and travel"
         case .payrollDeduction:
             "Gambling"
         case .gifts:
@@ -208,7 +217,7 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             "Health"
         case .home:
-            "Home"
+            "Housing and electricity"
         case .income:
             "Income"
         case .insurance:
@@ -227,15 +236,17 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     private var norwegianTitle: String {
         switch self {
         case .clothing:
-            "Klær"
+            "Klær og sko"
         case .communication:
-            "Kommunikasjon"
+            "Telefon og internett"
         case .deduction:
-            "Trekk"
+            "Skatt og avgifter"
         case .developer:
-            "Utvikler"
+            "Apputvikling"
+        case .diningOut:
+            "Spise ute"
         case .entertainment:
-            "Underholdning"
+            "Fritid og ferie"
         case .payrollDeduction:
             "Pengespill"
         case .gifts:
@@ -245,9 +256,9 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             "Helse"
         case .home:
-            "Hjem"
+            "Bolig og strøm"
         case .income:
-            "Inntekt"
+            "Inntekter"
         case .insurance:
             "Forsikring"
         case .other:
@@ -271,6 +282,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             "การหักเงิน"
         case .developer:
             "นักพัฒนา"
+        case .diningOut:
+            "รับประทานอาหารนอกบ้าน"
         case .entertainment:
             "บันเทิง"
         case .payrollDeduction:
@@ -308,13 +321,15 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .clothing:
             ["clothing", "clothes", "shoes", "klær", "klaer", "sko", "เสื้อผ้า", "รองเท้า"]
         case .communication:
-            ["communication", "phone", "mobile", "internet", "mobil", "telefon", "โทรศัพท์", "อินเทอร์เน็ต"]
+            ["communication", "phone", "mobile", "internet", "tv package", "kommunikasjon", "mobil", "telefon", "internett", "tv-pakke", "tvpakke", "โทรศัพท์", "อินเทอร์เน็ต"]
         case .deduction:
-            ["deduction", "deductions", "withholding", "payroll deduction", "wage garnishment", "garnishment", "attachment of earnings", "trekk", "påleggstrekk", "paleggstrekk", "utleggstrekk", "fradrag", "การหักเงินเดือน", "หักเงินเดือน", "หักเงินเดือนตามคำสั่ง"]
+            ["deduction", "deductions", "tax", "taxes", "fee", "fees", "back tax", "withholding", "payroll deduction", "wage garnishment", "garnishment", "attachment of earnings", "trekk", "skatt", "avgift", "avgifter", "restskatt", "påleggstrekk", "paleggstrekk", "utleggstrekk", "fradrag", "การหักเงินเดือน", "หักเงินเดือน", "หักเงินเดือนตามคำสั่ง"]
         case .developer:
-            ["developer", "development", "software", "app", "code", "coding", "programming", "utvikler", "utvikling", "programmering", "kode", "นักพัฒนา", "ซอฟต์แวร์", "เขียนโค้ด"]
+            ["developer", "development", "app development", "software", "chatgpt", "app store connect", "xcode", "code", "coding", "programming", "utvikler", "apputvikling", "utvikling", "programmering", "kode", "นักพัฒนา", "ซอฟต์แวร์", "เขียนโค้ด"]
+        case .diningOut:
+            ["dining out", "restaurant", "takeaway", "take away", "fast food", "burger king", "mcdonald", "hamburger", "spise ute", "gatekjøkken", "ferdigmat kjøpt ute", "ร้านอาหาร", "อาหารจานด่วน"]
         case .entertainment:
-            ["entertainment", "movie", "cinema", "game", "restaurant", "underholdning", "kino", "spill", "บันเทิง"]
+            ["entertainment", "leisure", "holiday", "vacation", "travel", "movie", "cinema", "game", "underholdning", "fritid", "ferie", "kino", "spill", "บันเทิง"]
         case .payrollDeduction:
             ["gambling", "casino", "betting", "bet", "lottery", "lotto", "spill", "pengespill", "casino", "tipping", "พนัน", "คาสิโน", "ลอตเตอรี่"]
         case .gifts:
@@ -324,9 +339,9 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             ["health", "doctor", "pharmacy", "medicine", "helse", "lege", "apotek", "สุขภาพ", "ยา"]
         case .home:
-            ["home", "housing", "rent", "mortgage", "electricity", "power", "bolig", "husleie", "strom", "strøm", "บ้าน", "ค่าเช่า"]
+            ["home", "housing", "rent", "mortgage", "electricity", "power", "hjem", "bolig", "husleie", "strom", "strøm", "บ้าน", "ค่าเช่า"]
         case .income:
-            ["income", "salary", "wage", "lønn", "lonn", "inntekt", "รายรับ", "เงินเดือน"]
+            ["income", "incomes", "salary", "wage", "lønn", "lonn", "inntekt", "inntekter", "รายรับ", "เงินเดือน"]
         case .insurance:
             ["insurance", "forsikring", "ประกัน"]
         case .other:

@@ -53,6 +53,7 @@ struct CategoriesView: View {
                 transaction.category == category &&
                 !transaction.isArchived &&
                 transaction.status != .cancelled &&
+                transaction.isIncludedInOrdinaryCashFlow &&
                 selectedPeriod.includes(transaction.dueDate, interval: periodInterval)
             }
             .reduce(Decimal.zero) { runningTotal, transaction in

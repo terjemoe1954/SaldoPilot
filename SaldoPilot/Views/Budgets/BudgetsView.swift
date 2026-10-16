@@ -122,6 +122,7 @@ struct BudgetsView: View {
         transactions.filter { transaction in
             !transaction.isArchived &&
             transaction.status != .cancelled &&
+            transaction.isIncludedInOrdinaryCashFlow &&
             currentMonthInterval.containsHalfOpen(transaction.dueDate)
         }
     }

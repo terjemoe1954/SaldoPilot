@@ -43,6 +43,17 @@ final class Transaction {
         isCompleted || status == .paid || status == .received
     }
 
+    /// Transfers to savings and balance corrections are not ordinary income or spending.
+    var isIncludedInOrdinaryCashFlow: Bool {
+        guard category != .savings else { return false }
+        let normalizedTitle = title.folding(
+            options: [.caseInsensitive, .diacriticInsensitive],
+            locale: .current
+        ).lowercased()
+        return !normalizedTitle.contains("saldojustering")
+            && !normalizedTitle.contains("balance adjustment")
+    }
+
     init(
         id: UUID = UUID(),
         title: String,

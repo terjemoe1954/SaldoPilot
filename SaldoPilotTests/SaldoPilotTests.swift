@@ -323,6 +323,66 @@ struct SaldoPilotTests {
         #expect(transactions.allSatisfy { $0.recurrenceAnchorDay == nil })
     }
 
+    @Test("Category standardization only moves explicit matches")
+    func categoryStandardizationRules() {
+        let fastFood = Transaction(
+            title: "Burger King",
+            amount: 149,
+            type: .expense,
+            dueDate: .now,
+            category: .other,
+            notes: "Keep this note"
+        )
+        let mobilePackage = Transaction(
+            title: "Mobil og TV-pakke",
+            amount: 799,
+            type: .expense,
+            dueDate: .now,
+            category: .subscriptions
+        )
+        let unclear = Transaction(
+            title: "Ukjent kjøp",
+            amount: 50,
+            type: .expense,
+            dueDate: .now,
+            category: .other
+        )
+
+        #expect(CategoryStandardizationService.standardizedCategory(for: fastFood) == .diningOut)
+        #expect(CategoryStandardizationService.standardizedCategory(for: mobilePackage) == .communication)
+        #expect(CategoryStandardizationService.standardizedCategory(for: unclear) == nil)
+        #expect(fastFood.amount == 149)
+        #expect(fastFood.notes == "Keep this note")
+    }
+
+    @Test("Savings transfers and balance adjustments are outside ordinary cash flow")
+    func ordinaryCashFlowExclusions() {
+        let savings = Transaction(
+            title: "Overføring til sparekonto",
+            amount: 1_000,
+            type: .expense,
+            dueDate: .now,
+            category: .savings
+        )
+        let adjustment = Transaction(
+            title: "Saldojustering",
+            amount: 25,
+            type: .income,
+            dueDate: .now
+        )
+        let ordinary = Transaction(
+            title: "Dagligvarer",
+            amount: 500,
+            type: .expense,
+            dueDate: .now,
+            category: .groceries
+        )
+
+        #expect(!savings.isIncludedInOrdinaryCashFlow)
+        #expect(!adjustment.isIncludedInOrdinaryCashFlow)
+        #expect(ordinary.isIncludedInOrdinaryCashFlow)
+    }
+
     private func transaction(
         title: String,
         amount: Decimal,

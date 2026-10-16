@@ -36,7 +36,9 @@ struct StatisticsView: View {
     }
 
     private var activeTransactions: [Transaction] {
-        transactions.filter { !$0.isArchived && $0.status != .cancelled }
+        transactions.filter {
+            !$0.isArchived && $0.status != .cancelled && $0.isIncludedInOrdinaryCashFlow
+        }
     }
 
     private var snapshot: StatisticsSnapshot {

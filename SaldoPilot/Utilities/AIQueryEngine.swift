@@ -117,6 +117,7 @@ enum AIQueryEngine {
         }
 
         let categoryTotals = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, amount: Decimal, matches: [Transaction])? in
+            guard category != .home else { return nil }
             let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.containsHalfOpen($0.dueDate) }
             guard !matches.isEmpty else { return nil }
             return (category, matches.totalAmount, matches.sortedByDueDate)

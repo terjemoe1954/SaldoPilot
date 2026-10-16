@@ -65,8 +65,12 @@ struct ReportsView: View {
                 reportType: selectedReportType,
                 selectedMonth: selectedMonth,
                 transactionCount: reportTransactions.count,
-                income: reportTransactions.filter { $0.type == .income }.totalAmount,
-                expenses: reportTransactions.filter { $0.type == .expense }.totalAmount,
+                income: reportTransactions.filter {
+                    $0.type == .income && $0.isIncludedInOrdinaryCashFlow
+                }.totalAmount,
+                expenses: reportTransactions.filter {
+                    $0.type == .expense && $0.isIncludedInOrdinaryCashFlow
+                }.totalAmount,
                 dateType: effectiveDateType,
                 scope: selectedScope,
                 includeArchived: includeArchived,

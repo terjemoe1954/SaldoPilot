@@ -96,7 +96,9 @@ struct DashboardView: View {
     }
 
     private var periodTransactions: [Transaction] {
-        activeTransactions.filter { periodInterval.containsHalfOpen($0.dueDate) }
+        activeTransactions.filter {
+            $0.isIncludedInOrdinaryCashFlow && periodInterval.containsHalfOpen($0.dueDate)
+        }
     }
 
     private var summary: DashboardSummary {
@@ -129,7 +131,10 @@ struct DashboardView: View {
     }
 
     private var aiInsights: [AIInsight] {
-        AIInsightEngine.insights(transactions: activeTransactions, locale: selectedLanguage.locale)
+        AIInsightEngine.insights(
+            transactions: activeTransactions.filter(\.isIncludedInOrdinaryCashFlow),
+            locale: selectedLanguage.locale
+        )
     }
 
     private var selectedLanguage: AppLanguage {

@@ -137,7 +137,7 @@ private extension HelpArticle {
                     HelpItem(
                         title: "Kategorier",
                         systemImage: "tag",
-                        body: "Kategorier gjør det lettere å lese statistikk og finne poster senere. Velg den kategorien som passer best, for eksempel Lønn, Husleie, Mat, Gaver, Trekk eller Pengespill."
+                        body: "Kategorier gjør det lettere å lese statistikk og finne poster senere. Velg den kategorien som passer best, for eksempel Inntekter, Bolig og strøm, Dagligvarer, Gaver, Skatt og avgifter eller Pengespill."
                     ),
                     HelpItem(
                         title: "Notater",

@@ -262,6 +262,7 @@ struct SaldoPilotApp: App {
                 .environment(\.locale, selectedLanguage.locale)
                 .environment(proPurchaseStore)
                 .task {
+                    try? CategoryStandardizationService.standardize(in: modelContainer.mainContext)
                     networkStatusMonitor.start(
                         cloudContainerIdentifier: AppLaunchConfiguration.activeCloudContainerIdentifier,
                         simulatesICloudUnavailable: AppLaunchConfiguration.simulatesICloudUnavailable
