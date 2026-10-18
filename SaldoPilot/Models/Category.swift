@@ -22,6 +22,7 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case income
     case insurance
     case other
+    case refund
     case savings
     case subscriptions
     case transport
@@ -31,17 +32,17 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     var title: LocalizedStringResource {
         switch self {
         case .clothing:
-            "Clothing and shoes"
+            "Clothing & shoes"
         case .communication:
-            "Phone and internet"
+            "Phone & internet"
         case .deduction:
-            "Taxes and fees"
+            "Taxes & fees"
         case .developer:
-            "App development"
+            "Hobby & development"
         case .diningOut:
             "Dining out"
         case .entertainment:
-            "Leisure and travel"
+            "Leisure & travel"
         case .payrollDeduction:
             "Gambling"
         case .gifts:
@@ -51,13 +52,15 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             "Health"
         case .home:
-            "Housing and electricity"
+            "Housing & electricity"
         case .income:
-            "Income"
+            "Salary & income"
         case .insurance:
             "Insurance"
         case .other:
             "Other"
+        case .refund:
+            "Refund"
         case .savings:
             "Savings"
         case .subscriptions:
@@ -97,6 +100,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             "shield"
         case .other:
             "tag"
+        case .refund:
+            "arrow.uturn.backward.circle"
         case .savings:
             "banknote"
         case .subscriptions:
@@ -136,6 +141,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             .indigo
         case .other:
             .gray
+        case .refund:
+            .cyan
         case .savings:
             .mint
         case .subscriptions:
@@ -197,17 +204,17 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     private var englishTitle: String {
         switch self {
         case .clothing:
-            "Clothing"
+            "Clothing & shoes"
         case .communication:
-            "Communication"
+            "Phone & internet"
         case .deduction:
-            "Deduction"
+            "Taxes & fees"
         case .developer:
-            "App development"
+            "Hobby & development"
         case .diningOut:
             "Dining out"
         case .entertainment:
-            "Leisure and travel"
+            "Leisure & travel"
         case .payrollDeduction:
             "Gambling"
         case .gifts:
@@ -217,13 +224,15 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             "Health"
         case .home:
-            "Housing and electricity"
+            "Housing & electricity"
         case .income:
-            "Income"
+            "Salary & income"
         case .insurance:
             "Insurance"
         case .other:
             "Other"
+        case .refund:
+            "Refund"
         case .savings:
             "Savings"
         case .subscriptions:
@@ -236,17 +245,17 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     private var norwegianTitle: String {
         switch self {
         case .clothing:
-            "Klær og sko"
+            "Klær & sko"
         case .communication:
-            "Telefon og internett"
+            "Telefon & internett"
         case .deduction:
-            "Skatt og avgifter"
+            "Skatt & avgifter"
         case .developer:
-            "Apputvikling"
+            "Hobby & Utvikling"
         case .diningOut:
             "Spise ute"
         case .entertainment:
-            "Fritid og ferie"
+            "Fritid & ferie"
         case .payrollDeduction:
             "Pengespill"
         case .gifts:
@@ -256,13 +265,15 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             "Helse"
         case .home:
-            "Bolig og strøm"
+            "Bolig & strøm"
         case .income:
-            "Inntekter"
+            "Lønn & Inntekt"
         case .insurance:
             "Forsikring"
         case .other:
             "Annet"
+        case .refund:
+            "Refusjon"
         case .savings:
             "Sparing"
         case .subscriptions:
@@ -275,17 +286,17 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
     private var thaiTitle: String {
         switch self {
         case .clothing:
-            "เสื้อผ้า"
+            "เสื้อผ้าและรองเท้า"
         case .communication:
-            "การสื่อสาร"
+            "โทรศัพท์และอินเทอร์เน็ต"
         case .deduction:
-            "การหักเงิน"
+            "ภาษีและค่าธรรมเนียม"
         case .developer:
-            "นักพัฒนา"
+            "งานอดิเรกและการพัฒนา"
         case .diningOut:
             "รับประทานอาหารนอกบ้าน"
         case .entertainment:
-            "บันเทิง"
+            "สันทนาการและวันหยุด"
         case .payrollDeduction:
             "การพนัน"
         case .gifts:
@@ -295,13 +306,15 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health:
             "สุขภาพ"
         case .home:
-            "บ้าน"
+            "ที่อยู่อาศัยและค่าไฟ"
         case .income:
-            "รายรับ"
+            "เงินเดือนและรายรับ"
         case .insurance:
             "ประกัน"
         case .other:
             "อื่น"
+        case .refund:
+            "การคืนเงิน"
         case .savings:
             "เงินออม"
         case .subscriptions:
@@ -325,9 +338,9 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         case .deduction:
             ["deduction", "deductions", "tax", "taxes", "fee", "fees", "back tax", "withholding", "payroll deduction", "wage garnishment", "garnishment", "attachment of earnings", "trekk", "skatt", "avgift", "avgifter", "restskatt", "påleggstrekk", "paleggstrekk", "utleggstrekk", "fradrag", "การหักเงินเดือน", "หักเงินเดือน", "หักเงินเดือนตามคำสั่ง"]
         case .developer:
-            ["developer", "development", "app development", "software", "chatgpt", "app store connect", "xcode", "code", "coding", "programming", "utvikler", "apputvikling", "utvikling", "programmering", "kode", "นักพัฒนา", "ซอฟต์แวร์", "เขียนโค้ด"]
+            ["developer", "development", "app development", "hobby", "software", "chatgpt", "openai", "app store connect", "xcode", "code", "coding", "programming", "utvikler", "apputvikling", "hobby og utvikling", "utvikling", "programmering", "kode", "นักพัฒนา", "ซอฟต์แวร์", "เขียนโค้ด"]
         case .diningOut:
-            ["dining out", "restaurant", "takeaway", "take away", "fast food", "burger king", "mcdonald", "hamburger", "spise ute", "gatekjøkken", "ferdigmat kjøpt ute", "ร้านอาหาร", "อาหารจานด่วน"]
+            ["dining out", "restaurant", "cafe", "café", "takeaway", "take away", "fast food", "burger king", "mcdonald", "hamburger", "spise ute", "restaurant", "kafe", "kafé", "gatekjøkken", "ferdigmat kjøpt ute", "ร้านอาหาร", "คาเฟ่", "อาหารจานด่วน"]
         case .entertainment:
             ["entertainment", "leisure", "holiday", "vacation", "travel", "movie", "cinema", "game", "underholdning", "fritid", "ferie", "kino", "spill", "บันเทิง"]
         case .payrollDeduction:
@@ -346,6 +359,8 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
             ["insurance", "forsikring", "ประกัน"]
         case .other:
             ["other", "annet", "øvrig", "ovrig", "อื่น"]
+        case .refund:
+            ["refund", "reimbursement", "refunded", "cashback", "refusjon", "tilbakebetaling", "tilbakebetalt", "คืนเงิน", "การคืนเงิน"]
         case .savings:
             ["savings", "saving", "save", "spare", "sparing", "ออม", "เงินออม"]
         case .subscriptions:

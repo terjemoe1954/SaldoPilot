@@ -137,7 +137,7 @@ private extension HelpArticle {
                     HelpItem(
                         title: "Kategorier",
                         systemImage: "tag",
-                        body: "Kategorier gjør det lettere å lese statistikk og finne poster senere. Velg den kategorien som passer best, for eksempel Inntekter, Bolig og strøm, Dagligvarer, Gaver, Skatt og avgifter eller Pengespill."
+                        body: "Kategorier gjør det lettere å lese statistikk og finne poster senere. Velg den kategorien som passer best, for eksempel Lønn & Inntekt, Bolig & strøm, Dagligvarer, Gaver, Skatt & avgifter eller Pengespill."
                     ),
                     HelpItem(
                         title: "Notater",
@@ -280,9 +280,9 @@ private extension HelpArticle {
                         body: "Bruk Importer data for å lese inn tidligere eksport. Ta alltid backup før import, spesielt hvis du allerede har mange poster i appen."
                     ),
                     HelpItem(
-                        title: "Slette alle poster",
+                        title: "Slette alle data",
                         systemImage: "trash",
-                        body: "I Innstillinger kan du slette alle poster. Dette krever bekreftelse. Bruk dette bare når du er sikker på at backup er tatt eller dataene ikke skal beholdes."
+                        body: "I Innstillinger kan du slette alle poster og budsjetter. Dette krever bekreftelse. Bruk dette bare når du er sikker på at backup er tatt eller dataene ikke skal beholdes."
                     )
                 ]
             )
@@ -360,7 +360,7 @@ private extension HelpArticle {
                     HelpItem(title: "Language and appearance", systemImage: "globe", body: "In Settings, choose Norwegian, English, Thai, or system language. You can also choose light, dark, or system appearance."),
                     HelpItem(title: "Backup and export", systemImage: "externaldrive", body: "Use Backup and export to save data as JSON or CSV. JSON is best for a full backup. CSV is useful for Numbers or Excel."),
                     HelpItem(title: "Import", systemImage: "square.and.arrow.down", body: "Use Import data to restore an earlier export. Always take a backup before importing, especially if you already have many transactions."),
-                    HelpItem(title: "Delete all transactions", systemImage: "trash", body: "Settings lets you delete all transactions. This requires confirmation. Use it only when you are sure you have a backup or no longer need the data.")
+                    HelpItem(title: "Delete all data", systemImage: "trash", body: "Settings lets you delete all transactions and budgets. This requires confirmation. Use it only when you are sure you have a backup or no longer need the data.")
                 ]
             )
         ]
@@ -437,7 +437,7 @@ private extension HelpArticle {
                     HelpItem(title: "ภาษาและรูปลักษณ์", systemImage: "globe", body: "ในการตั้งค่า เลือกภาษาอังกฤษ นอร์เวย์ ไทย หรือภาษาของระบบได้ และเลือกโหมดสว่าง มืด หรือให้ระบบกำหนด"),
                     HelpItem(title: "สำรองและส่งออก", systemImage: "externaldrive", body: "ใช้สำรองและส่งออกเพื่อบันทึกข้อมูลเป็น JSON หรือ CSV ไฟล์ JSON เหมาะกับการสำรองเต็มรูปแบบ CSV เหมาะสำหรับเปิดใน Numbers หรือ Excel"),
                     HelpItem(title: "นำเข้า", systemImage: "square.and.arrow.down", body: "ใช้นำเข้าข้อมูลเพื่อกู้คืนไฟล์ที่เคยส่งออก ควรสำรองข้อมูลก่อนนำเข้าเสมอ โดยเฉพาะเมื่อมีรายการอยู่แล้วจำนวนมาก"),
-                    HelpItem(title: "ลบรายการทั้งหมด", systemImage: "trash", body: "ในการตั้งค่าสามารถลบรายการทั้งหมดได้ การลบต้องยืนยันก่อน ใช้เฉพาะเมื่อแน่ใจว่ามีสำรองข้อมูลแล้วหรือไม่ต้องการเก็บข้อมูลอีก")
+                    HelpItem(title: "ลบข้อมูลทั้งหมด", systemImage: "trash", body: "ในการตั้งค่าสามารถลบรายการและงบประมาณทั้งหมดได้ การลบต้องยืนยันก่อน ใช้เฉพาะเมื่อแน่ใจว่ามีข้อมูลสำรองแล้วหรือไม่ต้องการเก็บข้อมูลอีก")
                 ]
             )
         ]

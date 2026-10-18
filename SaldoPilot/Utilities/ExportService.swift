@@ -29,7 +29,7 @@ enum ExportService {
 
         let data = try encoder.encode(payload)
         let url = exportURL(prefix: "SaldoPilot-Backup", extension: "json")
-        try data.write(to: url, options: .atomic)
+        try data.write(to: url, options: [.atomic, .withoutOverwriting])
         return url
     }
 
@@ -78,13 +78,13 @@ enum ExportService {
         let url = exportURL(prefix: "SaldoPilot-Transactions", extension: "csv")
         var data = Data([0xEF, 0xBB, 0xBF])
         data.append(contentsOf: csv.utf8)
-        try data.write(to: url, options: .atomic)
+        try data.write(to: url, options: [.atomic, .withoutOverwriting])
         return url
     }
 
     private static func exportURL(prefix: String, extension fileExtension: String) -> URL {
         FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(prefix)-\(fileTimestamp()).\(fileExtension)")
+            .appendingPathComponent("\(prefix)-\(fileTimestamp())-\(UUID().uuidString).\(fileExtension)")
     }
 
     private static func isoString(from date: Date) -> String {
@@ -94,7 +94,7 @@ enum ExportService {
     private static func fileTimestamp() -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        formatter.dateFormat = "yyyyMMdd-HHmmss-SSS"
         return formatter.string(from: .now)
     }
 

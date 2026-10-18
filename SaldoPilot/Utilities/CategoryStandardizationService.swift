@@ -1,21 +1,32 @@
 import Foundation
 import SwiftData
 
-@MainActor
 enum CategoryStandardizationService {
+    @MainActor
     static func standardize(in modelContext: ModelContext) throws {
         let transactions = try modelContext.fetch(FetchDescriptor<Transaction>())
+        guard standardize(transactions: transactions) else { return }
+        try modelContext.save()
+    }
+
+    @discardableResult
+    static func standardize(transactions: [Transaction]) -> Bool {
         var changed = false
 
         for transaction in transactions {
-            guard let category = standardizedCategory(for: transaction) else { continue }
+            let category = transaction.category == .other
+                ? CategorySuggestionService.reimbursementCategory(
+                    for: transaction.title,
+                    using: transactions,
+                    excluding: transaction.id
+                ) ?? standardizedCategory(for: transaction)
+                : standardizedCategory(for: transaction)
+            guard let category else { continue }
             transaction.category = category
             changed = true
         }
 
-        if changed {
-            try modelContext.save()
-        }
+        return changed
     }
 
     static func standardizedCategory(for transaction: Transaction) -> CategoryKind? {
@@ -30,16 +41,24 @@ enum CategoryStandardizationService {
             return .communication
         }
 
-        if title.contains("restskatt") || title.contains("back tax") {
-            return transaction.category == .deduction ? nil : .deduction
+        if transaction.category == .other,
+           (title.contains("restskatt") || title.contains("back tax")) {
+            return .deduction
         }
 
-        if title.contains("brilleabonnement") || title.contains("glasses subscription") {
-            return transaction.category == .health ? nil : .health
+        if transaction.category == .subscriptions,
+           (title.contains("brilleabonnement") || title.contains("glasses subscription")) {
+            return .health
         }
 
-        if developerTerms.contains(where: title.contains) {
-            return transaction.category == .developer ? nil : .developer
+        if [.other, .subscriptions].contains(transaction.category),
+           developerTerms.contains(where: title.contains) {
+            return .developer
+        }
+
+        if transaction.category == .other,
+           refundTerms.contains(where: title.contains) {
+            return .refund
         }
 
         return nil
@@ -47,7 +66,7 @@ enum CategoryStandardizationService {
 
     private static let diningOutTerms = [
         "burger king", "mcdonald", "hamburger", "fast food", "ferdigmat kjøpt ute",
-        "takeaway", "take away", "gatekjøkken"
+        "takeaway", "take away", "gatekjøkken", "restaurant", "kafe", "cafe"
     ]
 
     private static let communicationTerms = [
@@ -56,6 +75,10 @@ enum CategoryStandardizationService {
 
     private static let developerTerms = [
         "chatgpt", "openai", "app store connect", "xcode"
+    ]
+
+    private static let refundTerms = [
+        "refusjon", "refund", "cashback"
     ]
 }
 

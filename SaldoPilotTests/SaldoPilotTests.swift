@@ -347,9 +347,25 @@ struct SaldoPilotTests {
             dueDate: .now,
             category: .other
         )
+        let restaurant = Transaction(
+            title: "Kafé og restaurant",
+            amount: 280,
+            type: .expense,
+            dueDate: .now,
+            category: .other
+        )
+        let manuallyCategorized = Transaction(
+            title: "Burger King",
+            amount: 149,
+            type: .expense,
+            dueDate: .now,
+            category: .gifts
+        )
 
         #expect(CategoryStandardizationService.standardizedCategory(for: fastFood) == .diningOut)
         #expect(CategoryStandardizationService.standardizedCategory(for: mobilePackage) == .communication)
+        #expect(CategoryStandardizationService.standardizedCategory(for: restaurant) == .diningOut)
+        #expect(CategoryStandardizationService.standardizedCategory(for: manuallyCategorized) == nil)
         #expect(CategoryStandardizationService.standardizedCategory(for: unclear) == nil)
         #expect(fastFood.amount == 149)
         #expect(fastFood.notes == "Keep this note")
@@ -377,10 +393,66 @@ struct SaldoPilotTests {
             dueDate: .now,
             category: .groceries
         )
+        let refund = Transaction(
+            title: "Refusjon",
+            amount: 200,
+            type: .income,
+            dueDate: .now,
+            category: .refund
+        )
 
         #expect(!savings.isIncludedInOrdinaryCashFlow)
         #expect(!adjustment.isIncludedInOrdinaryCashFlow)
+        #expect(!refund.isIncludedInOrdinaryCashFlow)
         #expect(ordinary.isIncludedInOrdinaryCashFlow)
+    }
+
+    @Test("Category suggestions prefer history and can link reimbursements")
+    func categorySuggestions() {
+        let groceryPurchase = Transaction(
+            title: "Coop Mega",
+            amount: 600,
+            type: .expense,
+            dueDate: .now,
+            category: .groceries
+        )
+        let historicalChoice = Transaction(
+            title: "Fast leverandør",
+            amount: 300,
+            type: .expense,
+            dueDate: .now,
+            category: .health
+        )
+
+        #expect(
+            CategorySuggestionService.suggestion(
+                for: "Fast leverandør",
+                using: [groceryPurchase, historicalChoice]
+            ) == .health
+        )
+        #expect(
+            CategorySuggestionService.suggestion(
+                for: "Tilbakebetaling av utlegg Coop Mega",
+                using: [groceryPurchase]
+            ) == .groceries
+        )
+        #expect(CategorySuggestionService.suggestion(for: "Burger King", using: []) == .diningOut)
+        #expect(CategorySuggestionService.suggestion(for: "Refusjon", using: []) == .refund)
+        #expect(CategorySuggestionService.suggestion(for: "Uklar", using: []) == nil)
+    }
+
+    @Test("Exports use unique filenames and refuse overwriting")
+    func uniqueExportFilenames() throws {
+        let first = try ExportService.makeJSONBackup(transactions: [])
+        let second = try ExportService.makeJSONBackup(transactions: [])
+        defer {
+            try? FileManager.default.removeItem(at: first)
+            try? FileManager.default.removeItem(at: second)
+        }
+
+        #expect(first != second)
+        #expect(FileManager.default.fileExists(atPath: first.path))
+        #expect(FileManager.default.fileExists(atPath: second.path))
     }
 
     private func transaction(

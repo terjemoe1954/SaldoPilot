@@ -10,6 +10,7 @@ struct ReportTransaction {
     let status: TransactionStatus
     let category: CategoryKind
     let notes: String
+    let isIncludedInOrdinaryCashFlow: Bool
 
     init(transaction: Transaction, transactionDate: Date) {
         id = transaction.id
@@ -20,6 +21,7 @@ struct ReportTransaction {
         status = transaction.effectiveStatus
         category = transaction.category
         notes = transaction.notes
+        isIncludedInOrdinaryCashFlow = transaction.isIncludedInOrdinaryCashFlow
     }
 }
 
@@ -273,8 +275,12 @@ enum ReportPDFService {
         width: CGFloat
     ) {
         draw(strings.summary, rect: CGRect(x: x, y: y, width: width, height: 22), font: .boldSystemFont(ofSize: 14))
-        let received = total(transactions) { $0.type == .income && $0.status == .received }
-        let paid = total(transactions) { $0.type == .expense && $0.status == .paid }
+        let received = total(transactions) {
+            $0.isIncludedInOrdinaryCashFlow && $0.type == .income && $0.status == .received
+        }
+        let paid = total(transactions) {
+            $0.isIncludedInOrdinaryCashFlow && $0.type == .expense && $0.status == .paid
+        }
         let rows: [(String, Decimal)]
         if dateType == .paidDate {
             rows = [
@@ -282,8 +288,16 @@ enum ReportPDFService {
                 (strings.expensesPaid, paid)
             ]
         } else {
-            let pendingIncome = total(transactions) { $0.type == .income && ($0.status == .pending || $0.status == .overdue) }
-            let unpaidExpenses = total(transactions) { $0.type == .expense && ($0.status == .pending || $0.status == .overdue) }
+            let pendingIncome = total(transactions) {
+                $0.isIncludedInOrdinaryCashFlow
+                    && $0.type == .income
+                    && ($0.status == .pending || $0.status == .overdue)
+            }
+            let unpaidExpenses = total(transactions) {
+                $0.isIncludedInOrdinaryCashFlow
+                    && $0.type == .expense
+                    && ($0.status == .pending || $0.status == .overdue)
+            }
             rows = [
                 (strings.incomeReceived, received),
                 (strings.expensesPaid, paid),

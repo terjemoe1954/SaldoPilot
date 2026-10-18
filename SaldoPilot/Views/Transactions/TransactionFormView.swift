@@ -33,6 +33,8 @@ struct TransactionFormView: View {
     @State private var pendingCoverageScope: RecurrenceUpdateScope?
     @State private var allowsInsufficientCoverage = false
     @State private var isShowingSaveError = false
+    @State private var suggestedCategory: CategoryKind?
+    @State private var categoryWasManuallySelected: Bool
 
     init(transaction: Transaction? = nil, intent: NewTransactionIntent = .transaction) {
         self.transaction = transaction
@@ -52,18 +54,25 @@ struct TransactionFormView: View {
         _recurrence = State(initialValue: transaction?.recurrence ?? .none)
         _recurrenceIntervalMonths = State(initialValue: transaction?.recurrenceIntervalMonths ?? 1)
         _notes = State(initialValue: transaction?.notes ?? "")
+        _suggestedCategory = State(initialValue: nil)
+        _categoryWasManuallySelected = State(initialValue: transaction != nil)
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                TransactionBasicsSection(
-                    title: $title,
-                    amountText: $amountText,
-                    type: $type
+                TransactionDescriptionSection(title: $title)
+
+                TransactionCategorySection(
+                    category: $category,
+                    suggestedCategory: suggestedCategory,
+                    onManualSelection: {
+                        categoryWasManuallySelected = true
+                        suggestedCategory = nil
+                    }
                 )
 
-                TransactionCategorySection(category: $category)
+                TransactionAmountSection(amountText: $amountText)
 
                 TransactionDatesSection(
                     dueDate: $dueDate,
@@ -71,6 +80,8 @@ struct TransactionFormView: View {
                     paidDate: $paidDate,
                     status: $status
                 )
+
+                TransactionTypeSection(type: $type)
 
                 TransactionRecurrenceSection(
                     recurrence: $recurrence,
@@ -137,9 +148,17 @@ struct TransactionFormView: View {
             .onChange(of: title) { _, newTitle in
                 updateSuggestedCategory(for: newTitle)
             }
+            .task {
+                updateSuggestedCategory(for: title)
+            }
             .onChange(of: type) { _, newType in
-                if transaction == nil && category == .other {
-                    category = newType == .income ? .income : .other
+                if transaction == nil && !categoryWasManuallySelected {
+                    if newType == .income {
+                        suggestedCategory = nil
+                        category = .income
+                    } else {
+                        updateSuggestedCategory(for: title)
+                    }
                 }
 
                 if status == .paid || status == .received {
@@ -149,6 +168,8 @@ struct TransactionFormView: View {
             .onChange(of: status) { _, newStatus in
                 if newStatus == .paid || newStatus == .received {
                     hasPaidDate = true
+                } else {
+                    hasPaidDate = false
                 }
             }
             .onChange(of: hasPaidDate) { _, newValue in
@@ -168,10 +189,14 @@ struct TransactionFormView: View {
     }
 
     private func updateSuggestedCategory(for title: String) {
-        guard category == .other else { return }
-        if let suggestedCategory = CategoryKind.allCases.first(where: { $0 != .other && $0.matches(transactionTitle: title) }) {
-            category = suggestedCategory
-        }
+        guard !categoryWasManuallySelected, type == .expense else { return }
+        let suggestion = CategorySuggestionService.suggestion(
+            for: title,
+            using: transactions,
+            excluding: transaction?.id
+        )
+        suggestedCategory = suggestion
+        category = suggestion ?? .other
     }
 
     private func requestSave() {
@@ -303,19 +328,33 @@ private enum RecurrenceUpdateScope {
     case thisAndFuture
 }
 
-private struct TransactionBasicsSection: View {
+private struct TransactionDescriptionSection: View {
     @Binding var title: String
+
+    var body: some View {
+        Section("Description") {
+            TextField("Description", text: $title)
+                .textInputAutocapitalization(.sentences)
+        }
+    }
+}
+
+private struct TransactionAmountSection: View {
     @Binding var amountText: String
+
+    var body: some View {
+        Section("Amount") {
+            TextField("Amount", text: $amountText)
+                .keyboardType(.decimalPad)
+        }
+    }
+}
+
+private struct TransactionTypeSection: View {
     @Binding var type: TransactionType
 
     var body: some View {
-        Section("Transaction") {
-            TextField("Title", text: $title)
-                .textInputAutocapitalization(.sentences)
-
-            TextField("Amount", text: $amountText)
-                .keyboardType(.decimalPad)
-
+        Section("Type") {
             Picker("Type", selection: $type) {
                 ForEach(TransactionType.allCases) { transactionType in
                     Text(transactionType.title).tag(transactionType)
@@ -330,13 +369,33 @@ private struct TransactionCategorySection: View {
     @Environment(\.locale) private var locale
 
     @Binding var category: CategoryKind
+    let suggestedCategory: CategoryKind?
+    let onManualSelection: () -> Void
 
     var body: some View {
         Section("Category") {
-            Picker("Category", selection: $category) {
+            Menu {
                 ForEach(CategoryKind.sortedForDisplay(locale: locale)) { category in
-                    Label(category.title, systemImage: category.systemImage)
-                        .tag(category)
+                    Button {
+                        self.category = category
+                        onManualSelection()
+                    } label: {
+                        Label(category.title, systemImage: category.systemImage)
+                    }
+                }
+            } label: {
+                LabeledContent("Category") {
+                    HStack(spacing: 6) {
+                        if suggestedCategory == category {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(.blue)
+                                .accessibilityLabel("Suggested category")
+                        }
+                        Text(category.title)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -351,19 +410,54 @@ private struct TransactionDatesSection: View {
 
     var body: some View {
         Section("Dates") {
-            DatePicker("Due date", selection: $dueDate, displayedComponents: .date)
-
-            Toggle("Paid or received", isOn: $hasPaidDate)
-
-            if hasPaidDate {
-                DatePicker("Paid date", selection: $paidDate, displayedComponents: .date)
-            }
+            TransactionDateRow(title: "Date", date: $dueDate)
 
             Picker("Status", selection: $status) {
                 ForEach(TransactionStatus.allCases) { transactionStatus in
                     Text(transactionStatus.title).tag(transactionStatus)
                 }
             }
+
+            if hasPaidDate {
+                TransactionDateRow(title: "Paid or received date", date: $paidDate)
+            }
+        }
+    }
+}
+
+private struct TransactionDateRow: View {
+    let title: LocalizedStringKey
+    @Binding var date: Date
+    @State private var isShowingCalendar = false
+
+    var body: some View {
+        Button {
+            isShowingCalendar = true
+        } label: {
+            LabeledContent(title) {
+                Text(date, format: .dateTime.day().month().year())
+            }
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $isShowingCalendar) {
+            NavigationStack {
+                DatePicker(title, selection: $date, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding()
+                    .onChange(of: date) {
+                        isShowingCalendar = false
+                    }
+                    .navigationTitle(title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                isShowingCalendar = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium])
         }
     }
 }

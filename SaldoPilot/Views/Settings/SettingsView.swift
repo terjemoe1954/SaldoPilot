@@ -11,6 +11,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \Budget.monthStart) private var budgets: [Budget]
 
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
@@ -29,6 +30,7 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
 
     @State private var isShowingDeleteAllConfirmation = false
+    @State private var isShowingDeleteError = false
 
     var body: some View {
         NavigationStack {
@@ -133,9 +135,9 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         isShowingDeleteAllConfirmation = true
                     } label: {
-                        Label("Delete all transactions", systemImage: "trash")
+                        Label("Delete all data", systemImage: "trash")
                     }
-                    .disabled(transactions.isEmpty)
+                    .disabled(transactions.isEmpty && budgets.isEmpty)
                 }
 
                 Section("App") {
@@ -171,16 +173,21 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .confirmationDialog(
-                "Delete all transactions?",
+                "Delete all data?",
                 isPresented: $isShowingDeleteAllConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Delete all transactions", role: .destructive) {
-                    deleteAllTransactions()
+                Button("Delete all data", role: .destructive) {
+                    deleteAllData()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This permanently deletes \(transactions.count) transactions from this device and iCloud sync.")
+                Text("This permanently deletes \(transactions.count) transactions and \(budgets.count) budgets from this device and iCloud sync.")
+            }
+            .alert("Could not delete all data", isPresented: $isShowingDeleteError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("No data was deleted. Check the connection and try again.")
             }
         }
     }
@@ -241,9 +248,19 @@ struct SettingsView: View {
         URL(string: "https://github.com/terjemoe1954/SaldoPilot/issues") ?? URL(fileURLWithPath: "/")
     }
 
-    private func deleteAllTransactions() {
+    private func deleteAllData() {
         for transaction in transactions {
             modelContext.delete(transaction)
+        }
+        for budget in budgets {
+            modelContext.delete(budget)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            isShowingDeleteError = true
         }
     }
 }

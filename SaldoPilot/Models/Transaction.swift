@@ -45,7 +45,7 @@ final class Transaction {
 
     /// Transfers to savings and balance corrections are not ordinary income or spending.
     var isIncludedInOrdinaryCashFlow: Bool {
-        guard category != .savings else { return false }
+        guard category != .savings, category != .refund else { return false }
         let normalizedTitle = title.folding(
             options: [.caseInsensitive, .diacriticInsensitive],
             locale: .current

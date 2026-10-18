@@ -66,7 +66,7 @@ struct DashboardView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Overview")
             .sheet(isPresented: $isShowingAIQuery) {
-                AIQueryView(transactions: activeTransactions)
+                AIQueryView(transactions: activeTransactions.filter(\.isIncludedInOrdinaryCashFlow))
             }
         }
     }

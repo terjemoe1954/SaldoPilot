@@ -141,6 +141,8 @@ enum ImportService {
             budgets.append(budget)
         }
 
+        CategoryStandardizationService.standardize(transactions: transactions)
+
         return PreparedImportResult(
             transactions: transactions,
             budgets: budgets,
@@ -198,6 +200,8 @@ enum ImportService {
 
             transactions.append(transaction)
         }
+
+        CategoryStandardizationService.standardize(transactions: transactions)
 
         return PreparedImportResult(
             transactions: transactions,
