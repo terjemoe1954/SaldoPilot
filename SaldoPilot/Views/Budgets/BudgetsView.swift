@@ -246,13 +246,20 @@ private struct BudgetCategoryRow: Identifiable {
     let expenseAmount: Decimal
 
     var id: String { category.rawValue }
+    var isIncomeGoal: Bool { category == .income || category == .refund }
     var netSpentAmount: Decimal { expenseAmount - incomeAmount }
-    var remainingAmount: Decimal { budgetAmount - netSpentAmount }
+    var remainingAmount: Decimal {
+        isIncomeGoal ? budgetAmount - incomeAmount : budgetAmount - netSpentAmount
+    }
+    var displayedAmount: Decimal {
+        isIncomeGoal ? incomeAmount : remainingAmount
+    }
     var progress: Double {
         guard budgetAmount > .zero else { return 0 }
-        let spent = NSDecimalNumber(decimal: max(netSpentAmount, .zero)).doubleValue
+        let currentAmount = isIncomeGoal ? incomeAmount : max(netSpentAmount, .zero)
+        let current = NSDecimalNumber(decimal: currentAmount).doubleValue
         let budget = NSDecimalNumber(decimal: budgetAmount).doubleValue
-        return min(max(spent / budget, 0), 1)
+        return min(max(current / budget, 0), 1)
     }
 }
 
@@ -308,19 +315,25 @@ private struct BudgetCategoryRowView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(row.categoryTitle)
                         .font(.subheadline.weight(.semibold))
-                    Text("Income: \(row.incomeAmount.formattedCurrency)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("Expenses: \(row.expenseAmount.formattedCurrency) · Budget: \(row.budgetAmount.formattedCurrency)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if row.isIncomeGoal {
+                        Text("Income: \(row.incomeAmount.formattedCurrency) · Budget: \(row.budgetAmount.formattedCurrency)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Income: \(row.incomeAmount.formattedCurrency)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("Expenses: \(row.expenseAmount.formattedCurrency) · Budget: \(row.budgetAmount.formattedCurrency)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Spacer(minLength: 8)
 
-                Text(row.remainingAmount.formattedCurrency)
+                Text(row.displayedAmount.formattedCurrency)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(row.remainingAmount >= .zero ? Color.primary : Color.red)
+                    .foregroundStyle(row.isIncomeGoal ? Color.green : (row.remainingAmount >= .zero ? Color.primary : Color.red))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
 
@@ -330,7 +343,7 @@ private struct BudgetCategoryRowView: View {
             }
 
             ProgressView(value: row.progress)
-                .tint(row.remainingAmount >= .zero ? .blue : .red)
+                .tint(row.isIncomeGoal ? .green : (row.remainingAmount >= .zero ? .blue : .red))
         }
         .padding(12)
         .background(.background)
