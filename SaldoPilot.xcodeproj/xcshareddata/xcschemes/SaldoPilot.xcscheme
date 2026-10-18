@@ -17,6 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A89554943055F2CB00ED13D1"
                BuildableName = "SaldoPilot.app"
+               BlueprintName = "SaldoPilot"
                ReferencedContainer = "container:SaldoPilot.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -77,6 +78,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A89554943055F2CB00ED13D1"
             BuildableName = "SaldoPilot.app"
+            BlueprintName = "SaldoPilot"
             ReferencedContainer = "container:SaldoPilot.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -121,6 +123,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A89554943055F2CB00ED13D1"
             BuildableName = "SaldoPilot.app"
+            BlueprintName = "SaldoPilot"
             ReferencedContainer = "container:SaldoPilot.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
