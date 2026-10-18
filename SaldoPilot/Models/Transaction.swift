@@ -45,7 +45,8 @@ final class Transaction {
 
     /// Transfers to savings and balance corrections are not ordinary income or spending.
     var isIncludedInOrdinaryCashFlow: Bool {
-        guard category != .savings, category != .refund else { return false }
+        guard category != .savings else { return false }
+        if category == .refund, type != .income { return false }
         let normalizedTitle = title.folding(
             options: [.caseInsensitive, .diacriticInsensitive],
             locale: .current
@@ -54,7 +55,7 @@ final class Transaction {
             && !normalizedTitle.contains("balance adjustment")
     }
 
-    /// Refunds remain visible in category breakdowns without affecting ordinary totals.
+    /// Refunds remain visible in category breakdowns even if entered as an expense.
     var isIncludedInCategoryActivity: Bool {
         isIncludedInOrdinaryCashFlow || category == .refund
     }

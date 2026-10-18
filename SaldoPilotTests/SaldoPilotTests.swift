@@ -400,11 +400,20 @@ struct SaldoPilotTests {
             dueDate: .now,
             category: .refund
         )
+        let refundExpense = Transaction(
+            title: "Feilført refusjon",
+            amount: 200,
+            type: .expense,
+            dueDate: .now,
+            category: .refund
+        )
 
         #expect(!savings.isIncludedInOrdinaryCashFlow)
         #expect(!adjustment.isIncludedInOrdinaryCashFlow)
-        #expect(!refund.isIncludedInOrdinaryCashFlow)
+        #expect(refund.isIncludedInOrdinaryCashFlow)
         #expect(refund.isIncludedInCategoryActivity)
+        #expect(!refundExpense.isIncludedInOrdinaryCashFlow)
+        #expect(refundExpense.isIncludedInCategoryActivity)
         #expect(ordinary.isIncludedInOrdinaryCashFlow)
         #expect(ordinary.isIncludedInCategoryActivity)
         #expect(!savings.isIncludedInCategoryActivity)

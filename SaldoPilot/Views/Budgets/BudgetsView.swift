@@ -150,7 +150,7 @@ struct BudgetsView: View {
 
     private var budgetSummary: BudgetSummary {
         BudgetSummary(
-            rows: budgetRows.filter { $0.category != .refund && $0.category != .savings }
+            rows: budgetRows.filter { $0.category != .savings }
         )
     }
 

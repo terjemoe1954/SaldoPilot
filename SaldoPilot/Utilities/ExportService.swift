@@ -29,7 +29,7 @@ enum ExportService {
 
         let data = try encoder.encode(payload)
         let url = exportURL(prefix: "SaldoPilot-Backup", extension: "json")
-        try data.write(to: url, options: [.atomic, .withoutOverwriting])
+        try writeExportData(data, to: url)
         return url
     }
 
@@ -78,13 +78,25 @@ enum ExportService {
         let url = exportURL(prefix: "SaldoPilot-Transactions", extension: "csv")
         var data = Data([0xEF, 0xBB, 0xBF])
         data.append(contentsOf: csv.utf8)
-        try data.write(to: url, options: [.atomic, .withoutOverwriting])
+        try writeExportData(data, to: url)
         return url
     }
 
     private static func exportURL(prefix: String, extension fileExtension: String) -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("\(prefix)-\(fileTimestamp())-\(UUID().uuidString).\(fileExtension)")
+    }
+
+    private static func writeExportData(_ data: Data, to url: URL) throws {
+        guard !FileManager.default.fileExists(atPath: url.path) else {
+            throw CocoaError(
+                .fileWriteFileExists,
+                userInfo: [NSFilePathErrorKey: url.path]
+            )
+        }
+
+        // Foundation does not support combining atomic writes with withoutOverwriting.
+        try data.write(to: url, options: .atomic)
     }
 
     private static func isoString(from date: Date) -> String {
