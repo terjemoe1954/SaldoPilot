@@ -222,30 +222,20 @@ struct BudgetsView: View {
 }
 
 private struct BudgetGettingStartedCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let onSetBudget: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: "target")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 48, height: 48)
-                .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Set your first budget")
-                    .font(.headline)
-
-                Text("Choose a monthly amount for a category to start tracking your plan.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button(action: onSetBudget) {
-                    Label("Set budget", systemImage: "plus")
+        VStack(alignment: .leading, spacing: 14) {
+            if dynamicTypeSize.isAccessibilitySize {
+                BudgetGettingStartedIcon()
+                BudgetGettingStartedContent(onSetBudget: onSetBudget)
+            } else {
+                HStack(alignment: .top, spacing: 14) {
+                    BudgetGettingStartedIcon()
+                    BudgetGettingStartedContent(onSetBudget: onSetBudget)
                 }
-                .buttonStyle(.borderedProminent)
             }
         }
         .padding(18)
@@ -255,6 +245,39 @@ private struct BudgetGettingStartedCard: View {
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(Color.blue.opacity(0.14), lineWidth: 1)
+        }
+    }
+}
+
+private struct BudgetGettingStartedIcon: View {
+    var body: some View {
+        Image(systemName: "target")
+            .font(.title2.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(width: 48, height: 48)
+            .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
+private struct BudgetGettingStartedContent: View {
+    let onSetBudget: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Set your first budget")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+
+            Text("Choose a monthly amount for a category to start tracking your plan.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(action: onSetBudget) {
+                Label("Set budget", systemImage: "plus")
+            }
+            .buttonStyle(.borderedProminent)
         }
     }
 }
@@ -354,7 +377,9 @@ private struct BudgetRemainingHero: View {
         .frame(maxWidth: .infinity, minHeight: 124, alignment: .leading)
         .background {
             LinearGradient(
-                colors: value >= .zero ? [Color.blue, Color.indigo] : [Color.orange, Color.red],
+                colors: value >= .zero
+                    ? [Color(red: 0, green: 0.29, blue: 0.60), Color(red: 0.21, green: 0.13, blue: 0.44)]
+                    : [Color(red: 0.51, green: 0.22, blue: 0), Color(red: 0.54, green: 0.11, blue: 0.11)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

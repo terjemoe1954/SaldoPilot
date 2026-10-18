@@ -7742,7 +7742,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "machine_translated",
-            "value" : "Denne måneden er positiv med %@ etter registrerte inntekter og utgifter."
+            "value" : "Måneden er positiv med %@ etter registrerte inntekter og utgifter."
           }
         },
         "th" : {

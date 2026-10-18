@@ -85,38 +85,38 @@ private struct OnboardingPage: View {
     let message: LocalizedStringKey
 
     var body: some View {
-        VStack(spacing: 28) {
-            Spacer(minLength: 20)
+        ScrollView {
+            VStack(spacing: 28) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 72, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 148, height: 148)
+                    .background(
+                        LinearGradient(
+                            colors: [tint, tint.opacity(0.65)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 38, style: .continuous)
+                    )
+                    .shadow(color: tint.opacity(0.24), radius: 20, y: 10)
+                    .accessibilityHidden(true)
 
-            Image(systemName: systemImage)
-                .font(.system(size: 72, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 148, height: 148)
-                .background(
-                    LinearGradient(
-                        colors: [tint, tint.opacity(0.65)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: 38, style: .continuous)
-                )
-                .shadow(color: tint.opacity(0.24), radius: 20, y: 10)
-                .accessibilityHidden(true)
+                VStack(spacing: 14) {
+                    Text(title)
+                        .font(.largeTitle.weight(.bold))
+                        .multilineTextAlignment(.center)
+                        .accessibilityAddTraits(.isHeader)
 
-            VStack(spacing: 14) {
-                Text(title)
-                    .font(.largeTitle.weight(.bold))
-                    .multilineTextAlignment(.center)
-
-                Text(message)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(message)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 28)
             }
-            .padding(.horizontal, 28)
-
-            Spacer(minLength: 44)
+            .padding(.vertical, 20)
         }
     }
 }

@@ -10,8 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct StatisticsView: View {
+    @Environment(\.locale) private var locale
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
-    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @State private var selectedCategoryMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
 
     let onNewTransaction: () -> Void
@@ -19,8 +19,12 @@ struct StatisticsView: View {
     var body: some View {
         NavigationStack {
             if visibleTransactions.isEmpty {
-                StatisticsEmptyState(onNewTransaction: onNewTransaction)
-                    .navigationTitle("Statistics")
+                ScrollView {
+                    StatisticsEmptyState(onNewTransaction: onNewTransaction)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
+                .navigationTitle("Statistics")
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
@@ -60,14 +64,11 @@ struct StatisticsView: View {
         StatisticsSnapshot(
             ordinaryTransactions: ordinaryTransactions,
             categoryTransactions: categoryTransactions,
-            locale: selectedLanguage.locale,
+            locale: locale,
             selectedCategoryMonth: selectedCategoryMonth
         )
     }
 
-    private var selectedLanguage: AppLanguage {
-        AppLanguage(rawValue: languageRawValue) ?? .system
-    }
 }
 
 private struct StatisticsEmptyState: View {
@@ -193,7 +194,9 @@ private struct MonthStatistics: Identifiable {
     var income: Decimal { transactions.filter { $0.type == .income }.totalAmount }
     var expenses: Decimal { transactions.filter { $0.type == .expense }.totalAmount }
     var net: Decimal { income - expenses }
-    var title: String { monthStart.formatted(.dateTime.month(.abbreviated).year()) }
+    func title(locale: Locale) -> String {
+        monthStart.formatted(.dateTime.month(.abbreviated).year().locale(locale))
+    }
 }
 
 private struct CategoryStatistics: Identifiable {
@@ -216,7 +219,9 @@ private struct OutstandingMonthStatistics: Identifiable {
 
     var id: Date { monthStart }
     var amount: Decimal { transactions.totalAmount }
-    var title: String { monthStart.formatted(.dateTime.month(.abbreviated).year()) }
+    func title(locale: Locale) -> String {
+        monthStart.formatted(.dateTime.month(.abbreviated).year().locale(locale))
+    }
 }
 
 private struct StatisticsSummaryGrid: View {
@@ -264,7 +269,9 @@ private struct StatisticsNetHero: View {
         .frame(maxWidth: .infinity, minHeight: 124, alignment: .leading)
         .background {
             LinearGradient(
-                colors: value >= .zero ? [Color.blue, Color.indigo] : [Color.orange, Color.red],
+                colors: value >= .zero
+                    ? [Color(red: 0, green: 0.29, blue: 0.60), Color(red: 0.21, green: 0.13, blue: 0.44)]
+                    : [Color(red: 0.51, green: 0.22, blue: 0), Color(red: 0.54, green: 0.11, blue: 0.11)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -305,7 +312,7 @@ private struct StatisticsMetricCard: View {
 }
 
 private struct MonthlyComparisonChart: View {
-    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
+    @Environment(\.locale) private var locale
 
     let months: [MonthStatistics]
 
@@ -317,13 +324,13 @@ private struct MonthlyComparisonChart: View {
                         x: .value("Month", month.monthStart, unit: .month),
                         y: .value("Amount", month.income.doubleValue)
                     )
-                    .foregroundStyle(by: .value("Type", localized("Income")))
+                    .foregroundStyle(by: .value("Type", incomeLegendTitle))
 
                     BarMark(
                         x: .value("Month", month.monthStart, unit: .month),
                         y: .value("Amount", month.expenses.doubleValue)
                     )
-                    .foregroundStyle(by: .value("Type", localized("Expenses")))
+                    .foregroundStyle(by: .value("Type", expenseLegendTitle))
                 }
             }
             .chartYAxisLabel("Amount")
@@ -334,11 +341,15 @@ private struct MonthlyComparisonChart: View {
     }
 
     private func localized(_ value: String.LocalizationValue) -> String {
-        String(localized: value, bundle: .main, locale: selectedLanguage.locale)
+        String(localized: value, bundle: .main, locale: locale)
     }
 
-    private var selectedLanguage: AppLanguage {
-        AppLanguage(rawValue: languageRawValue) ?? .system
+    private var incomeLegendTitle: String {
+        locale.usesNorwegianLanguage ? "Inntekter" : localized("Income")
+    }
+
+    private var expenseLegendTitle: String {
+        locale.usesNorwegianLanguage ? "Utgifter" : localized("Expenses")
     }
 }
 
@@ -415,6 +426,8 @@ private struct NetTrendChart: View {
 }
 
 private struct OutstandingAmountChart: View {
+    @Environment(\.locale) private var locale
+
     let months: [OutstandingMonthStatistics]
 
     var body: some View {
@@ -436,12 +449,12 @@ private struct OutstandingAmountChart: View {
                     ForEach(months) { month in
                         NavigationLink {
                             StatisticsTransactionListView(
-                                title: month.title,
+                                title: month.title(locale: locale),
                                 transactions: month.transactions.sortedByDueDate
                             )
                         } label: {
                             StatisticsValueRow(
-                                title: month.title,
+                                title: month.title(locale: locale),
                                 subtitle: "Receivable",
                                 value: month.amount,
                                 systemImage: "clock.badge.exclamationmark"
@@ -478,6 +491,8 @@ private struct StatisticsChartSection<Content: View>: View {
 }
 
 private struct StatisticsMonthLinkList: View {
+    @Environment(\.locale) private var locale
+
     let months: [MonthStatistics]
     let subtitle: LocalizedStringKey
     let value: (MonthStatistics) -> Decimal
@@ -487,12 +502,12 @@ private struct StatisticsMonthLinkList: View {
             ForEach(months) { month in
                 NavigationLink {
                     StatisticsTransactionListView(
-                        title: month.title,
+                        title: month.title(locale: locale),
                         transactions: month.transactions.sortedByDueDate
                     )
                 } label: {
                     StatisticsValueRow(
-                        title: month.title,
+                        title: month.title(locale: locale),
                         subtitle: subtitle,
                         value: value(month),
                         systemImage: "calendar"
@@ -634,6 +649,13 @@ private extension Array where Element == Transaction {
 private extension Decimal {
     var doubleValue: Double {
         NSDecimalNumber(decimal: self).doubleValue
+    }
+}
+
+private extension Locale {
+    var usesNorwegianLanguage: Bool {
+        guard let languageCode = language.languageCode?.identifier.lowercased() else { return false }
+        return languageCode == "nb" || languageCode == "no" || languageCode == "nn"
     }
 }
 

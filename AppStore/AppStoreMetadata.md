@@ -1,6 +1,6 @@
 # SaldoPilot App Store Metadata
 
-Sist oppdatert: 2026-09-18
+Sist oppdatert: 2026-10-18
 
 Dette dokumentet er et arbeidsutkast for App Store Connect. Kopier tekstene inn i riktig språk/locale ved behov.
 
@@ -18,37 +18,42 @@ Productivity
 
 ## Subtitle - Norwegian
 
-Kontroll på inntekt og utgift
+Budsjett, regninger og saldo
 
 ## Subtitle - English
 
-Track income and bills
+Budget, bills & cash flow
 
 ## Promotional Text - Norwegian
 
-Planlegg faste inntekter og utgifter, følg forfall, registrer betalinger og få bedre oversikt over måneden.
+Se hva du faktisk har igjen. Planlegg budsjett, følg regninger og inntekter, og få forståelig statistikk – uten bankkobling.
 
 ## Promotional Text - English
 
-Plan recurring income and expenses, track due dates, register payments, and stay in control of your month.
+See what you actually have left. Plan budgets, track bills and income, and understand your spending – without connecting a bank account.
 
 ## Description - Norwegian
 
-SaldoPilot hjelper deg å holde oversikt over inntekter, utgifter, regninger, lønn og faste poster.
+Se hva du faktisk har igjen – uten å koble til banken.
 
-Legg inn regninger, lønn, pensjon eller andre inntekter med forfallsdato og kategori. Når en regning er betalt eller en inntekt er mottatt, registrerer du datoen. Har posten gjentakelse, oppretter SaldoPilot neste post automatisk.
+SaldoPilot samler budsjett, inntekter, utgifter og kommende betalinger i en ryddig oversikt. Registrer regninger, lønn, refusjoner og andre poster manuelt, og behold kontrollen over egne økonomidata.
+
+Registreringen går raskt: skriv en beskrivelse, få et kategoriforslag basert på tydelige nøkkelord og tidligere poster, og velg selv før du lagrer. Gjentakende poster kan opprette neste forekomst automatisk når en betaling eller inntekt registreres.
 
 Viktige funksjoner:
 
-- Oversikt over inntekter, utgifter og saldo
+- Oversikt over inntekter, utgifter, netto og tilgjengelig saldo
+- Månedsbudsjett per kategori med forventet og oppnådd inntekt
 - Registrering av betalte regninger og mottatt lønn
+- Forslag til kategori mens du skriver
 - Gjentakende poster med intervall
-- Filter og sortering av poster
-- Statistikk per kategori
+- Filter, søk og sortering av poster
+- Statistikk, grafer og månedsvis sammenligning
+- Egne kategorier og støtte for blant annet refusjon og sparing
 - Varsler for forfall og ventende inntekter
-- Backup og eksport til JSON eller CSV
+- Backup, gjenoppretting og eksport til JSON, CSV eller PDF
 - Norsk, engelsk og thai språk
-- Lokal AI-oppsummering basert på data du registrerer
+- Lokale innsikter basert på dataene du registrerer
 
 SaldoPilot er laget for deg som ønsker en enkel og ryddig måte å se hva som skal betales, hva som er mottatt, og hva som kommer neste gang.
 
@@ -56,51 +61,70 @@ SaldoPilot er ikke en bank, kobler ikke til bankkontoer, gjennomfører ikke beta
 
 ## Description - English
 
-SaldoPilot helps you keep track of income, expenses, bills, salary, and recurring transactions.
+See what you actually have left – without connecting your bank.
 
-Add bills, salary, pension, or other income with due dates and categories. When a bill is paid or income is received, register the date. If the transaction repeats, SaldoPilot automatically creates the next one.
+SaldoPilot brings budgets, income, expenses, and upcoming payments into one clear overview. Add bills, salary, reimbursements, and other transactions manually while keeping control of your financial data.
+
+Registration is quick: enter a description, get a category suggestion based on clear keywords and previous entries, and make the final choice yourself. Recurring transactions can automatically create the next occurrence when a payment or income is registered.
 
 Key features:
 
-- Overview of income, expenses, and balance
+- Overview of income, expenses, net cash flow, and available balance
+- Monthly category budgets with expected and achieved income
 - Register paid bills and received income
-- Recurring transactions with intervals
-- Filters and sorting
-- Statistics by category
-- Due date and pending income notifications
-- Backup and export to JSON or CSV
+- Category suggestions as you type
+- Recurring transactions with flexible intervals
+- Search, filters, and sorting
+- Statistics, charts, and monthly comparisons
+- Custom categories, reimbursements, and savings support
+- Due-date and pending-income reminders
+- Backup, restore, and export to JSON, CSV, or PDF
 - Norwegian, English, and Thai language support
-- Local AI-style summaries based on the data you enter
+- Local insights based on the data you enter
 
-SaldoPilot is built for people who want a simple, clear way to see what needs to be paid, what has been received, and what comes next.
+SaldoPilot is for people who want a simple way to understand what needs to be paid, what has been received, and what comes next.
 
 SaldoPilot is not a bank, does not connect to bank accounts, does not process payments, and does not provide financial advice. AI-style summaries are informational suggestions based only on data you enter.
 
 ## Keywords - Norwegian
 
-budsjett,regninger,forfall,inntekt,utgift,økonomi,lønn,pensjon,betaling,oversikt
+forbruk,økonomiplan,betalingsplan,faktura,sparekonto,kontantstrøm,månedsbudsjett,privatøkonomi
 
 ## Keywords - English
 
-budget,bills,due,income,expense,finance,salary,pension,payment,overview
+spending,money,planner,invoice,due,date,tracker,savings,personal,monthly,reimbursement,household
+
+Nøkkelordene utfyller ordene i appnavn og undertittel i stedet for å gjenta dem. Begge feltene er innenfor App Store Connect-grensen på 100 tegn.
+
+## What's New - Norwegian
+
+SaldoPilot har fått en enklere og mer konsekvent kategorioversikt, raskere registrering med kategoriforslag og tydeligere budsjett og statistikk. Refusjoner kan nå følges som inntekt, og backup og databehandling er gjort mer robust.
+
+Vi har også forbedret tilgjengelighet, språk og den visuelle presentasjonen i hele appen.
+
+## What's New - English
+
+SaldoPilot now has a simpler, more consistent category overview, faster entry with category suggestions, and clearer budgets and statistics. Refunds can now be tracked as income, while backup and data handling are more robust.
+
+We have also improved accessibility, localization, and visual presentation throughout the app.
 
 ## Suggested Screenshot Texts - Norwegian
 
-1. Full oversikt over inntekt og utgifter
-2. Se regninger, lønn og faste poster
-3. Marker regninger som betalt
-4. Registrer lønn som mottatt
-5. Neste post opprettes automatisk
-6. Forstå hvor pengene går
+1. Se hva du faktisk har igjen
+2. Få kontroll på månedens budsjett
+3. Registrer raskt og enkelt
+4. Følg regninger, lønn og refusjoner
+5. Forstå hvor pengene går
+6. Dine data. Din private iCloud.
 
 ## Suggested Screenshot Texts - English
 
-1. See income and expenses clearly
-2. Track bills, salary, and recurring items
-3. Mark bills as paid
-4. Register salary as received
-5. Automatically create the next item
-6. Understand where your money goes
+1. See what you actually have left
+2. Stay on top of your monthly budget
+3. Register quickly and easily
+4. Track bills, salary, and refunds
+5. Understand where your money goes
+6. Your data. Your private iCloud.
 
 ## App Review Notes
 
@@ -123,4 +147,3 @@ The app stores user-entered data with SwiftData and may use the user's private i
 ## What To Test - TestFlight
 
 Please test creating income and expense transactions, marking them as paid or received, recurring transactions, filters, statistics, backup/export, import, language selection, and local notifications.
-

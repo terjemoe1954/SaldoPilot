@@ -38,6 +38,16 @@ final class ProPurchaseStore {
     }
 
     func refresh() async {
+        if AppLaunchConfiguration.usesScreenshotData && !AppLaunchConfiguration.usesProReviewData {
+            isProUnlocked = true
+            return
+        }
+
+        if AppLaunchConfiguration.usesProReviewData {
+            isProUnlocked = false
+            return
+        }
+
         isLoading = true
         defer { isLoading = false }
 

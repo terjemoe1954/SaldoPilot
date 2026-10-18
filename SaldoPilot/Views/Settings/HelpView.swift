@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HelpView: View {
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
+    @State private var searchText = ""
 
     private var article: HelpArticle {
         HelpArticle.article(for: selectedLanguage)
@@ -27,24 +28,33 @@ struct HelpView: View {
                 .padding(.vertical, 4)
             }
 
-            ForEach(article.sections) { section in
-                Section(section.title) {
-                    ForEach(section.items) { item in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Label(item.title, systemImage: item.systemImage)
-                                .font(.headline)
+            if filteredSections.isEmpty {
+                ContentUnavailableView(
+                    noResultsTitle,
+                    systemImage: "magnifyingglass",
+                    description: Text(noResultsDescription)
+                )
+            } else {
+                ForEach(filteredSections) { section in
+                    Section(section.title) {
+                        ForEach(section.items) { item in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label(item.title, systemImage: item.systemImage)
+                                    .font(.headline)
 
-                            Text(item.body)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                                Text(item.body)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }
         }
         .navigationTitle(article.navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: searchPrompt)
     }
 
     private var selectedLanguage: AppLanguage {
@@ -61,6 +71,53 @@ struct HelpView: View {
         }
 
         return .english
+    }
+
+    private var filteredSections: [HelpSection] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return article.sections }
+
+        return article.sections.compactMap { section in
+            let matchingItems = section.items.filter { item in
+                item.title.localizedStandardContains(query) ||
+                item.body.localizedStandardContains(query)
+            }
+            guard !matchingItems.isEmpty else { return nil }
+            return HelpSection(title: section.title, items: matchingItems)
+        }
+    }
+
+    private var searchPrompt: String {
+        switch selectedLanguage {
+        case .norwegian:
+            "Søk i brukerveiledningen"
+        case .thai:
+            "ค้นหาในคู่มือการใช้"
+        case .system, .english:
+            "Search the user guide"
+        }
+    }
+
+    private var noResultsTitle: String {
+        switch selectedLanguage {
+        case .norwegian:
+            "Ingen treff"
+        case .thai:
+            "ไม่พบผลลัพธ์"
+        case .system, .english:
+            "No results"
+        }
+    }
+
+    private var noResultsDescription: String {
+        switch selectedLanguage {
+        case .norwegian:
+            "Prøv et annet søkeord."
+        case .thai:
+            "ลองใช้คำค้นหาอื่น"
+        case .system, .english:
+            "Try another search term."
+        }
     }
 }
 
@@ -83,16 +140,18 @@ private struct HelpArticle {
 }
 
 private struct HelpSection: Identifiable {
-    let id = UUID()
     let title: String
     let items: [HelpItem]
+
+    var id: String { title }
 }
 
 private struct HelpItem: Identifiable {
-    let id = UUID()
     let title: String
     let systemImage: String
     let body: String
+
+    var id: String { title }
 }
 
 private extension HelpArticle {
@@ -137,7 +196,7 @@ private extension HelpArticle {
                     HelpItem(
                         title: "Kategorier",
                         systemImage: "tag",
-                        body: "Kategorier gjør det lettere å lese statistikk og finne poster senere. Velg den kategorien som passer best, for eksempel Lønn & Inntekt, Bolig & strøm, Dagligvarer, Gaver, Skatt & avgifter eller Pengespill."
+                        body: "Kategorier gjør det lettere å lese statistikk og finne poster senere. Bruk blant annet Lønn & Inntekt, Bolig & strøm, Spise ute, Refusjon og Hobby & Utvikling. Overføringer mellom egne kontoer og saldojusteringer holdes utenfor vanlig forbruk og inntekt."
                     ),
                     HelpItem(
                         title: "Notater",
@@ -208,6 +267,11 @@ private extension HelpArticle {
                         title: "Statistikk",
                         systemImage: "chart.bar.xaxis",
                         body: "Statistikk viser inntekter og utgifter per måned, nettoutvikling, utestående beløp og kategoribalanse. Under Kategoribalanse velger du ønsket måned i månedsmenyen. Diagrammet og postlisten oppdateres automatisk."
+                    ),
+                    HelpItem(
+                        title: "Budsjett",
+                        systemImage: "target",
+                        body: "Sett et månedlig mål per kategori. Utgiftskategorier viser hvor mye som er brukt og gjenstår, mens Lønn & Inntekt og Refusjon viser forventet og oppnådd inntekt."
                     ),
                     HelpItem(
                         title: "AI-oppsummering",
@@ -307,7 +371,7 @@ private extension HelpArticle {
                 items: [
                     HelpItem(title: "Add a bill or expense", systemImage: "minus.circle", body: "Go to Transactions and tap the plus button at the top. Choose Expense, then enter title, amount, category, and due date. Select recurrence if the bill repeats, for example monthly."),
                     HelpItem(title: "Add salary or income", systemImage: "plus.circle", body: "Go to Transactions and tap the plus button at the top. Choose Income, then enter amount, category, and the date you expect to receive the money. For salary, use monthly recurrence if it repeats."),
-                    HelpItem(title: "Categories", systemImage: "tag", body: "Categories make statistics and search easier. Choose the category that best fits the transaction, such as Salary, Rent, Food, Gifts, Deduction, or Gambling."),
+                    HelpItem(title: "Categories", systemImage: "tag", body: "Categories make statistics and search easier. Use categories such as Salary & income, Housing & electricity, Eating out, Refund, and Hobby & Development. Transfers between your own accounts and balance adjustments stay outside ordinary income and spending."),
                     HelpItem(title: "Notes", systemImage: "note.text", body: "Use notes for practical details such as invoice references, account numbers, agreement details, or anything else you want to remember.")
                 ]
             ),
@@ -334,6 +398,7 @@ private extension HelpArticle {
                 items: [
                     HelpItem(title: "Overview", systemImage: "chart.pie", body: "The front page is for quick control: what has arrived, what has been paid, what is due soon, and what is missing. Use it before paying bills."),
                     HelpItem(title: "Statistics", systemImage: "chart.bar.xaxis", body: "Statistics shows monthly income and expenses, net development, receivables, and category balance. Under Category balance, choose a month from the month menu. The chart and transaction list update automatically."),
+                    HelpItem(title: "Budgets", systemImage: "target", body: "Set a monthly target for each category. Expense categories show how much is spent and remaining, while Salary & income and Refund show expected and achieved income."),
                     HelpItem(title: "AI summary", systemImage: "sparkles", body: "AI summary can explain the numbers in simple text. External AI can be enabled or disabled in Settings.")
                 ]
             ),
@@ -384,7 +449,7 @@ private extension HelpArticle {
                 items: [
                     HelpItem(title: "เพิ่มบิลหรือรายจ่าย", systemImage: "minus.circle", body: "ไปที่รายการ แล้วแตะปุ่มบวกด้านบน เลือกประเภทรายจ่าย ใส่ชื่อ จำนวนเงิน หมวดหมู่ และวันครบกำหนด เลือกการเกิดซ้ำหากบิลมาประจำ เช่น รายเดือน"),
                     HelpItem(title: "เพิ่มเงินเดือนหรือรายรับ", systemImage: "plus.circle", body: "ไปที่รายการ แล้วแตะปุ่มบวกด้านบน เลือกประเภทรายรับ ใส่จำนวนเงิน หมวดหมู่ และวันที่คาดว่าจะได้รับเงิน สำหรับเงินเดือนให้เลือกการเกิดซ้ำรายเดือนหากได้รับประจำ"),
-                    HelpItem(title: "หมวดหมู่", systemImage: "tag", body: "หมวดหมู่ช่วยให้ดูสถิติและค้นหารายการง่ายขึ้น เลือกหมวดหมู่ที่เหมาะสม เช่น เงินเดือน ค่าเช่า อาหาร ของขวัญ รายการหัก หรือการพนัน"),
+                    HelpItem(title: "หมวดหมู่", systemImage: "tag", body: "หมวดหมู่ช่วยให้ดูสถิติและค้นหารายการง่ายขึ้น ใช้หมวดหมู่ เช่น เงินเดือนและรายรับ ที่อยู่อาศัยและค่าไฟ รับประทานอาหารนอกบ้าน เงินคืน และงานอดิเรกและการพัฒนา การโอนเงินระหว่างบัญชีของตนเองและการปรับยอดคงเหลือจะไม่นับเป็นรายรับหรือรายจ่ายทั่วไป"),
                     HelpItem(title: "บันทึกเพิ่มเติม", systemImage: "note.text", body: "ใช้ช่องบันทึกสำหรับรายละเอียด เช่น เลขอ้างอิงใบแจ้งหนี้ เลขบัญชี ข้อมูลสัญญา หรือสิ่งที่ต้องการจำ")
                 ]
             ),
@@ -411,6 +476,7 @@ private extension HelpArticle {
                 items: [
                     HelpItem(title: "ภาพรวม", systemImage: "chart.pie", body: "หน้าแรกใช้ตรวจสอบอย่างรวดเร็วว่าอะไรเข้ามาแล้ว อะไรจ่ายแล้ว อะไรใกล้ครบกำหนด และอะไรยังขาดอยู่ ใช้ก่อนจ่ายบิลได้ดี"),
                     HelpItem(title: "สถิติ", systemImage: "chart.bar.xaxis", body: "สถิติแสดงรายรับและรายจ่ายรายเดือน แนวโน้มยอดสุทธิ ยอดค้างรับ และยอดสุทธิตามหมวดหมู่ ในส่วนยอดสุทธิตามหมวดหมู่ ให้เลือกเดือนจากเมนูเดือน แล้วแผนภูมิและรายการจะอัปเดตโดยอัตโนมัติ"),
+                    HelpItem(title: "งบประมาณ", systemImage: "target", body: "กำหนดเป้าหมายรายเดือนสำหรับแต่ละหมวดหมู่ หมวดรายจ่ายจะแสดงจำนวนที่ใช้ไปและคงเหลือ ส่วนเงินเดือนและรายรับ รวมถึงเงินคืน จะแสดงรายรับที่คาดหวังและทำได้จริง"),
                     HelpItem(title: "สรุปด้วย AI", systemImage: "sparkles", body: "สรุปด้วย AI สามารถอธิบายตัวเลขเป็นข้อความง่าย ๆ สามารถเปิดหรือปิดการใช้ AI ภายนอกได้ในการตั้งค่า")
                 ]
             ),

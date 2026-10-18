@@ -94,9 +94,17 @@ enum AIInsightEngine {
 
         let message: String
         if net >= 0 {
-            message = localized("This month is positive by \(net.formattedCurrency) after registered income and expenses.", locale: locale)
+            if locale.usesNorwegianLanguage {
+                message = "Måneden er positiv med \(net.formattedCurrency) etter registrerte inntekter og utgifter."
+            } else {
+                message = localized("This month is positive by \(net.formattedCurrency) after registered income and expenses.", locale: locale)
+            }
         } else {
-            message = localized("This month is negative by \(abs(net).formattedCurrency) after registered income and expenses.", locale: locale)
+            if locale.usesNorwegianLanguage {
+                message = "Måneden er negativ med \(abs(net).formattedCurrency) etter registrerte inntekter og utgifter."
+            } else {
+                message = localized("This month is negative by \(abs(net).formattedCurrency) after registered income and expenses.", locale: locale)
+            }
         }
 
         return AIInsight(
@@ -287,6 +295,13 @@ enum AIInsightEngine {
 
     private static func localized(_ value: String.LocalizationValue, locale: Locale) -> String {
         String(localized: value, bundle: .main, locale: locale)
+    }
+}
+
+private extension Locale {
+    var usesNorwegianLanguage: Bool {
+        guard let languageCode = language.languageCode?.identifier.lowercased() else { return false }
+        return languageCode == "nb" || languageCode == "no" || languageCode == "nn"
     }
 }
 

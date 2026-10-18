@@ -32,7 +32,7 @@ struct ProInfoView: View {
 
             Section(content.currentStatusTitle) {
                 LabeledContent(content.statusLabel, value: statusText)
-                if let price = proPurchaseStore.product?.displayPrice {
+                if let price = displayPrice {
                     LabeledContent(content.priceLabel, value: price)
                 }
 
@@ -48,7 +48,10 @@ struct ProInfoView: View {
                     } label: {
                         Label(purchaseButtonTitle, systemImage: "cart")
                     }
-                    .disabled(proPurchaseStore.product == nil || proPurchaseStore.isLoading)
+                    .disabled(
+                        (!AppLaunchConfiguration.usesProReviewData && proPurchaseStore.product == nil)
+                            || proPurchaseStore.isLoading
+                    )
                 }
 
                 Button {
@@ -64,7 +67,7 @@ struct ProInfoView: View {
                     Text(message)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                } else if proPurchaseStore.product == nil {
+                } else if proPurchaseStore.product == nil && !AppLaunchConfiguration.usesProReviewData {
                     Text(content.productUnavailableText)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -116,11 +119,19 @@ struct ProInfoView: View {
     }
 
     private var purchaseButtonTitle: String {
-        if let price = proPurchaseStore.product?.displayPrice {
+        if let price = displayPrice {
             return "\(content.purchaseButtonTitle) \(price)"
         }
 
         return content.purchaseButtonTitle
+    }
+
+    private var displayPrice: String? {
+        if let price = proPurchaseStore.product?.displayPrice {
+            return price
+        }
+
+        return AppLaunchConfiguration.usesProReviewData ? "kr 39,00" : nil
     }
 }
 
@@ -183,7 +194,7 @@ private struct ProInfoContent {
 private extension ProInfoContent {
     static let norwegian = ProInfoContent(
         title: "SaldoPilot Pro",
-        introduction: "Pro-grunnlaget er på plass slik at betalte funksjoner kan planlegges ryddig før kjøp aktiveres.",
+        introduction: "Lås opp månedsbudsjett per kategori med ett engangskjøp.",
         currentStatusTitle: "Status",
         statusLabel: "Nåværende plan",
         freeStatus: "Gratis",
@@ -199,23 +210,20 @@ private extension ProInfoContent {
             ProInfoFeature(title: "Oversikt og statistikk", detail: "Se forfalt, neste forfall, til gode, netto og enkle grafer."),
             ProInfoFeature(title: "Backup og import", detail: "Eksporter og importer data med JSON og CSV.")
         ],
-        proTitle: "Mulige Pro-funksjoner",
+        proTitle: "Inkludert i Pro",
         proFeatures: [
-            ProInfoFeature(title: "Budsjett per kategori", detail: "Planlegg grenser og se når en kategori nærmer seg budsjett."),
-            ProInfoFeature(title: "Prognose", detail: "Beregn forventet månedsslutt basert på kommende inntekter og utgifter."),
-            ProInfoFeature(title: "Smarte forslag", detail: "Foreslå kategori, gjentakelse og nyttige handlinger basert på historikk."),
-            ProInfoFeature(title: "Avansert eksport", detail: "Flere valg for eksport og rapportering.")
+            ProInfoFeature(title: "Budsjett per kategori", detail: "Sett månedsbudsjett og se forventet, brukt og gjenstående beløp for hver kategori.")
         ],
-        storeKitTitle: "StoreKit-plan",
+        storeKitTitle: "Om kjøpet",
         storeKitNotes: [
-            ProInfoFeature(title: "Engangskjøp", detail: "SaldoPilot Pro er satt opp som ett kjøp på 39 kr."),
-            ProInfoFeature(title: "Ingen låsing ennå", detail: "Kjøpsstatus er koblet til appen, men funksjoner låses ikke før Pro-grensen er endelig testet.")
+            ProInfoFeature(title: "Engangskjøp", detail: "Betal én gang. SaldoPilot Pro er ikke et abonnement."),
+            ProInfoFeature(title: "Kan gjenopprettes", detail: "Gjenopprett kjøpet på en annen enhet med samme Apple-konto.")
         ]
     )
 
     static let english = ProInfoContent(
         title: "SaldoPilot Pro",
-        introduction: "The Pro foundation is in place so paid features can be planned clearly before purchases are enabled.",
+        introduction: "Unlock monthly budgets by category with one purchase.",
         currentStatusTitle: "Status",
         statusLabel: "Current plan",
         freeStatus: "Free",
@@ -231,23 +239,20 @@ private extension ProInfoContent {
             ProInfoFeature(title: "Overview and statistics", detail: "See overdue items, next due date, receivables, net amount and simple charts."),
             ProInfoFeature(title: "Backup and import", detail: "Export and import data with JSON and CSV.")
         ],
-        proTitle: "Possible Pro features",
+        proTitle: "Included with Pro",
         proFeatures: [
-            ProInfoFeature(title: "Budgets by category", detail: "Plan limits and see when a category is close to its budget."),
-            ProInfoFeature(title: "Forecast", detail: "Estimate month-end status from upcoming income and expenses."),
-            ProInfoFeature(title: "Smart suggestions", detail: "Suggest category, recurrence and useful actions from history."),
-            ProInfoFeature(title: "Advanced export", detail: "More choices for export and reporting.")
+            ProInfoFeature(title: "Budgets by category", detail: "Set monthly budgets and see the expected, spent, and remaining amount for each category.")
         ],
-        storeKitTitle: "StoreKit plan",
+        storeKitTitle: "About the purchase",
         storeKitNotes: [
-            ProInfoFeature(title: "One-time purchase", detail: "SaldoPilot Pro is set up as one purchase for 39 kr."),
-            ProInfoFeature(title: "No locking yet", detail: "Purchase status is connected to the app, but features are not locked until the Pro boundary is fully tested.")
+            ProInfoFeature(title: "One-time purchase", detail: "Pay once. SaldoPilot Pro is not a subscription."),
+            ProInfoFeature(title: "Restorable", detail: "Restore your purchase on another device using the same Apple Account.")
         ]
     )
 
     static let thai = ProInfoContent(
         title: "SaldoPilot Pro",
-        introduction: "วางพื้นฐาน Pro ไว้เพื่อให้วางแผนฟีเจอร์แบบชำระเงินได้ชัดเจน ก่อนเปิดใช้การซื้อ",
+        introduction: "ปลดล็อกงบประมาณรายเดือนตามหมวดหมู่ด้วยการซื้อครั้งเดียว",
         currentStatusTitle: "สถานะ",
         statusLabel: "แผนปัจจุบัน",
         freeStatus: "ฟรี",
@@ -263,17 +268,14 @@ private extension ProInfoContent {
             ProInfoFeature(title: "ภาพรวมและสถิติ", detail: "ดูรายการค้างชำระ วันครบกำหนดถัดไป เงินที่รอรับ ยอดสุทธิ และกราฟพื้นฐาน"),
             ProInfoFeature(title: "สำรองข้อมูลและนำเข้า", detail: "ส่งออกและนำเข้าข้อมูลด้วย JSON และ CSV")
         ],
-        proTitle: "ฟีเจอร์ Pro ที่เป็นไปได้",
+        proTitle: "รวมอยู่ใน Pro",
         proFeatures: [
-            ProInfoFeature(title: "งบประมาณตามหมวดหมู่", detail: "วางแผนวงเงินและดูเมื่อหมวดหมู่ใกล้ถึงงบประมาณ"),
-            ProInfoFeature(title: "การคาดการณ์", detail: "ประเมินสถานะปลายเดือนจากรายรับและรายจ่ายที่กำลังจะมาถึง"),
-            ProInfoFeature(title: "คำแนะนำอัจฉริยะ", detail: "แนะนำหมวดหมู่ การเกิดซ้ำ และการทำงานที่เหมาะสมจากประวัติ"),
-            ProInfoFeature(title: "การส่งออกขั้นสูง", detail: "ตัวเลือกเพิ่มเติมสำหรับการส่งออกและรายงาน")
+            ProInfoFeature(title: "งบประมาณตามหมวดหมู่", detail: "ตั้งงบประมาณรายเดือนและดูยอดที่คาดไว้ ใช้ไป และคงเหลือของแต่ละหมวดหมู่")
         ],
-        storeKitTitle: "แผน StoreKit",
+        storeKitTitle: "เกี่ยวกับการซื้อ",
         storeKitNotes: [
-            ProInfoFeature(title: "ซื้อครั้งเดียว", detail: "SaldoPilot Pro ตั้งค่าเป็นการซื้อครั้งเดียวราคา 39 kr"),
-            ProInfoFeature(title: "ยังไม่ล็อกฟีเจอร์", detail: "เชื่อมสถานะการซื้อกับแอปแล้ว แต่ยังไม่ล็อกฟีเจอร์จนกว่าจะทดสอบขอบเขต Pro เรียบร้อย")
+            ProInfoFeature(title: "ซื้อครั้งเดียว", detail: "ชำระเงินครั้งเดียว SaldoPilot Pro ไม่ใช่การสมัครสมาชิก"),
+            ProInfoFeature(title: "กู้คืนได้", detail: "กู้คืนการซื้อบนอุปกรณ์เครื่องอื่นด้วยบัญชี Apple เดียวกัน")
         ]
     )
 }

@@ -74,9 +74,26 @@ enum AppLaunchConfiguration {
         || normalizedArguments.contains("saldopilotuseproductionstore")
         || environmentFlag(named: "SALDOPILOT_USE_PRODUCTION_STORE")
 
+    static let usesEnglishScreenshotData = allowsIsolatedTestStores
+        && normalizedArguments.contains("saldopilotscreenshotmodeenglish")
+
+    static let usesProReviewData = allowsIsolatedTestStores
+        && normalizedArguments.contains("saldopilotproreviewmode")
+
+    static let usesScreenshotData = allowsIsolatedTestStores
+        && (
+            normalizedArguments.contains("saldopilotscreenshotmode")
+                || usesEnglishScreenshotData
+                || usesProReviewData
+        )
+
     static let usesIsolatedCloudTestStore: Bool = {
         if explicitlyUsesProductionStore {
             UserDefaults.standard.removeObject(forKey: persistedTestStoreModeKey)
+            return false
+        }
+
+        if usesScreenshotData {
             return false
         }
 
@@ -91,6 +108,10 @@ enum AppLaunchConfiguration {
 
     static let usesLocalIsolatedTestStore: Bool = {
         guard !explicitlyUsesProductionStore, !usesIsolatedCloudTestStore else { return false }
+
+        if usesScreenshotData {
+            return true
+        }
 
         if normalizedArguments.contains("saldopilotuseteststore")
             || environmentFlag(named: "SALDOPILOT_USE_TEST_STORE") {
@@ -117,7 +138,18 @@ enum AppLaunchConfiguration {
     }
 
     static var isolatedTestStoreURL: URL {
-        URL.applicationSupportDirectory
+        if usesScreenshotData {
+            return URL.applicationSupportDirectory
+                .appending(
+                    path: usesEnglishScreenshotData
+                        ? "SaldoPilot-Screenshot-English-v1.store"
+                        : usesProReviewData
+                            ? "SaldoPilot-Pro-Review-v1.store"
+                            : "SaldoPilot-Screenshot-v2.store",
+                    directoryHint: .notDirectory
+                )
+        }
+        return URL.applicationSupportDirectory
             .appending(path: "SaldoPilot-Isolated-Test.store", directoryHint: .notDirectory)
     }
 
@@ -127,7 +159,7 @@ enum AppLaunchConfiguration {
     }
 
     static let syntheticTransactionCount: Int = {
-        guard usesLocalIsolatedTestStore, !usesIsolatedCloudTestStore else { return 0 }
+        guard usesLocalIsolatedTestStore, !usesIsolatedCloudTestStore, !usesScreenshotData else { return 0 }
         let value = ProcessInfo.processInfo.environment["SALDOPILOT_SYNTHETIC_TRANSACTION_COUNT"]
         return min(max(Int(value ?? "") ?? 0, 0), 10_000)
     }()
@@ -186,6 +218,20 @@ struct SaldoPilotApp: App {
                     count: AppLaunchConfiguration.syntheticTransactionCount,
                     in: container.mainContext
                 )
+                if AppLaunchConfiguration.usesScreenshotData {
+                    try SampleData.ensureScreenshotData(
+                        in: container.mainContext,
+                        language: AppLaunchConfiguration.usesEnglishScreenshotData ? .english : .norwegian
+                    )
+                    UserDefaults.standard.set(true, forKey: AppSettingsKey.hasCompletedOnboarding)
+                    let screenshotLanguage: AppLanguage = AppLaunchConfiguration.usesEnglishScreenshotData ? .english : .norwegian
+                    UserDefaults.standard.set(screenshotLanguage.rawValue, forKey: AppSettingsKey.language)
+                    UserDefaults.standard.set(AppAppearance.light.rawValue, forKey: AppSettingsKey.appearance)
+                    UserDefaults.standard.set(AppProStatus.pro.rawValue, forKey: AppSettingsKey.proStatus)
+                    UserDefaults.standard.set("10000", forKey: AppSettingsKey.openingBalanceAmount)
+                    let monthStart = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? Date.now
+                    UserDefaults.standard.set(monthStart.timeIntervalSince1970, forKey: AppSettingsKey.openingBalanceDate)
+                }
                 return container
             } catch {
                 fatalError("Could not create isolated test model container: \(error)")
@@ -222,41 +268,10 @@ struct SaldoPilotApp: App {
         WindowGroup {
             MainTabView()
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    VStack(spacing: 0) {
-                        if AppLaunchConfiguration.usesIsolatedTestStore {
-                            Label {
-                                if AppLaunchConfiguration.usesIsolatedCloudTestStore {
-                                    Text("ISOLATED ICLOUD TEST DATA")
-                                } else {
-                                    Text("ISOLATED TEST DATA")
-                                }
-                            } icon: {
-                                Image(systemName: "checkmark.shield.fill")
-                            }
-                            .font(.caption.bold())
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
-                            .foregroundStyle(.white)
-                            .background(.orange)
-                        }
-
-                        if networkStatusMonitor.isICloudUnavailable {
-                            Label("ICLOUD UNAVAILABLE — CHANGES ARE SAVED ON THIS DEVICE", systemImage: "icloud.slash")
-                                .font(.caption.bold())
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 6)
-                                .foregroundStyle(.white)
-                                .background(.red)
-                        } else if !AppLaunchConfiguration.usesLocalIsolatedTestStore,
-                                  networkStatusMonitor.isOffline {
-                            Label("OFFLINE — CHANGES WILL SYNC WHEN CONNECTED", systemImage: "wifi.slash")
-                                .font(.caption.bold())
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 6)
-                                .foregroundStyle(.white)
-                                .background(.red)
-                        }
-                    }
+                    AppStatusBanners(
+                        isICloudUnavailable: networkStatusMonitor.isICloudUnavailable,
+                        isOffline: networkStatusMonitor.isOffline
+                    )
                 }
                 .preferredColorScheme(selectedAppearance.colorScheme)
                 .environment(\.locale, selectedLanguage.locale)
@@ -278,5 +293,67 @@ struct SaldoPilotApp: App {
 
     private var selectedLanguage: AppLanguage {
         AppLanguage(rawValue: languageRawValue) ?? .system
+    }
+}
+
+private struct AppStatusBanners: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    let isICloudUnavailable: Bool
+    let isOffline: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if AppLaunchConfiguration.usesIsolatedTestStore && !AppLaunchConfiguration.usesScreenshotData {
+                AppStatusBanner(
+                    title: AppLaunchConfiguration.usesIsolatedCloudTestStore
+                        ? "ISOLATED ICLOUD TEST DATA"
+                        : "ISOLATED TEST DATA",
+                    systemImage: "checkmark.shield.fill",
+                    color: Color(red: 0.51, green: 0.22, blue: 0),
+                    usesCompactLayout: dynamicTypeSize.isAccessibilitySize
+                )
+            }
+
+            if isICloudUnavailable {
+                AppStatusBanner(
+                    title: "ICLOUD UNAVAILABLE — CHANGES ARE SAVED ON THIS DEVICE",
+                    systemImage: "icloud.slash",
+                    color: Color(red: 0.54, green: 0.11, blue: 0.11),
+                    usesCompactLayout: dynamicTypeSize.isAccessibilitySize
+                )
+            } else if !AppLaunchConfiguration.usesLocalIsolatedTestStore, isOffline {
+                AppStatusBanner(
+                    title: "OFFLINE — CHANGES WILL SYNC WHEN CONNECTED",
+                    systemImage: "wifi.slash",
+                    color: Color(red: 0.54, green: 0.11, blue: 0.11),
+                    usesCompactLayout: dynamicTypeSize.isAccessibilitySize
+                )
+            }
+        }
+    }
+}
+
+private struct AppStatusBanner: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let color: Color
+    let usesCompactLayout: Bool
+
+    var body: some View {
+        HStack {
+            Image(systemName: systemImage)
+
+            if !usesCompactLayout {
+                Text(title)
+            }
+        }
+        .font(.caption.bold())
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .foregroundStyle(.white)
+        .background(color)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(title))
     }
 }

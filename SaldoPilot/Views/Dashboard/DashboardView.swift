@@ -9,9 +9,9 @@ import SwiftData
 import SwiftUI
 
 struct DashboardView: View {
+    @Environment(\.locale) private var locale
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @AppStorage(AppSettingsKey.defaultPeriod) private var selectedPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
-    @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
     @State private var customStartDate = Calendar.current.currentMonthStart
@@ -141,12 +141,8 @@ struct DashboardView: View {
     private var aiInsights: [AIInsight] {
         AIInsightEngine.insights(
             transactions: activeTransactions.filter(\.isIncludedInOrdinaryCashFlow),
-            locale: selectedLanguage.locale
+            locale: locale
         )
-    }
-
-    private var selectedLanguage: AppLanguage {
-        AppLanguage(rawValue: languageRawValue) ?? .system
     }
 
     private var attentionItems: [DashboardAttentionItem] {
@@ -207,27 +203,22 @@ struct DashboardView: View {
 }
 
 private struct DashboardGettingStartedCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let onNewIncome: () -> Void
     let onNewExpense: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 14) {
-                Image(systemName: "flag.checkered")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 48, height: 48)
-                    .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Start with your first entry")
-                        .font(.headline)
-
-                    Text("Add income and expenses to make your overview useful right away.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 14) {
+                    DashboardGettingStartedIcon()
+                    DashboardGettingStartedText()
+                }
+            } else {
+                HStack(alignment: .top, spacing: 14) {
+                    DashboardGettingStartedIcon()
+                    DashboardGettingStartedText()
                 }
             }
 
@@ -263,6 +254,32 @@ private struct DashboardGettingStartedCard: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
+    }
+}
+
+private struct DashboardGettingStartedIcon: View {
+    var body: some View {
+        Image(systemName: "flag.checkered")
+            .font(.title2.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(width: 48, height: 48)
+            .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
+private struct DashboardGettingStartedText: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text("Start with your first entry")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+
+            Text("Add income and expenses to make your overview useful right away.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 
@@ -451,8 +468,8 @@ private struct DashboardNetHero: View {
         .background {
             LinearGradient(
                 colors: amount >= .zero
-                    ? [Color.blue, Color.indigo]
-                    : [Color.orange, Color.red],
+                    ? [Color(red: 0, green: 0.29, blue: 0.60), Color(red: 0.21, green: 0.13, blue: 0.44)]
+                    : [Color(red: 0.51, green: 0.22, blue: 0), Color(red: 0.54, green: 0.11, blue: 0.11)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
