@@ -122,7 +122,7 @@ struct BudgetsView: View {
         transactions.filter { transaction in
             !transaction.isArchived &&
             transaction.status != .cancelled &&
-            transaction.isIncludedInOrdinaryCashFlow &&
+            transaction.isIncludedInCategoryActivity &&
             currentMonthInterval.containsHalfOpen(transaction.dueDate)
         }
     }
@@ -149,7 +149,9 @@ struct BudgetsView: View {
     }
 
     private var budgetSummary: BudgetSummary {
-        BudgetSummary(rows: budgetRows)
+        BudgetSummary(
+            rows: budgetRows.filter { $0.category != .refund && $0.category != .savings }
+        )
     }
 
     private func openBudgetForm(category: CategoryKind) {

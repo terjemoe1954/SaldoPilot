@@ -54,6 +54,11 @@ final class Transaction {
             && !normalizedTitle.contains("balance adjustment")
     }
 
+    /// Refunds remain visible in category breakdowns without affecting ordinary totals.
+    var isIncludedInCategoryActivity: Bool {
+        isIncludedInOrdinaryCashFlow || category == .refund
+    }
+
     init(
         id: UUID = UUID(),
         title: String,

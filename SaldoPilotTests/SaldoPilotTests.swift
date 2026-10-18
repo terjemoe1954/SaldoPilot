@@ -404,7 +404,11 @@ struct SaldoPilotTests {
         #expect(!savings.isIncludedInOrdinaryCashFlow)
         #expect(!adjustment.isIncludedInOrdinaryCashFlow)
         #expect(!refund.isIncludedInOrdinaryCashFlow)
+        #expect(refund.isIncludedInCategoryActivity)
         #expect(ordinary.isIncludedInOrdinaryCashFlow)
+        #expect(ordinary.isIncludedInCategoryActivity)
+        #expect(!savings.isIncludedInCategoryActivity)
+        #expect(!adjustment.isIncludedInCategoryActivity)
     }
 
     @Test("Category suggestions prefer history and can link reimbursements")

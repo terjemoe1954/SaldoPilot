@@ -35,15 +35,24 @@ struct StatisticsView: View {
         }
     }
 
-    private var activeTransactions: [Transaction] {
+    private var visibleTransactions: [Transaction] {
         transactions.filter {
-            !$0.isArchived && $0.status != .cancelled && $0.isIncludedInOrdinaryCashFlow
+            !$0.isArchived && $0.status != .cancelled
         }
+    }
+
+    private var ordinaryTransactions: [Transaction] {
+        visibleTransactions.filter(\.isIncludedInOrdinaryCashFlow)
+    }
+
+    private var categoryTransactions: [Transaction] {
+        visibleTransactions.filter(\.isIncludedInCategoryActivity)
     }
 
     private var snapshot: StatisticsSnapshot {
         StatisticsSnapshot(
-            transactions: activeTransactions,
+            ordinaryTransactions: ordinaryTransactions,
+            categoryTransactions: categoryTransactions,
             locale: selectedLanguage.locale,
             selectedCategoryMonth: selectedCategoryMonth
         )
@@ -60,19 +69,24 @@ private struct StatisticsSnapshot {
     let categoryBalances: [CategoryStatistics]
     let outstandingMonths: [OutstandingMonthStatistics]
 
-    init(transactions: [Transaction], locale: Locale, selectedCategoryMonth: Date) {
+    init(
+        ordinaryTransactions: [Transaction],
+        categoryTransactions: [Transaction],
+        locale: Locale,
+        selectedCategoryMonth: Date
+    ) {
         let calendar = Calendar.current
         let now = Date.now
         let currentMonthInterval = calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: now, duration: 0)
-        let currentMonthTransactions = transactions.filter { currentMonthInterval.containsHalfOpen($0.dueDate) }
+        let currentMonthTransactions = ordinaryTransactions.filter { currentMonthInterval.containsHalfOpen($0.dueDate) }
         let categoryMonthInterval = calendar.dateInterval(of: .month, for: selectedCategoryMonth)
             ?? DateInterval(start: selectedCategoryMonth, duration: 0)
-        let categoryMonthTransactions = transactions.filter { categoryMonthInterval.containsHalfOpen($0.dueDate) }
+        let categoryMonthTransactions = categoryTransactions.filter { categoryMonthInterval.containsHalfOpen($0.dueDate) }
 
         currentMonthSummary = StatisticsSummary(transactions: currentMonthTransactions)
-        months = Self.makeMonthStatistics(transactions: transactions, calendar: calendar)
+        months = Self.makeMonthStatistics(transactions: ordinaryTransactions, calendar: calendar)
         categoryBalances = Self.makeCategoryBalanceStatistics(transactions: categoryMonthTransactions, locale: locale)
-        outstandingMonths = Self.makeOutstandingMonthStatistics(transactions: transactions, calendar: calendar)
+        outstandingMonths = Self.makeOutstandingMonthStatistics(transactions: ordinaryTransactions, calendar: calendar)
     }
 
     private static func makeMonthStatistics(transactions: [Transaction], calendar: Calendar) -> [MonthStatistics] {
