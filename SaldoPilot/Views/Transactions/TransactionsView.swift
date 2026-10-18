@@ -58,7 +58,11 @@ struct TransactionsView: View {
                 )
 
                 if filteredTransactions.isEmpty {
-                    TransactionEmptyState(filter: selectedFilter)
+                    TransactionEmptyState(
+                        filter: selectedFilter,
+                        showsAddAction: activeTransactions.isEmpty,
+                        onAdd: { newTransactionAction?() }
+                    )
                 } else {
                     List {
                         ForEach(filteredTransactions, id: \.id) { transaction in
@@ -1145,13 +1149,22 @@ private struct TransactionTypeBadge: View {
 
 private struct TransactionEmptyState: View {
     let filter: TransactionListFilter
+    let showsAddAction: Bool
+    let onAdd: () -> Void
 
     var body: some View {
-        ContentUnavailableView(
-            "No transactions",
-            systemImage: "list.bullet.rectangle",
-            description: Text(emptyDescription)
-        )
+        ContentUnavailableView {
+            Label("No transactions", systemImage: "list.bullet.rectangle")
+        } description: {
+            Text(emptyDescription)
+        } actions: {
+            if showsAddAction {
+                Button(action: onAdd) {
+                    Label("New transaction", systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

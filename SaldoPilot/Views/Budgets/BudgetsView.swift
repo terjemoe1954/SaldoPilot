@@ -69,6 +69,12 @@ struct BudgetsView: View {
     private var budgetContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if currentMonthBudgets.isEmpty {
+                    BudgetGettingStartedCard {
+                        openBudgetForm(category: .home)
+                    }
+                }
+
                 BudgetSummarySection(summary: budgetSummary)
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -141,6 +147,7 @@ struct BudgetsView: View {
                 category: category,
                 categoryTitle: category.localizedTitle(locale: locale),
                 systemImage: category.systemImage,
+                tint: category.tint,
                 budgetAmount: budget?.amount ?? .zero,
                 incomeAmount: income,
                 expenseAmount: expenses
@@ -214,6 +221,44 @@ struct BudgetsView: View {
     }
 }
 
+private struct BudgetGettingStartedCard: View {
+    let onSetBudget: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: "target")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Set your first budget")
+                    .font(.headline)
+
+                Text("Choose a monthly amount for a category to start tracking your plan.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(action: onSetBudget) {
+                    Label("Set budget", systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.blue.opacity(0.14), lineWidth: 1)
+        }
+    }
+}
+
 private struct BudgetDraft: Identifiable {
     let category: CategoryKind
     let amount: Decimal
@@ -241,6 +286,7 @@ private struct BudgetCategoryRow: Identifiable {
     let category: CategoryKind
     let categoryTitle: String
     let systemImage: String
+    let tint: Color
     let budgetAmount: Decimal
     let incomeAmount: Decimal
     let expenseAmount: Decimal
@@ -267,12 +313,55 @@ private struct BudgetSummarySection: View {
     let summary: BudgetSummary
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-            BudgetMetricCard(title: "Budget", value: summary.totalBudget, systemImage: "target", tint: .blue)
-            BudgetMetricCard(title: "Income", value: summary.totalIncome, systemImage: "arrow.down.circle", tint: .green)
-            BudgetMetricCard(title: "Expenses", value: summary.totalExpenses, systemImage: "creditcard", tint: .red)
-            BudgetMetricCard(title: "Remaining", value: summary.remaining, systemImage: "banknote", tint: summary.remaining >= .zero ? .green : .red)
+        VStack(spacing: 12) {
+            BudgetRemainingHero(value: summary.remaining)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                BudgetMetricCard(title: "Budget", value: summary.totalBudget, systemImage: "target", tint: .blue)
+                BudgetMetricCard(title: "Income", value: summary.totalIncome, systemImage: "arrow.down.circle", tint: .green)
+                BudgetMetricCard(title: "Expenses", value: summary.totalExpenses, systemImage: "creditcard", tint: .red)
+            }
         }
+    }
+}
+
+private struct BudgetRemainingHero: View {
+    let value: Decimal
+
+    var body: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Remaining", systemImage: "banknote.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Text(value.formattedCurrency)
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .contentTransition(.numericText())
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: value >= .zero ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+                .accessibilityHidden(true)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, minHeight: 124, alignment: .leading)
+        .background {
+            LinearGradient(
+                colors: value >= .zero ? [Color.blue, Color.indigo] : [Color.orange, Color.red],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: (value >= .zero ? Color.blue : Color.red).opacity(0.16), radius: 10, y: 5)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -309,8 +398,9 @@ private struct BudgetCategoryRowView: View {
             HStack(spacing: 12) {
                 Image(systemName: row.systemImage)
                     .font(.headline)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 28, height: 28)
+                    .foregroundStyle(row.tint)
+                    .frame(width: 38, height: 38)
+                    .background(row.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(row.categoryTitle)
@@ -344,13 +434,14 @@ private struct BudgetCategoryRowView: View {
 
             ProgressView(value: row.progress)
                 .tint(row.isIncomeGoal ? .green : (row.remainingAmount >= .zero ? .blue : .red))
+                .scaleEffect(x: 1, y: 1.35, anchor: .center)
         }
         .padding(12)
         .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.quaternary, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(row.tint.opacity(0.10), lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
     }

@@ -148,6 +148,7 @@ enum AppSettingsKey {
     static let proStatus = key("proStatus")
     static let openingBalanceAmount = key("openingBalanceAmount")
     static let openingBalanceDate = key("openingBalanceDate")
+    static let hasCompletedOnboarding = key("hasCompletedOnboarding")
 
     private static func key(_ name: String) -> String {
         AppLaunchConfiguration.usesIsolatedTestStore

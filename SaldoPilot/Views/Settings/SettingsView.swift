@@ -31,6 +31,7 @@ struct SettingsView: View {
 
     @State private var isShowingDeleteAllConfirmation = false
     @State private var isShowingDeleteError = false
+    @State private var isShowingOnboarding = false
 
     var body: some View {
         NavigationStack {
@@ -156,6 +157,12 @@ struct SettingsView: View {
                         Label("User Guide", systemImage: "book")
                     }
 
+                    Button {
+                        isShowingOnboarding = true
+                    } label: {
+                        Label("Show introduction", systemImage: "rectangle.stack.badge.play")
+                    }
+
                     Link(destination: privacyURL) {
                         Label("Privacy", systemImage: "hand.raised")
                     }
@@ -188,6 +195,11 @@ struct SettingsView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("No data was deleted. Check the connection and try again.")
+            }
+            .fullScreenCover(isPresented: $isShowingOnboarding) {
+                OnboardingView {
+                    isShowingOnboarding = false
+                }
             }
         }
     }

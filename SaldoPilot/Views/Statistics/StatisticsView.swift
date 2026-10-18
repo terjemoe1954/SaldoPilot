@@ -14,24 +14,31 @@ struct StatisticsView: View {
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @State private var selectedCategoryMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
 
+    let onNewTransaction: () -> Void
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    StatisticsSummaryGrid(summary: snapshot.currentMonthSummary)
+            if visibleTransactions.isEmpty {
+                StatisticsEmptyState(onNewTransaction: onNewTransaction)
+                    .navigationTitle("Statistics")
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        StatisticsSummaryGrid(summary: snapshot.currentMonthSummary)
 
-                    MonthlyComparisonChart(months: snapshot.months)
-                    CategoryBalanceChart(
-                        categories: snapshot.categoryBalances,
-                        months: snapshot.months,
-                        selectedMonth: $selectedCategoryMonth
-                    )
-                    NetTrendChart(months: snapshot.months)
-                    OutstandingAmountChart(months: snapshot.outstandingMonths)
+                        MonthlyComparisonChart(months: snapshot.months)
+                        CategoryBalanceChart(
+                            categories: snapshot.categoryBalances,
+                            months: snapshot.months,
+                            selectedMonth: $selectedCategoryMonth
+                        )
+                        NetTrendChart(months: snapshot.months)
+                        OutstandingAmountChart(months: snapshot.outstandingMonths)
+                    }
+                    .padding()
                 }
-                .padding()
+                .navigationTitle("Statistics")
             }
-            .navigationTitle("Statistics")
         }
     }
 
@@ -60,6 +67,23 @@ struct StatisticsView: View {
 
     private var selectedLanguage: AppLanguage {
         AppLanguage(rawValue: languageRawValue) ?? .system
+    }
+}
+
+private struct StatisticsEmptyState: View {
+    let onNewTransaction: () -> Void
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("No statistics yet", systemImage: "chart.bar.xaxis")
+        } description: {
+            Text("Add income and expenses to see trends, category balances and monthly comparisons.")
+        } actions: {
+            Button(action: onNewTransaction) {
+                Label("New transaction", systemImage: "plus")
+            }
+            .buttonStyle(.borderedProminent)
+        }
     }
 }
 
@@ -199,12 +223,55 @@ private struct StatisticsSummaryGrid: View {
     let summary: StatisticsSummary
 
     var body: some View {
-        LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 12) {
-            StatisticsMetricCard(title: "Income", value: summary.income, systemImage: "arrow.down.circle", tint: .green)
-            StatisticsMetricCard(title: "Expenses", value: summary.expenses, systemImage: "arrow.up.circle", tint: .red)
-            StatisticsMetricCard(title: "Net", value: summary.net, systemImage: "equal.circle", tint: summary.net >= 0 ? .green : .red)
-            StatisticsMetricCard(title: "Receivable", value: summary.outstandingReceivable, systemImage: "tray.and.arrow.down", tint: .blue)
+        VStack(spacing: 12) {
+            StatisticsNetHero(value: summary.net)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                StatisticsMetricCard(title: "Income", value: summary.income, systemImage: "arrow.down.circle", tint: .green)
+                StatisticsMetricCard(title: "Expenses", value: summary.expenses, systemImage: "arrow.up.circle", tint: .red)
+                StatisticsMetricCard(title: "Receivable", value: summary.outstandingReceivable, systemImage: "tray.and.arrow.down", tint: .blue)
+            }
         }
+    }
+}
+
+private struct StatisticsNetHero: View {
+    let value: Decimal
+
+    var body: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Net", systemImage: "equal.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Text(value.formattedCurrency)
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .contentTransition(.numericText())
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: value >= .zero ? "chart.line.uptrend.xyaxis" : "chart.line.downtrend.xyaxis")
+                .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+                .accessibilityHidden(true)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, minHeight: 124, alignment: .leading)
+        .background {
+            LinearGradient(
+                colors: value >= .zero ? [Color.blue, Color.indigo] : [Color.orange, Color.red],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: (value >= .zero ? Color.blue : Color.red).opacity(0.16), radius: 10, y: 5)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -229,10 +296,10 @@ private struct StatisticsMetricCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.quaternary, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(tint.opacity(0.10), lineWidth: 1)
         }
     }
 }
@@ -571,5 +638,5 @@ private extension Decimal {
 }
 
 #Preview {
-    StatisticsView()
+    StatisticsView(onNewTransaction: {})
 }

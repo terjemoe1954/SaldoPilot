@@ -93,6 +93,7 @@ struct TransactionFormView: View {
                         .frame(minHeight: 96)
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(transaction == nil ? "New transaction" : "Edit transaction")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -333,8 +334,14 @@ private struct TransactionDescriptionSection: View {
 
     var body: some View {
         Section("Description") {
-            TextField("Description", text: $title)
-                .textInputAutocapitalization(.sentences)
+            HStack(spacing: 12) {
+                TransactionFormIcon(systemImage: "text.alignleft", tint: .blue)
+
+                TextField("Description", text: $title)
+                    .textInputAutocapitalization(.sentences)
+                    .font(.body.weight(.medium))
+            }
+            .padding(.vertical, 4)
         }
     }
 }
@@ -344,8 +351,15 @@ private struct TransactionAmountSection: View {
 
     var body: some View {
         Section("Amount") {
-            TextField("Amount", text: $amountText)
-                .keyboardType(.decimalPad)
+            HStack(spacing: 12) {
+                TransactionFormIcon(systemImage: "banknote", tint: .green)
+
+                TextField("Amount", text: $amountText)
+                    .keyboardType(.decimalPad)
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.trailing)
+            }
+            .padding(.vertical, 4)
         }
     }
 }
@@ -384,21 +398,45 @@ private struct TransactionCategorySection: View {
                     }
                 }
             } label: {
-                LabeledContent("Category") {
-                    HStack(spacing: 6) {
-                        if suggestedCategory == category {
-                            Image(systemName: "sparkles")
-                                .foregroundStyle(.blue)
-                                .accessibilityLabel("Suggested category")
-                        }
+                HStack(spacing: 12) {
+                    TransactionFormIcon(systemImage: category.systemImage, tint: category.tint)
+
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(category.title)
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.body.weight(.semibold))
+
+                        if suggestedCategory == category {
+                            Label("Suggested category", systemImage: "sparkles")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                        }
                     }
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
+                .contentShape(.rect)
+                .padding(.vertical, 4)
             }
+            .buttonStyle(.plain)
         }
+    }
+}
+
+private struct TransactionFormIcon: View {
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(tint)
+            .frame(width: 36, height: 36)
+            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .accessibilityHidden(true)
     }
 }
 

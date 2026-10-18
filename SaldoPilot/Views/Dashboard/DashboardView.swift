@@ -31,6 +31,13 @@ struct DashboardView: View {
                         DashboardGreetingView(name: displayName.trimmedForDisplay)
                     }
 
+                    if activeTransactions.isEmpty {
+                        DashboardGettingStartedCard(
+                            onNewIncome: onNewIncome,
+                            onNewExpense: onNewExpense
+                        )
+                    }
+
                     DashboardPeriodSection(
                         selectedPeriod: selectedPeriodBinding,
                         customStartDate: $customStartDate,
@@ -41,6 +48,12 @@ struct DashboardView: View {
                         summary: summary,
                         onShowOverdue: { onShowTransactions(.overdue) },
                         onShowNextDue: { onShowTransactions(.nextDue) }
+                    )
+
+                    DashboardQuickActionsSection(
+                        onNewIncome: onNewIncome,
+                        onNewExpense: onNewExpense,
+                        onRegisterPayment: onRegisterPayment
                     )
 
                     AIInsightSection(insights: aiInsights) {
@@ -55,11 +68,6 @@ struct DashboardView: View {
                         }
                     )
 
-                    DashboardQuickActionsSection(
-                        onNewIncome: onNewIncome,
-                        onNewExpense: onNewExpense,
-                        onRegisterPayment: onRegisterPayment
-                    )
                 }
                 .padding()
             }
@@ -198,6 +206,66 @@ struct DashboardView: View {
     }
 }
 
+private struct DashboardGettingStartedCard: View {
+    let onNewIncome: () -> Void
+    let onNewExpense: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: "flag.checkered")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Start with your first entry")
+                        .font(.headline)
+
+                    Text("Add income and expenses to make your overview useful right away.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            ViewThatFits {
+                HStack(spacing: 10) {
+                    actionButtons
+                }
+
+                VStack(spacing: 10) {
+                    actionButtons
+                }
+            }
+        }
+        .padding(18)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.blue.opacity(0.14), lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        Button(action: onNewIncome) {
+            Label("Add income", systemImage: "plus.circle.fill")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+
+        Button(action: onNewExpense) {
+            Label("Add expense", systemImage: "minus.circle.fill")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+    }
+}
+
 private enum DashboardPeriod: String, CaseIterable, Identifiable {
     case thisMonth
     case previousMonth
@@ -282,9 +350,7 @@ private struct DashboardGreetingView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 2)
         .accessibilityElement(children: .combine)
     }
 }
@@ -296,15 +362,19 @@ private struct DashboardPeriodSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Period")
-                .font(.headline)
+            HStack(spacing: 12) {
+                Label("Period", systemImage: "calendar")
+                    .font(.headline)
 
-            Picker("Period", selection: $selectedPeriod) {
-                ForEach(DashboardPeriod.allCases) { period in
-                    Text(period.title).tag(period)
+                Spacer()
+
+                Picker("Period", selection: $selectedPeriod) {
+                    ForEach(DashboardPeriod.allCases) { period in
+                        Text(period.title).tag(period)
+                    }
                 }
+                .pickerStyle(.menu)
             }
-            .pickerStyle(.segmented)
 
             if selectedPeriod == .custom {
                 VStack(spacing: 8) {
@@ -326,13 +396,11 @@ private struct DashboardSummarySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Summary")
-                .font(.headline)
+            DashboardNetHero(amount: summary.net)
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
                 DashboardSummaryTile(title: "Income", amount: summary.income, systemImage: "arrow.down.circle", tint: .green)
                 DashboardSummaryTile(title: "Expenses", amount: summary.expenses, systemImage: "arrow.up.circle", tint: .red)
-                DashboardSummaryTile(title: "Net", amount: summary.net, systemImage: "equal.circle", tint: .blue)
                 DashboardSummaryTile(title: "Receivable", amount: summary.outstanding, systemImage: "clock.badge.checkmark", tint: .orange)
             }
 
@@ -353,6 +421,48 @@ private struct DashboardSummarySection: View {
     }
 }
 
+private struct DashboardNetHero: View {
+    let amount: Decimal
+
+    var body: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Net", systemImage: "equal.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Text(amount.formattedCurrency)
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .contentTransition(.numericText())
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: amount >= .zero ? "chart.line.uptrend.xyaxis" : "chart.line.downtrend.xyaxis")
+                .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+                .accessibilityHidden(true)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
+        .background {
+            LinearGradient(
+                colors: amount >= .zero
+                    ? [Color.blue, Color.indigo]
+                    : [Color.orange, Color.red],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: (amount >= .zero ? Color.blue : Color.red).opacity(0.18), radius: 12, y: 6)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct DashboardSummaryTile: View {
     let title: LocalizedStringKey
     let amount: Decimal
@@ -360,20 +470,33 @@ private struct DashboardSummaryTile: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: systemImage)
-                .font(.subheadline)
-                .foregroundStyle(tint)
-
-            Text(amount.formattedCurrency)
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
                 .font(.title3.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .foregroundStyle(tint)
+                .frame(width: 42, height: 42)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text(amount.formattedCurrency)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .contentTransition(.numericText())
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(tint.opacity(0.12), lineWidth: 1)
+        }
         .accessibilityElement(children: .combine)
     }
 }
@@ -565,24 +688,54 @@ private struct DashboardQuickActionsSection: View {
             Text("Actions")
                 .font(.headline)
 
-            VStack(spacing: 10) {
-                Button(action: onNewIncome) {
-                    Label("New income", systemImage: "arrow.down.circle")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                Button(action: onNewExpense) {
-                    Label("New expense", systemImage: "arrow.up.circle")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                Button(action: onRegisterPayment) {
-                    Label("Register payment", systemImage: "checkmark.circle")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: 10)], spacing: 10) {
+                DashboardActionButton(
+                    title: "New income",
+                    systemImage: "arrow.down.circle.fill",
+                    tint: .green,
+                    action: onNewIncome
+                )
+                DashboardActionButton(
+                    title: "New expense",
+                    systemImage: "arrow.up.circle.fill",
+                    tint: .red,
+                    action: onNewExpense
+                )
+                DashboardActionButton(
+                    title: "Register payment",
+                    systemImage: "checkmark.circle.fill",
+                    tint: .blue,
+                    action: onRegisterPayment
+                )
             }
-            .buttonStyle(.bordered)
         }
+    }
+}
+
+private struct DashboardActionButton: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.title3)
+
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .multilineTextAlignment(.leading)
+
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+            .padding(.horizontal, 14)
+            .background(tint.opacity(0.11), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 

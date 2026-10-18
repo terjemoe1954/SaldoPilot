@@ -15,10 +15,12 @@ struct MainTabView: View {
     @AppStorage(AppSettingsKey.notifyDueInAdvance) private var notifyDueInAdvance = false
     @AppStorage(AppSettingsKey.notificationAdvanceDays) private var notificationAdvanceDays = 7
     @AppStorage(AppSettingsKey.notifyPendingIncome) private var notifyPendingIncome = false
+    @AppStorage(AppSettingsKey.hasCompletedOnboarding) private var hasCompletedOnboarding = false
 
     @State private var selectedTab: MainTab = .dashboard
     @State private var newTransactionIntent: NewTransactionIntent?
     @State private var transactionListFilter: TransactionListFilter = .all
+    @State private var isShowingOnboarding = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -42,7 +44,9 @@ struct MainTabView: View {
                 }
                 .tag(MainTab.transactions)
 
-            StatisticsView()
+            StatisticsView {
+                newTransactionIntent = .transaction
+            }
                 .tabItem {
                     Label("Statistics", systemImage: "chart.bar.xaxis")
                 }
@@ -63,7 +67,16 @@ struct MainTabView: View {
         .sheet(item: $newTransactionIntent) { intent in
             TransactionFormView(intent: intent)
         }
+        .fullScreenCover(isPresented: $isShowingOnboarding) {
+            OnboardingView {
+                hasCompletedOnboarding = true
+                isShowingOnboarding = false
+            }
+        }
         .task {
+            if !hasCompletedOnboarding && transactions.isEmpty {
+                isShowingOnboarding = true
+            }
             await synchronizeNotifications()
         }
         .onChange(of: notificationFingerprint) { _, _ in
