@@ -295,13 +295,15 @@ private struct BudgetSummary {
     let totalExpenses: Decimal
 
     init(rows: [BudgetCategoryRow]) {
-        totalBudget = rows.reduce(.zero) { $0 + $1.budgetAmount }
+        totalBudget = rows
+            .filter { !$0.isIncomeGoal }
+            .reduce(.zero) { $0 + $1.budgetAmount }
         totalIncome = rows.reduce(.zero) { $0 + $1.incomeAmount }
         totalExpenses = rows.reduce(.zero) { $0 + $1.expenseAmount }
     }
 
     var remaining: Decimal {
-        totalBudget + totalIncome - totalExpenses
+        totalBudget - totalExpenses
     }
 }
 
