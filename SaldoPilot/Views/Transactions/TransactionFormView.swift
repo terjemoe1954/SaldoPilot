@@ -35,6 +35,7 @@ struct TransactionFormView: View {
     @State private var isShowingSaveError = false
     @State private var suggestedCategory: CategoryKind?
     @State private var categoryWasManuallySelected: Bool
+    @FocusState private var focusedField: TransactionFormField?
 
     init(transaction: Transaction? = nil, intent: NewTransactionIntent = .transaction) {
         self.transaction = transaction
@@ -61,7 +62,10 @@ struct TransactionFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                TransactionDescriptionSection(title: $title)
+                TransactionDescriptionSection(
+                    title: $title,
+                    focusedField: $focusedField
+                )
 
                 TransactionCategorySection(
                     category: $category,
@@ -72,13 +76,19 @@ struct TransactionFormView: View {
                     }
                 )
 
-                TransactionAmountSection(amountText: $amountText)
+                TransactionAmountSection(
+                    amountText: $amountText,
+                    focusedField: $focusedField
+                )
 
                 TransactionDatesSection(
                     dueDate: $dueDate,
                     hasPaidDate: $hasPaidDate,
                     paidDate: $paidDate,
-                    status: $status
+                    status: $status,
+                    onPresentDatePicker: {
+                        focusedField = nil
+                    }
                 )
 
                 TransactionTypeSection(type: $type)
@@ -165,6 +175,9 @@ struct TransactionFormView: View {
                 if status == .paid || status == .received {
                     status = newType == .income ? .received : .paid
                 }
+            }
+            .onChange(of: dueDate) { _, newDueDate in
+                suggestCompletionForPastDate(newDueDate)
             }
             .onChange(of: status) { _, newStatus in
                 if newStatus == .paid || newStatus == .received {
@@ -312,6 +325,18 @@ struct TransactionFormView: View {
         type == .income ? .received : .paid
     }
 
+    private func suggestCompletionForPastDate(_ newDueDate: Date) {
+        guard transaction == nil,
+              status == .pending,
+              newDueDate < Calendar.current.startOfDay(for: .now) else {
+            return
+        }
+
+        paidDate = newDueDate
+        hasPaidDate = true
+        status = completedStatus(for: type)
+    }
+
     private static let amountFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -329,8 +354,14 @@ private enum RecurrenceUpdateScope {
     case thisAndFuture
 }
 
+private enum TransactionFormField: Hashable {
+    case title
+    case amount
+}
+
 private struct TransactionDescriptionSection: View {
     @Binding var title: String
+    let focusedField: FocusState<TransactionFormField?>.Binding
 
     var body: some View {
         Section("Description") {
@@ -340,6 +371,7 @@ private struct TransactionDescriptionSection: View {
                 TextField("Description", text: $title)
                     .textInputAutocapitalization(.sentences)
                     .font(.body.weight(.medium))
+                    .focused(focusedField, equals: .title)
             }
             .padding(.vertical, 4)
         }
@@ -348,6 +380,7 @@ private struct TransactionDescriptionSection: View {
 
 private struct TransactionAmountSection: View {
     @Binding var amountText: String
+    let focusedField: FocusState<TransactionFormField?>.Binding
 
     var body: some View {
         Section("Amount") {
@@ -358,6 +391,7 @@ private struct TransactionAmountSection: View {
                     .keyboardType(.decimalPad)
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.trailing)
+                    .focused(focusedField, equals: .amount)
             }
             .padding(.vertical, 4)
         }
@@ -445,10 +479,15 @@ private struct TransactionDatesSection: View {
     @Binding var hasPaidDate: Bool
     @Binding var paidDate: Date
     @Binding var status: TransactionStatus
+    let onPresentDatePicker: () -> Void
 
     var body: some View {
         Section("Dates") {
-            TransactionDateRow(title: "Date", date: $dueDate)
+            TransactionDateRow(
+                title: "Date",
+                date: $dueDate,
+                onPresent: onPresentDatePicker
+            )
 
             Picker("Status", selection: $status) {
                 ForEach(TransactionStatus.allCases) { transactionStatus in
@@ -457,7 +496,11 @@ private struct TransactionDatesSection: View {
             }
 
             if hasPaidDate {
-                TransactionDateRow(title: "Paid or received date", date: $paidDate)
+                TransactionDateRow(
+                    title: "Paid or received date",
+                    date: $paidDate,
+                    onPresent: onPresentDatePicker
+                )
             }
         }
     }
@@ -466,10 +509,12 @@ private struct TransactionDatesSection: View {
 private struct TransactionDateRow: View {
     let title: LocalizedStringKey
     @Binding var date: Date
+    let onPresent: () -> Void
     @State private var isShowingCalendar = false
 
     var body: some View {
         Button {
+            onPresent()
             isShowingCalendar = true
         } label: {
             LabeledContent(title) {
@@ -495,7 +540,13 @@ private struct TransactionDateRow: View {
                         }
                     }
             }
-            .presentationDetents([.medium])
+            .frame(
+                minWidth: 320,
+                idealWidth: 360,
+                minHeight: 440,
+                idealHeight: 500
+            )
+            .presentationSizing(.fitted)
         }
     }
 }

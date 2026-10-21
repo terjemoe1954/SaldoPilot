@@ -304,17 +304,6 @@ private struct AppStatusBanners: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if AppLaunchConfiguration.usesIsolatedTestStore && !AppLaunchConfiguration.usesScreenshotData {
-                AppStatusBanner(
-                    title: AppLaunchConfiguration.usesIsolatedCloudTestStore
-                        ? "ISOLATED ICLOUD TEST DATA"
-                        : "ISOLATED TEST DATA",
-                    systemImage: "checkmark.shield.fill",
-                    color: Color(red: 0.51, green: 0.22, blue: 0),
-                    usesCompactLayout: dynamicTypeSize.isAccessibilitySize
-                )
-            }
-
             if isICloudUnavailable {
                 AppStatusBanner(
                     title: "ICLOUD UNAVAILABLE — CHANGES ARE SAVED ON THIS DEVICE",

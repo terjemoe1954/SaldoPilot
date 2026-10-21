@@ -8,6 +8,64 @@
 import SwiftData
 import SwiftUI
 
+struct BudgetSuggestion: Equatable {
+    let amount: Decimal
+    let monthsUsed: Int
+}
+
+enum BudgetSuggestionCalculator {
+    static func suggestion(
+        for category: CategoryKind,
+        transactions: [Transaction],
+        referenceDate: Date = .now,
+        calendar: Calendar = .current
+    ) -> BudgetSuggestion? {
+        guard let currentMonthStart = calendar.dateInterval(of: .month, for: referenceDate)?.start,
+              let firstCandidateMonth = calendar.date(byAdding: .month, value: -3, to: currentMonthStart) else {
+            return nil
+        }
+
+        let validTransactions = transactions.filter {
+            !$0.isArchived &&
+            $0.status != .cancelled &&
+            $0.isIncludedInCategoryActivity &&
+            $0.dueDate < currentMonthStart
+        }
+        guard let firstTransactionDate = validTransactions.map(\.dueDate).min(),
+              let firstDataMonth = calendar.dateInterval(of: .month, for: firstTransactionDate)?.start else {
+            return nil
+        }
+
+        let startMonth = max(firstCandidateMonth, firstDataMonth)
+        var monthlyAmounts: [Decimal] = []
+        var monthStart = startMonth
+
+        while monthStart < currentMonthStart {
+            guard let monthInterval = calendar.dateInterval(of: .month, for: monthStart) else { break }
+            let categoryTransactions = validTransactions.filter {
+                $0.category == category && monthInterval.containsHalfOpen($0.dueDate)
+            }
+            let income = categoryTransactions
+                .filter { $0.type == .income }
+                .reduce(.zero) { $0 + $1.amount }
+            let expenses = categoryTransactions
+                .filter { $0.type == .expense }
+                .reduce(.zero) { $0 + $1.amount }
+            let isIncomeGoal = category == .income || category == .refund
+            monthlyAmounts.append(isIncomeGoal ? income : max(expenses - income, .zero))
+
+            guard let nextMonth = calendar.date(byAdding: .month, value: 1, to: monthStart) else { break }
+            monthStart = nextMonth
+        }
+
+        guard !monthlyAmounts.isEmpty else { return nil }
+        var roundedAverage = monthlyAmounts.reduce(.zero, +) / Decimal(monthlyAmounts.count)
+        var roundedResult = Decimal.zero
+        NSDecimalRound(&roundedResult, &roundedAverage, 2, .plain)
+        return BudgetSuggestion(amount: roundedResult, monthsUsed: monthlyAmounts.count)
+    }
+}
+
 struct BudgetsView: View {
     @Environment(ProPurchaseStore.self) private var proPurchaseStore
     @Environment(\.modelContext) private var modelContext
@@ -43,6 +101,7 @@ struct BudgetsView: View {
                 BudgetFormView(
                     category: draft.category,
                     amount: draft.amount,
+                    suggestion: draft.suggestion,
                     onSave: saveBudget
                 )
             }
@@ -164,7 +223,11 @@ struct BudgetsView: View {
     private func openBudgetForm(category: CategoryKind) {
         budgetDraft = BudgetDraft(
             category: category,
-            amount: currentMonthBudgets.first { $0.category == category }?.amount ?? .zero
+            amount: currentMonthBudgets.first { $0.category == category }?.amount ?? .zero,
+            suggestion: BudgetSuggestionCalculator.suggestion(
+                for: category,
+                transactions: transactions
+            )
         )
     }
 
@@ -285,6 +348,7 @@ private struct BudgetGettingStartedContent: View {
 private struct BudgetDraft: Identifiable {
     let category: CategoryKind
     let amount: Decimal
+    let suggestion: BudgetSuggestion?
 
     var id: String { category.rawValue }
 }
@@ -480,13 +544,20 @@ private struct BudgetFormView: View {
 
     let category: CategoryKind
     let amount: Decimal
+    let suggestion: BudgetSuggestion?
     let onSave: (CategoryKind, Decimal) -> Void
 
     @State private var amountText: String
 
-    init(category: CategoryKind, amount: Decimal, onSave: @escaping (CategoryKind, Decimal) -> Void) {
+    init(
+        category: CategoryKind,
+        amount: Decimal,
+        suggestion: BudgetSuggestion?,
+        onSave: @escaping (CategoryKind, Decimal) -> Void
+    ) {
         self.category = category
         self.amount = amount
+        self.suggestion = suggestion
         self.onSave = onSave
         _amountText = State(initialValue: amount > .zero ? amount.formattedPlainAmount : "")
     }
@@ -501,6 +572,22 @@ private struct BudgetFormView: View {
                 Section("Monthly budget") {
                     TextField("Amount", text: $amountText)
                         .keyboardType(.decimalPad)
+                }
+
+                if let suggestion {
+                    Section {
+                        LabeledContent("Average from completed months") {
+                            Text(suggestion.amount.formattedCurrency)
+                        }
+
+                        Button("Use suggestion") {
+                            amountText = suggestion.amount.formattedPlainAmount
+                        }
+                    } header: {
+                        Text("Historical suggestion")
+                    } footer: {
+                        Text("The suggestion is based on recorded activity in completed months and never changes your budget automatically.")
+                    }
                 }
             }
             .navigationTitle("Set budget")
@@ -540,6 +627,7 @@ private struct BudgetFormView: View {
 
         return amount
     }
+
 }
 
 private extension Array where Element == Transaction {
