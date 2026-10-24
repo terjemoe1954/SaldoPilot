@@ -405,6 +405,7 @@ struct UnpaidBillsView: View {
     @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
 
     @State private var isShowingSaveError = false
+    @State private var isShowingPrintError = false
 
     let scope: UnpaidBillsScope
 
@@ -430,6 +431,20 @@ struct UnpaidBillsView: View {
                     description: Text("Everything in this list has been paid.")
                 )
             } else {
+                if !overdueBills.isEmpty {
+                    Section {
+                        Button {
+                            printOverdueChecklist()
+                        } label: {
+                            Label("Print overdue checklist", systemImage: "printer")
+                        }
+                    } header: {
+                        Text("Printable checklist")
+                    } footer: {
+                        Text("The printed checkboxes are for use on paper and do not change transactions in SaldoPilot.")
+                    }
+                }
+
                 Section("Bills by due date") {
                     ForEach(unpaidBills, id: \.id) { transaction in
                         UnpaidBillRow(
@@ -451,6 +466,11 @@ struct UnpaidBillsView: View {
         } message: {
             Text("The bill was not marked as paid. Check the connection and try again.")
         }
+        .alert("Could not create checklist", isPresented: $isShowingPrintError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The printable checklist could not be created. Please try again.")
+        }
     }
 
     private var unpaidBills: [Transaction] {
@@ -469,6 +489,36 @@ struct UnpaidBillsView: View {
 
     private var totalAmount: Decimal {
         unpaidBills.reduce(.zero) { $0 + $1.amount }
+    }
+
+    private var overdueBills: [Transaction] {
+        let today = Calendar.current.startOfDay(for: .now)
+        return unpaidBills.filter { $0.dueDate < today }
+    }
+
+    @MainActor
+    private func printOverdueChecklist() {
+        let reportTransactions = overdueBills.map { transaction in
+            ReportTransaction(
+                transaction: transaction,
+                transactionDate: transaction.dueDate,
+                categoryName: CategoryOption.resolve(
+                    id: transaction.categoryID,
+                    definitions: categoryDefinitions,
+                    locale: locale
+                ).name
+            )
+        }
+
+        do {
+            let url = try ReportPDFService.makeOverdueChecklist(
+                transactions: reportTransactions,
+                locale: locale
+            )
+            ReportPDFService.printReport(at: url, jobName: String(localized: "Overdue checklist"))
+        } catch {
+            isShowingPrintError = true
+        }
     }
 
     private func markPaid(_ transaction: Transaction) {

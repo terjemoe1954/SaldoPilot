@@ -29,6 +29,79 @@ struct ReportTransaction {
 
 @MainActor
 enum ReportPDFService {
+    static func makeOverdueChecklist(
+        transactions: [ReportTransaction],
+        locale: Locale
+    ) throws -> URL {
+        let strings = ReportStrings(locale: locale)
+        let pageBounds = CGRect(x: 0, y: 0, width: 595, height: 842)
+        let margin: CGFloat = 32
+        let contentWidth = pageBounds.width - margin * 2
+        let rowHeight: CGFloat = 30
+        let sortedTransactions = transactions.sorted { $0.transactionDate < $1.transactionDate }
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = locale
+        dateFormatter.setLocalizedDateFormatFromTemplate("d MMM yyyy")
+        let currencyFormatter = NumberFormatter()
+        currencyFormatter.locale = locale
+        currencyFormatter.numberStyle = .currency
+        currencyFormatter.currencyCode = "NOK"
+        let totalAmount = sortedTransactions.reduce(Decimal.zero) { $0 + $1.amount }
+        let renderer = UIGraphicsPDFRenderer(bounds: pageBounds)
+
+        let data = renderer.pdfData { context in
+            var index = 0
+            var pageNumber = 0
+
+            repeat {
+                context.beginPage()
+                context.cgContext.setFillColor(UIColor.white.cgColor)
+                context.cgContext.fill(pageBounds)
+                pageNumber += 1
+
+                draw(strings.overdueChecklist, rect: CGRect(x: margin, y: margin, width: contentWidth, height: 28), font: .boldSystemFont(ofSize: 20))
+                draw("\(strings.generated): \(Date.now.formatted(date: .abbreviated, time: .shortened))", rect: CGRect(x: margin, y: margin + 31, width: contentWidth, height: 16), font: .systemFont(ofSize: 9), color: .darkGray)
+                draw("\(strings.count): \(sortedTransactions.count)    \(strings.total): \(currency(totalAmount, formatter: currencyFormatter))", rect: CGRect(x: margin, y: margin + 47, width: contentWidth, height: 16), font: .systemFont(ofSize: 9), color: .darkGray)
+                draw("\(strings.page) \(pageNumber)", rect: CGRect(x: margin, y: margin, width: contentWidth, height: 16), font: .systemFont(ofSize: 9), color: .darkGray, alignment: .right)
+
+                var y = margin + 73
+                context.cgContext.setFillColor(UIColor(white: 0.86, alpha: 1).cgColor)
+                context.cgContext.fill(CGRect(x: margin, y: y, width: contentWidth, height: 24))
+                draw(strings.paid, rect: CGRect(x: margin + 4, y: y + 6, width: 34, height: 14), font: .boldSystemFont(ofSize: 8))
+                draw(strings.dueDate, rect: CGRect(x: margin + 42, y: y + 6, width: 82, height: 14), font: .boldSystemFont(ofSize: 8))
+                draw(strings.title, rect: CGRect(x: margin + 126, y: y + 6, width: 205, height: 14), font: .boldSystemFont(ofSize: 8))
+                draw(strings.category, rect: CGRect(x: margin + 334, y: y + 6, width: 105, height: 14), font: .boldSystemFont(ofSize: 8))
+                draw(strings.amount, rect: CGRect(x: margin + 442, y: y + 6, width: contentWidth - 446, height: 14), font: .boldSystemFont(ofSize: 8), alignment: .right)
+                y += 24
+
+                while index < sortedTransactions.count, y + rowHeight < pageBounds.height - 44 {
+                    let transaction = sortedTransactions[index]
+                    context.cgContext.setStrokeColor(UIColor.black.cgColor)
+                    context.cgContext.setLineWidth(1)
+                    context.cgContext.stroke(CGRect(x: margin + 10, y: y + 9, width: 12, height: 12))
+                    draw(dateFormatter.string(from: transaction.transactionDate), rect: CGRect(x: margin + 42, y: y + 8, width: 82, height: 14), font: .systemFont(ofSize: 8))
+                    draw(transaction.title, rect: CGRect(x: margin + 126, y: y + 8, width: 205, height: 14), font: .systemFont(ofSize: 8))
+                    draw(transaction.categoryName ?? transaction.category.localizedTitle(locale: locale), rect: CGRect(x: margin + 334, y: y + 8, width: 105, height: 14), font: .systemFont(ofSize: 8))
+                    draw(currency(transaction.amount, formatter: currencyFormatter), rect: CGRect(x: margin + 442, y: y + 8, width: contentWidth - 446, height: 14), font: .systemFont(ofSize: 8), alignment: .right)
+                    context.cgContext.setStrokeColor(UIColor.separator.cgColor)
+                    context.cgContext.setLineWidth(0.4)
+                    context.cgContext.move(to: CGPoint(x: margin, y: y + rowHeight))
+                    context.cgContext.addLine(to: CGPoint(x: margin + contentWidth, y: y + rowHeight))
+                    context.cgContext.strokePath()
+                    y += rowHeight
+                    index += 1
+                }
+
+                drawFooter(strings: strings, pageNumber: pageNumber, pageBounds: pageBounds, margin: margin)
+            } while index < sortedTransactions.count
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SaldoPilot-Overdue-Checklist-\(fileDay(from: .now)).pdf")
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
     static func makeMonthlyReport(
         transactions: [ReportTransaction],
         monthStart: Date,
@@ -365,6 +438,13 @@ enum ReportPDFService {
         formatter.dateFormat = "yyyy-MM"
         return formatter.string(from: date)
     }
+
+    private static func fileDay(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
 }
 
 private struct ReportTableRow {
@@ -399,6 +479,10 @@ private struct ReportStrings {
     var incomePending: String { languageCode == "nb" ? "Inntekt venter" : languageCode == "th" ? "รายรับที่รอรับ" : "Income pending" }
     var expensesUnpaid: String { languageCode == "nb" ? "Utgift ubetalt" : languageCode == "th" ? "รายจ่ายที่ยังไม่จ่าย" : "Expenses unpaid" }
     var page: String { languageCode == "nb" ? "Side" : languageCode == "th" ? "หน้า" : "Page" }
+    var overdueChecklist: String { languageCode == "nb" ? "Forfalte poster – avkrysningsliste" : languageCode == "th" ? "รายการเกินกำหนด – รายการตรวจสอบ" : "Overdue transactions – checklist" }
+    var paid: String { languageCode == "nb" ? "Betalt" : languageCode == "th" ? "จ่ายแล้ว" : "Paid" }
+    var dueDate: String { languageCode == "nb" ? "Forfallsdato" : languageCode == "th" ? "วันครบกำหนด" : "Due date" }
+    var total: String { languageCode == "nb" ? "Totalt" : languageCode == "th" ? "รวม" : "Total" }
 
     func sortingTitle(for dateType: AppDefaultDateType) -> String {
         dateType == .paidDate ? paymentDateAscending : dueDateAscending
