@@ -11,7 +11,6 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
-    @Query(sort: \Budget.monthStart) private var budgets: [Budget]
 
     @AppStorage(AppSettingsKey.appearance) private var appearanceRawValue = AppAppearance.system.rawValue
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
@@ -136,9 +135,9 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         isShowingDeleteAllConfirmation = true
                     } label: {
-                        Label("Delete all data", systemImage: "trash")
+                        Label("Delete all transactions", systemImage: "trash")
                     }
-                    .disabled(transactions.isEmpty && budgets.isEmpty)
+                    .disabled(transactions.isEmpty)
                 }
 
                 Section("App") {
@@ -180,18 +179,18 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .confirmationDialog(
-                "Delete all data?",
+                "Delete all transactions?",
                 isPresented: $isShowingDeleteAllConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Delete all data", role: .destructive) {
+                Button("Delete all transactions", role: .destructive) {
                     deleteAllData()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This permanently deletes \(transactions.count) transactions and \(budgets.count) budgets from this device and iCloud sync.")
+                Text("This permanently deletes \(transactions.count) transactions from this device and iCloud sync. Budgets are kept unchanged.")
             }
-            .alert("Could not delete all data", isPresented: $isShowingDeleteError) {
+            .alert("Could not delete transactions", isPresented: $isShowingDeleteError) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("No data was deleted. Check the connection and try again.")
@@ -264,10 +263,6 @@ struct SettingsView: View {
         for transaction in transactions {
             modelContext.delete(transaction)
         }
-        for budget in budgets {
-            modelContext.delete(budget)
-        }
-
         do {
             try modelContext.save()
         } catch {

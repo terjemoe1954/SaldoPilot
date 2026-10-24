@@ -31,7 +31,7 @@ struct ImportDataView: View {
             Section("Supported formats") {
                 ImportInfoRow(
                     title: "JSON",
-                    detail: "Imports transactions, budgets, settings, categories and recurrence fields from a structured backup."
+                    detail: "Imports transactions, settings, categories and recurrence fields from a structured backup. Existing budgets are always kept unchanged."
                 )
                 ImportInfoRow(
                     title: "CSV",
@@ -40,7 +40,7 @@ struct ImportDataView: View {
             }
 
             Section("Safety") {
-                Text("Merge adds backup data. Replace removes existing transactions and, when the backup contains budgets, existing budgets. Settings in the backup are restored in both modes. Purchase status and external AI consent are never restored.")
+                Text("Merge adds backup transactions. Replace removes existing transactions first. Budgets are always kept unchanged. Settings in the backup are restored in both modes. Purchase status and external AI consent are never restored.")
                     .foregroundStyle(.secondary)
             }
 
@@ -80,7 +80,7 @@ struct ImportDataView: View {
                 pendingImportURL = nil
             }
         } message: {
-            Text("Merge adds imported transactions and budgets. Replace removes existing transactions and budgets included in the backup first.")
+            Text("Merge adds imported transactions. Replace removes existing transactions first. Existing budgets are kept unchanged.")
         }
     }
 

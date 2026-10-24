@@ -20,6 +20,16 @@ enum BudgetSuggestionCalculator {
         referenceDate: Date = .now,
         calendar: Calendar = .current
     ) -> BudgetSuggestion? {
+        suggestion(forCategoryID: category.rawValue, isIncomeGoal: category == .income || category == .refund, transactions: transactions, referenceDate: referenceDate, calendar: calendar)
+    }
+
+    static func suggestion(
+        forCategoryID categoryID: String,
+        isIncomeGoal: Bool,
+        transactions: [Transaction],
+        referenceDate: Date = .now,
+        calendar: Calendar = .current
+    ) -> BudgetSuggestion? {
         guard let currentMonthStart = calendar.dateInterval(of: .month, for: referenceDate)?.start,
               let firstCandidateMonth = calendar.date(byAdding: .month, value: -3, to: currentMonthStart) else {
             return nil
@@ -43,7 +53,7 @@ enum BudgetSuggestionCalculator {
         while monthStart < currentMonthStart {
             guard let monthInterval = calendar.dateInterval(of: .month, for: monthStart) else { break }
             let categoryTransactions = validTransactions.filter {
-                $0.category == category && monthInterval.containsHalfOpen($0.dueDate)
+                $0.categoryID == categoryID && monthInterval.containsHalfOpen($0.dueDate)
             }
             let income = categoryTransactions
                 .filter { $0.type == .income }
@@ -51,7 +61,6 @@ enum BudgetSuggestionCalculator {
             let expenses = categoryTransactions
                 .filter { $0.type == .expense }
                 .reduce(.zero) { $0 + $1.amount }
-            let isIncomeGoal = category == .income || category == .refund
             monthlyAmounts.append(isIncomeGoal ? income : max(expenses - income, .zero))
 
             guard let nextMonth = calendar.date(byAdding: .month, value: 1, to: monthStart) else { break }
@@ -72,6 +81,7 @@ struct BudgetsView: View {
     @Environment(\.locale) private var locale
     @Query(sort: \Budget.monthStart) private var budgets: [Budget]
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
 
     @State private var budgetDraft: BudgetDraft?
     @State private var isShowingProInfo = false
@@ -90,7 +100,7 @@ struct BudgetsView: View {
                 if canUseBudgets {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            openBudgetForm(category: .home)
+                            openBudgetForm(category: defaultCategory)
                         } label: {
                             Label("Set budget", systemImage: "plus")
                         }
@@ -130,7 +140,7 @@ struct BudgetsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 if currentMonthBudgets.isEmpty {
                     BudgetGettingStartedCard {
-                        openBudgetForm(category: .home)
+                        openBudgetForm(category: defaultCategory)
                     }
                 }
 
@@ -193,9 +203,9 @@ struct BudgetsView: View {
     }
 
     private var budgetRows: [BudgetCategoryRow] {
-        CategoryKind.sortedForDisplay(locale: locale).map { category in
-            let budget = currentMonthBudgets.first { $0.category == category }
-            let categoryTransactions = currentMonthTransactions.filter { $0.category == category }
+        categoryOptions.map { category in
+            let budget = currentMonthBudgets.first { $0.categoryID == category.id }
+            let categoryTransactions = currentMonthTransactions.filter { $0.categoryID == category.id }
             let income = categoryTransactions
                 .filter { $0.type == .income }
                 .totalAmount
@@ -204,7 +214,7 @@ struct BudgetsView: View {
                 .totalAmount
             return BudgetCategoryRow(
                 category: category,
-                categoryTitle: category.localizedTitle(locale: locale),
+                categoryTitle: category.name,
                 systemImage: category.systemImage,
                 tint: category.tint,
                 budgetAmount: budget?.amount ?? .zero,
@@ -216,29 +226,39 @@ struct BudgetsView: View {
 
     private var budgetSummary: BudgetSummary {
         BudgetSummary(
-            rows: budgetRows.filter { $0.category != .savings }
+            rows: budgetRows.filter { $0.category.id != CategoryKind.savings.rawValue }
         )
     }
 
-    private func openBudgetForm(category: CategoryKind) {
+    private var categoryOptions: [CategoryOption] {
+        CategoryOption.available(definitions: categoryDefinitions, locale: locale)
+    }
+
+    private var defaultCategory: CategoryOption {
+        CategoryOption.resolve(id: CategoryKind.home.rawValue, definitions: categoryDefinitions, locale: locale)
+    }
+
+    private func openBudgetForm(category: CategoryOption) {
         budgetDraft = BudgetDraft(
             category: category,
-            amount: currentMonthBudgets.first { $0.category == category }?.amount ?? .zero,
+            amount: currentMonthBudgets.first { $0.categoryID == category.id }?.amount ?? .zero,
             suggestion: BudgetSuggestionCalculator.suggestion(
-                for: category,
+                forCategoryID: category.id,
+                isIncomeGoal: category.id == CategoryKind.income.rawValue || category.id == CategoryKind.refund.rawValue,
                 transactions: transactions
             )
         )
     }
 
-    private func saveBudget(category: CategoryKind, amount: Decimal) {
-        if let budget = currentMonthBudgets.first(where: { $0.category == category }) {
+    private func saveBudget(category: CategoryOption, amount: Decimal) {
+        if let budget = currentMonthBudgets.first(where: { $0.categoryID == category.id }) {
             budget.amount = amount
             budget.markUpdated()
         } else {
             modelContext.insert(
                 Budget(
-                    category: category,
+                    category: category.legacyKind ?? .other,
+                    customCategoryID: category.legacyKind == nil ? category.id : nil,
                     monthStart: currentMonthStart,
                     amount: amount
                 )
@@ -263,18 +283,19 @@ struct BudgetsView: View {
         let sourceBudgets = earlierBudgets.filter {
             calendar.isDate($0.monthStart, equalTo: sourceMonthStart, toGranularity: .month)
         }
-        var currentCategories = Set(currentMonthBudgets.map(\.category))
+        var currentCategories = Set(currentMonthBudgets.map(\.categoryID))
         var copiedBudget = false
 
-        for sourceBudget in sourceBudgets where !currentCategories.contains(sourceBudget.category) {
+        for sourceBudget in sourceBudgets where !currentCategories.contains(sourceBudget.categoryID) {
             modelContext.insert(
                 Budget(
                     category: sourceBudget.category,
+                    customCategoryID: sourceBudget.customCategoryID,
                     monthStart: currentMonthStart,
                     amount: sourceBudget.amount
                 )
             )
-            currentCategories.insert(sourceBudget.category)
+            currentCategories.insert(sourceBudget.categoryID)
             copiedBudget = true
         }
 
@@ -346,11 +367,11 @@ private struct BudgetGettingStartedContent: View {
 }
 
 private struct BudgetDraft: Identifiable {
-    let category: CategoryKind
+    let category: CategoryOption
     let amount: Decimal
     let suggestion: BudgetSuggestion?
 
-    var id: String { category.rawValue }
+    var id: String { category.id }
 }
 
 private struct BudgetSummary {
@@ -372,7 +393,7 @@ private struct BudgetSummary {
 }
 
 private struct BudgetCategoryRow: Identifiable {
-    let category: CategoryKind
+    let category: CategoryOption
     let categoryTitle: String
     let systemImage: String
     let tint: Color
@@ -380,8 +401,8 @@ private struct BudgetCategoryRow: Identifiable {
     let incomeAmount: Decimal
     let expenseAmount: Decimal
 
-    var id: String { category.rawValue }
-    var isIncomeGoal: Bool { category == .income || category == .refund }
+    var id: String { category.id }
+    var isIncomeGoal: Bool { category.id == CategoryKind.income.rawValue || category.id == CategoryKind.refund.rawValue }
     var netSpentAmount: Decimal { expenseAmount - incomeAmount }
     var remainingAmount: Decimal {
         isIncomeGoal ? budgetAmount - incomeAmount : budgetAmount - netSpentAmount
@@ -542,18 +563,18 @@ private struct BudgetFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
 
-    let category: CategoryKind
+    let category: CategoryOption
     let amount: Decimal
     let suggestion: BudgetSuggestion?
-    let onSave: (CategoryKind, Decimal) -> Void
+    let onSave: (CategoryOption, Decimal) -> Void
 
     @State private var amountText: String
 
     init(
-        category: CategoryKind,
+        category: CategoryOption,
         amount: Decimal,
         suggestion: BudgetSuggestion?,
-        onSave: @escaping (CategoryKind, Decimal) -> Void
+        onSave: @escaping (CategoryOption, Decimal) -> Void
     ) {
         self.category = category
         self.amount = amount
@@ -566,7 +587,7 @@ private struct BudgetFormView: View {
         NavigationStack {
             Form {
                 Section("Category") {
-                    Label(category.localizedTitle(locale: locale), systemImage: category.systemImage)
+                    Label(category.name, systemImage: category.systemImage)
                 }
 
                 Section("Monthly budget") {

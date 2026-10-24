@@ -65,28 +65,22 @@ enum ImportService {
         }
 
         var replacedTransactions = 0
-        var replacedBudgets = 0
         if mode == .replaceExisting {
             let existingTransactions = try modelContext.fetch(FetchDescriptor<Transaction>())
             for transaction in existingTransactions {
                 modelContext.delete(transaction)
             }
             replacedTransactions = existingTransactions.count
-
-            if importResult.includesBudgets {
-                let existingBudgets = try modelContext.fetch(FetchDescriptor<Budget>())
-                for budget in existingBudgets {
-                    modelContext.delete(budget)
-                }
-                replacedBudgets = existingBudgets.count
-            }
         }
 
         for transaction in importResult.transactions {
             modelContext.insert(transaction)
         }
-        for budget in importResult.budgets {
-            modelContext.insert(budget)
+
+        let existingDefinitions = try modelContext.fetch(FetchDescriptor<CategoryDefinition>())
+        let existingDefinitionIDs = Set(existingDefinitions.map(\.id))
+        for definition in importResult.categoryDefinitions where !existingDefinitionIDs.contains(definition.id) {
+            modelContext.insert(definition)
         }
 
         do {
@@ -102,8 +96,8 @@ enum ImportService {
             categorizedRows: importResult.categorizedRows,
             transactionsCreated: importResult.transactions.count,
             replacedTransactions: replacedTransactions,
-            budgetsCreated: importResult.budgets.count,
-            replacedBudgets: replacedBudgets,
+            budgetsCreated: 0,
+            replacedBudgets: 0,
             settingsRestored: importResult.settings != nil,
             skippedRows: importResult.skippedRows
         )
@@ -146,6 +140,7 @@ enum ImportService {
         return PreparedImportResult(
             transactions: transactions,
             budgets: budgets,
+            categoryDefinitions: (payload.categories ?? []).compactMap(\.categoryDefinition),
             includesBudgets: payload.includesBudgets,
             settings: payload.settings,
             categorizedRows: categorizedRows,
@@ -160,7 +155,7 @@ enum ImportService {
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
         guard let headerRow = rows.first else {
-            return PreparedImportResult(transactions: [], budgets: [], includesBudgets: false, settings: nil, categorizedRows: 0, skippedRows: 0)
+            return PreparedImportResult(transactions: [], budgets: [], categoryDefinitions: [], includesBudgets: false, settings: nil, categorizedRows: 0, skippedRows: 0)
         }
 
         let headers = parseCSVRow(headerRow).map { $0.normalizedImportKey }
@@ -206,6 +201,7 @@ enum ImportService {
         return PreparedImportResult(
             transactions: transactions,
             budgets: [],
+            categoryDefinitions: [],
             includesBudgets: false,
             settings: nil,
             categorizedRows: categorizedRows,
@@ -227,6 +223,7 @@ enum ImportService {
         let type = TransactionType(importValue: importedTransaction.type) ?? .expense
         let status = TransactionStatus(importValue: importedTransaction.status, type: type)
         let category = categoryLookup.category(for: importedTransaction.category)
+        let customCategoryID = categoryLookup.customCategoryID(for: importedTransaction.category)
         if category != .other {
             categorizedRows += 1
         }
@@ -247,6 +244,7 @@ enum ImportService {
             paidDate: paidDate,
             status: status,
             category: category,
+            customCategoryID: customCategoryID,
             recurrence: recurrence,
             recurrenceIntervalMonths: intervalMonths,
             recurrenceSeriesID: importedTransaction.recurrenceSeriesID.flatMap(UUID.init(uuidString:)),
@@ -364,6 +362,7 @@ private struct ImportPayload: Decodable {
 private struct PreparedImportResult {
     let transactions: [Transaction]
     let budgets: [Budget]
+    let categoryDefinitions: [CategoryDefinition]
     let includesBudgets: Bool
     let settings: BackupAppSettings?
     let categorizedRows: Int
@@ -403,6 +402,8 @@ private struct ImportCategory: Decodable {
     let name: String?
     let icon: String?
     let colorIdentifier: String?
+    let legacyKindRawValue: String?
+    let isUserDefined: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -416,6 +417,8 @@ private struct ImportCategory: Decodable {
         case color
         case colorId
         case farge
+        case legacyKindRawValue
+        case isUserDefined
     }
 
     init(from decoder: Decoder) throws {
@@ -424,6 +427,19 @@ private struct ImportCategory: Decodable {
         name = try container.decodeFlexibleString(forKeys: [.name, .navn, .title, .tittel])
         icon = try container.decodeFlexibleString(forKeys: [.icon, .ikon])
         colorIdentifier = try container.decodeFlexibleString(forKeys: [.colorIdentifier, .color, .colorId, .farge])
+        legacyKindRawValue = try container.decodeFlexibleString(forKeys: [.legacyKindRawValue])
+        isUserDefined = (try? container.decodeIfPresent(Bool.self, forKey: .isUserDefined)) ?? false
+    }
+
+    var categoryDefinition: CategoryDefinition? {
+        guard isUserDefined, let id, let name, !name.isEmpty else { return nil }
+        return CategoryDefinition(
+            id: id,
+            name: name,
+            systemImage: icon ?? "tag",
+            colorName: colorIdentifier ?? "blue",
+            legacyKindRawValue: legacyKindRawValue
+        )
     }
 }
 
@@ -576,19 +592,25 @@ private struct CategoryImportLookup {
     static let empty = CategoryImportLookup(categories: [])
 
     private let categoriesByKey: [String: CategoryKind]
+    private let customIDsByKey: [String: String]
 
     init(categories: [ImportCategory]) {
         var categoriesByKey: [String: CategoryKind] = [:]
+        var customIDsByKey: [String: String] = [:]
 
         for category in categories {
             let resolvedCategory = CategoryKind.matching(category.name ?? category.id)
             for value in [category.id, category.name] {
                 guard let key = value?.normalizedImportKey, !key.isEmpty else { continue }
                 categoriesByKey[key] = resolvedCategory
+                if category.isUserDefined, category.legacyKindRawValue == nil, let id = category.id {
+                    customIDsByKey[key] = id
+                }
             }
         }
 
         self.categoriesByKey = categoriesByKey
+        self.customIDsByKey = customIDsByKey
     }
 
     func category(for importedValue: String?) -> CategoryKind {
@@ -598,6 +620,11 @@ private struct CategoryImportLookup {
 
         let key = importedValue.normalizedImportKey
         return categoriesByKey[key] ?? CategoryKind.matching(importedValue)
+    }
+
+    func customCategoryID(for importedValue: String?) -> String? {
+        guard let importedValue else { return nil }
+        return customIDsByKey[importedValue.normalizedImportKey]
     }
 }
 

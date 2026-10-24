@@ -152,6 +152,25 @@ enum CategoryKind: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    var colorName: String {
+        switch self {
+        case .clothing: "pink"
+        case .communication: "teal"
+        case .deduction: "brown"
+        case .developer: "black"
+        case .diningOut, .transport: "orange"
+        case .entertainment: "yellow"
+        case .payrollDeduction, .health: "red"
+        case .gifts, .subscriptions: "purple"
+        case .groceries, .income: "green"
+        case .home: "blue"
+        case .insurance: "indigo"
+        case .other: "gray"
+        case .refund: "cyan"
+        case .savings: "mint"
+        }
+    }
+
     static func matching(_ value: String?) -> CategoryKind {
         guard let value else { return .other }
         let normalizedValue = value.normalizedCategoryKey

@@ -11,6 +11,7 @@ import SwiftUI
 struct ExportDataView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @Query(sort: \Budget.monthStart) private var budgets: [Budget]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
 
     @State private var backupURL: URL?
     @State private var csvURL: URL?
@@ -80,6 +81,7 @@ struct ExportDataView: View {
             backupURL = try ExportService.makeJSONBackup(
                 transactions: transactions,
                 budgets: budgets,
+                categoryDefinitions: categoryDefinitions,
                 settings: BackupAppSettings.capture()
             )
         } catch {

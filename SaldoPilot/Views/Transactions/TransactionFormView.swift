@@ -12,6 +12,7 @@ struct TransactionFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
     @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
 
@@ -21,6 +22,7 @@ struct TransactionFormView: View {
     @State private var amountText: String
     @State private var type: TransactionType
     @State private var category: CategoryKind
+    @State private var customCategoryID: String?
     @State private var dueDate: Date
     @State private var hasPaidDate: Bool
     @State private var paidDate: Date
@@ -48,6 +50,7 @@ struct TransactionFormView: View {
         _amountText = State(initialValue: transaction.map { Self.amountFormatter.string(from: NSDecimalNumber(decimal: $0.amount)) ?? "" } ?? "")
         _type = State(initialValue: initialType)
         _category = State(initialValue: transaction?.category ?? (initialType == .income ? .income : .other))
+        _customCategoryID = State(initialValue: transaction?.customCategoryID)
         _dueDate = State(initialValue: transaction?.dueDate ?? .now)
         _hasPaidDate = State(initialValue: transaction?.paidDate != nil || initialStatus == .paid || initialStatus == .received)
         _paidDate = State(initialValue: initialPaidDate)
@@ -69,6 +72,8 @@ struct TransactionFormView: View {
 
                 TransactionCategorySection(
                     category: $category,
+                    customCategoryID: $customCategoryID,
+                    definitions: categoryDefinitions,
                     suggestedCategory: suggestedCategory,
                     onManualSelection: {
                         categoryWasManuallySelected = true
@@ -167,6 +172,7 @@ struct TransactionFormView: View {
                     if newType == .income {
                         suggestedCategory = nil
                         category = .income
+                        customCategoryID = nil
                     } else {
                         updateSuggestedCategory(for: title)
                     }
@@ -270,6 +276,7 @@ struct TransactionFormView: View {
             transaction.paidDate = resolvedPaidDate
             transaction.status = resolvedStatus
             transaction.category = category
+            transaction.customCategoryID = customCategoryID
             transaction.recurrence = recurrence
             transaction.recurrenceIntervalMonths = resolvedInterval
             transaction.notes = notes
@@ -292,6 +299,7 @@ struct TransactionFormView: View {
                 paidDate: resolvedPaidDate,
                 status: resolvedStatus,
                 category: category,
+                customCategoryID: customCategoryID,
                 recurrence: recurrence,
                 recurrenceIntervalMonths: resolvedInterval,
                 notes: notes,
@@ -417,26 +425,29 @@ private struct TransactionCategorySection: View {
     @Environment(\.locale) private var locale
 
     @Binding var category: CategoryKind
+    @Binding var customCategoryID: String?
+    let definitions: [CategoryDefinition]
     let suggestedCategory: CategoryKind?
     let onManualSelection: () -> Void
 
     var body: some View {
         Section("Category") {
             Menu {
-                ForEach(CategoryKind.sortedForDisplay(locale: locale)) { category in
+                ForEach(options) { option in
                     Button {
-                        self.category = category
+                        category = option.legacyKind ?? .other
+                        customCategoryID = option.legacyKind == nil ? option.id : nil
                         onManualSelection()
                     } label: {
-                        Label(category.title, systemImage: category.systemImage)
+                        Label(option.name, systemImage: option.systemImage)
                     }
                 }
             } label: {
                 HStack(spacing: 12) {
-                    TransactionFormIcon(systemImage: category.systemImage, tint: category.tint)
+                    TransactionFormIcon(systemImage: selectedOption.systemImage, tint: selectedOption.tint)
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(category.title)
+                        Text(selectedOption.name)
                             .font(.body.weight(.semibold))
 
                         if suggestedCategory == category {
@@ -457,6 +468,14 @@ private struct TransactionCategorySection: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var options: [CategoryOption] {
+        CategoryOption.available(definitions: definitions, locale: locale)
+    }
+
+    private var selectedOption: CategoryOption {
+        CategoryOption.resolve(id: customCategoryID ?? category.rawValue, definitions: definitions, locale: locale)
     }
 }
 

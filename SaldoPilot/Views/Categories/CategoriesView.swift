@@ -1,165 +1,157 @@
-//
-//  CategoriesView.swift
-//  SaldoPilot
-//
-//  Created by Terje Moe on 13/09/2026.
-//
-
 import SwiftData
 import SwiftUI
 
 struct CategoriesView: View {
     @Environment(\.locale) private var locale
-
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
-
-    @State private var selectedPeriod: CategoryPeriod = .thisMonth
+    @Query(sort: \Budget.monthStart) private var budgets: [Budget]
+    @Query(sort: \CategoryDefinition.name) private var definitions: [CategoryDefinition]
+    @State private var editedCategory: CategoryOption?
+    @State private var isAddingCategory = false
+    @State private var deletingCategory: CategoryOption?
+    @State private var replacementCategoryID = CategoryKind.other.rawValue
+    @State private var saveError = false
 
     var body: some View {
         List {
-            Section {
-                CategoryPeriodPicker(selectedPeriod: $selectedPeriod)
-            }
-
-            Section("Standard categories") {
-                ForEach(CategoryKind.sortedForDisplay(locale: locale)) { category in
-                    CategoryRowView(
+            Section("Categories") {
+                ForEach(options) { category in
+                    CategoryManagementRow(
                         category: category,
-                        transactionCount: transactionCount(for: category),
-                        periodAmount: periodAmount(for: category)
+                        transactionCount: transactions.filter { $0.categoryID == category.id && !$0.isArchived }.count,
+                        budgetCount: budgets.filter { $0.categoryID == category.id }.count
                     )
+                    .swipeActions {
+                        Button("Delete", role: .destructive) {
+                            replacementCategoryID = options.first { $0.id != category.id }?.id ?? CategoryKind.other.rawValue
+                            deletingCategory = category
+                        }
+                        Button("Edit") { editedCategory = category }.tint(.blue)
+                    }
                 }
             }
-
             Section("About categories") {
-                Text("SaldoPilot uses a small fixed category set so names stay translated across Norwegian, English and Thai.")
+                Text("Names, icons and colors can be changed. When deleting a category, its transactions and budgets must be moved to another category first.")
                     .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("Categories")
-    }
-
-    private var periodInterval: DateInterval? {
-        selectedPeriod.interval(calendar: .current)
-    }
-
-    private func transactionCount(for category: CategoryKind) -> Int {
-        transactions.filter { $0.category == category && !$0.isArchived }.count
-    }
-
-    private func periodAmount(for category: CategoryKind) -> Decimal {
-        transactions
-            .filter { transaction in
-                transaction.category == category &&
-                !transaction.isArchived &&
-                transaction.status != .cancelled &&
-                transaction.isIncludedInOrdinaryCashFlow &&
-                selectedPeriod.includes(transaction.dueDate, interval: periodInterval)
+        .toolbar {
+            Button { isAddingCategory = true } label: { Label("New category", systemImage: "plus") }
+        }
+        .sheet(isPresented: $isAddingCategory) {
+            CategoryFormView(title: "New category") { name, icon, color in
+                modelContext.insert(CategoryDefinition(name: name, systemImage: icon, colorName: color))
+                save()
             }
-            .reduce(Decimal.zero) { runningTotal, transaction in
-                switch transaction.type {
-                case .income:
-                    runningTotal + transaction.amount
-                case .expense:
-                    runningTotal - transaction.amount
+        }
+        .sheet(item: $editedCategory) { category in
+            CategoryFormView(title: "Edit category", name: category.name, systemImage: category.systemImage, colorName: category.colorName) { name, icon, color in
+                saveChanges(to: category, name: name, icon: icon, color: color)
+            }
+        }
+        .sheet(item: $deletingCategory) { category in
+            NavigationStack {
+                Form {
+                    Section {
+                        Picker("Move to", selection: $replacementCategoryID) {
+                            ForEach(options.filter { $0.id != category.id }) { option in
+                                Label(option.name, systemImage: option.systemImage).tag(option.id)
+                            }
+                        }
+                    } footer: {
+                        Text("Existing transactions and budgets are moved before the category is removed.")
+                    }
+                }
+                .navigationTitle("Delete category")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { deletingCategory = nil } }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Move and delete", role: .destructive) {
+                            delete(category, replacingWith: replacementCategoryID)
+                            deletingCategory = nil
+                        }
+                    }
                 }
             }
-    }
-}
-
-private enum CategoryPeriod: String, CaseIterable, Identifiable {
-    case thisMonth
-    case thisYear
-    case allTime
-
-    var id: String { rawValue }
-
-    var title: LocalizedStringKey {
-        switch self {
-        case .thisMonth:
-            "This month"
-        case .thisYear:
-            "This year"
-        case .allTime:
-            "All time"
         }
+        .alert("Could not save categories", isPresented: $saveError) { Button("OK", role: .cancel) {} }
     }
 
-    func interval(calendar: Calendar) -> DateInterval? {
-        switch self {
-        case .thisMonth:
-            calendar.dateInterval(of: .month, for: .now)
-        case .thisYear:
-            calendar.dateInterval(of: .year, for: .now)
-        case .allTime:
-            nil
+    private var options: [CategoryOption] { CategoryOption.available(definitions: definitions, locale: locale) }
+
+    private func saveChanges(to category: CategoryOption, name: String, icon: String, color: String) {
+        if let definition = definitions.first(where: { $0.id == category.id }) {
+            definition.name = name
+            definition.systemImage = icon
+            definition.colorName = color
+            definition.updatedAt = .now
+        } else {
+            modelContext.insert(CategoryDefinition(id: category.id, name: name, systemImage: icon, colorName: color, legacyKindRawValue: category.legacyKind?.rawValue))
         }
+        save()
     }
 
-    func includes(_ date: Date, interval: DateInterval?) -> Bool {
-        guard let interval else { return true }
-        return interval.containsHalfOpen(date)
-    }
-}
-
-private struct CategoryPeriodPicker: View {
-    @Binding var selectedPeriod: CategoryPeriod
-
-    var body: some View {
-        Picker("Period", selection: $selectedPeriod) {
-            ForEach(CategoryPeriod.allCases) { period in
-                Text(period.title).tag(period)
+    private func delete(_ category: CategoryOption, replacingWith replacementID: String) {
+        let replacement = CategoryOption.resolve(id: replacementID, definitions: definitions, locale: locale)
+        for transaction in transactions where transaction.categoryID == category.id {
+            transaction.category = replacement.legacyKind ?? .other
+            transaction.customCategoryID = replacement.legacyKind == nil ? replacement.id : nil
+            transaction.markUpdated()
+        }
+        for budget in budgets.filter({ $0.categoryID == category.id }) {
+            if let existingBudget = budgets.first(where: {
+                $0.id != budget.id &&
+                $0.categoryID == replacement.id &&
+                Calendar.current.isDate($0.monthStart, equalTo: budget.monthStart, toGranularity: .month)
+            }) {
+                existingBudget.amount += budget.amount
+                existingBudget.markUpdated()
+                modelContext.delete(budget)
+            } else {
+                budget.category = replacement.legacyKind ?? .other
+                budget.customCategoryID = replacement.legacyKind == nil ? replacement.id : nil
+                budget.markUpdated()
             }
         }
-        .pickerStyle(.segmented)
+        if let definition = definitions.first(where: { $0.id == category.id }) {
+            if category.legacyKind == nil { modelContext.delete(definition) } else {
+                definition.isHidden = true
+                definition.updatedAt = .now
+            }
+        } else if let legacyKind = category.legacyKind {
+            modelContext.insert(CategoryDefinition(id: category.id, name: category.name, systemImage: category.systemImage, colorName: category.colorName, legacyKindRawValue: legacyKind.rawValue, isHidden: true))
+        }
+        save()
+    }
+
+    private func save() {
+        do { try modelContext.save() } catch {
+            modelContext.rollback()
+            saveError = true
+        }
     }
 }
 
-private struct CategoryRowView: View {
-    let category: CategoryKind
+private struct CategoryManagementRow: View {
+    let category: CategoryOption
     let transactionCount: Int
-    let periodAmount: Decimal
+    let budgetCount: Int
 
     var body: some View {
         HStack(spacing: 12) {
-            CategoryIconView(category: category)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(category.title)
-                    .font(.headline)
-
-                Text("\(transactionCount) transactions")
+            Image(systemName: category.systemImage)
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(category.tint.gradient)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            VStack(alignment: .leading) {
+                Text(category.name).font(.headline)
+                Text("\(transactionCount) transactions · \(budgetCount) budgets")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            Spacer()
-
-            Text(periodAmount.formattedCurrency)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(periodAmount < .zero ? .red : .green)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
         }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
     }
-}
-
-struct CategoryIconView: View {
-    let category: CategoryKind
-
-    var body: some View {
-        Image(systemName: category.systemImage)
-            .font(.headline)
-            .foregroundStyle(.white)
-            .frame(width: 36, height: 36)
-            .background(category.tint.gradient)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .accessibilityHidden(true)
-    }
-}
-
-#Preview {
-    CategoriesView()
 }

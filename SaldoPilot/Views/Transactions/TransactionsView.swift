@@ -12,6 +12,7 @@ struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @AppStorage(AppSettingsKey.showCompletedStatus) private var showCompletedStatus = true
     @AppStorage(AppSettingsKey.showSettledTransactions) private var showSettledTransactions = true
     @AppStorage(AppSettingsKey.defaultPeriod) private var defaultPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
@@ -49,10 +50,13 @@ struct TransactionsView: View {
                 TransactionFilterPicker(selectedFilter: $selectedFilter)
 
                 if advancedFilter.hasActiveFilters {
-                    TransactionActiveFilterChips(filter: $advancedFilter)
+                    TransactionActiveFilterChips(filter: $advancedFilter, definitions: categoryDefinitions)
                 }
 
                 TransactionSelectionSummary(
+                    income: filteredSummary.income,
+                    expenses: filteredSummary.expenses,
+                    net: filteredSummary.net,
                     shownCount: filteredTransactions.count,
                     totalCount: activeTransactions.count
                 )
@@ -164,7 +168,7 @@ struct TransactionsView: View {
                 Text("The changes were not saved. Check the connection and try again.")
             }
             .sheet(isPresented: $isShowingAdvancedFilter) {
-                TransactionFilterSheet(filter: $advancedFilter)
+                TransactionFilterSheet(filter: $advancedFilter, definitions: categoryDefinitions)
             }
             .confirmationDialog(
                 "Not enough registered balance",
@@ -218,6 +222,21 @@ struct TransactionsView: View {
         return advancedFilter.sort(filteredTransactions)
     }
 
+    private var filteredSummary: TransactionFilteredSummary {
+        let income = filteredTransactions
+            .filter { $0.type == .income }
+            .reduce(Decimal.zero) { $0 + $1.amount }
+        let expenses = filteredTransactions
+            .filter { $0.type == .expense }
+            .reduce(Decimal.zero) { $0 + $1.amount }
+
+        return TransactionFilteredSummary(
+            income: income,
+            expenses: expenses,
+            net: income - expenses
+        )
+    }
+
     private func includesSettledTransaction(_ transaction: Transaction) -> Bool {
         guard !showSettledTransactions, selectedFilter != .completed else {
             return true
@@ -232,7 +251,7 @@ struct TransactionsView: View {
 
         return transaction.title.localizedStandardContains(query)
             || transaction.notes.localizedStandardContains(query)
-            || transaction.category.localizedTitle(locale: locale).localizedStandardContains(query)
+            || categoryOption(for: transaction).name.localizedStandardContains(query)
     }
 
     private var availableAmount: Decimal? {
@@ -282,12 +301,17 @@ struct TransactionsView: View {
             dueDate: transaction.dueDate,
             status: .pending,
             category: transaction.category,
+            customCategoryID: transaction.customCategoryID,
             recurrence: transaction.recurrence,
             recurrenceIntervalMonths: transaction.recurrenceIntervalMonths,
             notes: transaction.notes
         )
         modelContext.insert(copy)
         saveChanges()
+    }
+
+    private func categoryOption(for transaction: Transaction) -> CategoryOption {
+        CategoryOption.resolve(id: transaction.categoryID, definitions: categoryDefinitions, locale: locale)
     }
 
     private func edit(_ transaction: Transaction) {
@@ -356,7 +380,7 @@ private struct TransactionAdvancedFilter: Equatable {
     var customEndDate = Date.now
     var status: TransactionFilterStatus = .all
     var type: TransactionFilterType = .all
-    var category: CategoryKind?
+    var categoryID: String?
     var minimumAmountText = ""
     var maximumAmountText = ""
     var sortOption: TransactionSortOption = .dueDate
@@ -366,7 +390,7 @@ private struct TransactionAdvancedFilter: Equatable {
         period != .all ||
         status != .all ||
         type != .all ||
-        category != nil ||
+        categoryID != nil ||
         parsedMinimumAmount != nil ||
         parsedMaximumAmount != nil ||
         sortOption != .dueDate ||
@@ -394,7 +418,7 @@ private struct TransactionAdvancedFilter: Equatable {
             return false
         }
 
-        if let category, transaction.category != category {
+        if let categoryID, transaction.categoryID != categoryID {
             return false
         }
 
@@ -738,21 +762,52 @@ private struct AvailableAmountBanner: View {
     }
 }
 
+private struct TransactionFilteredSummary {
+    let income: Decimal
+    let expenses: Decimal
+    let net: Decimal
+}
+
 private struct TransactionSelectionSummary: View {
+    let income: Decimal
+    let expenses: Decimal
+    let net: Decimal
     let shownCount: Int
     let totalCount: Int
 
     var body: some View {
-        Text(
-            "Visible: \(shownCount) of \(totalCount)",
-            comment: "Summary below transaction filters. The first number is visible transactions and the second is all active transactions."
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 6) {
+            ViewThatFits {
+                HStack(spacing: 14) {
+                    summaryValues
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    summaryValues
+                }
+            }
+
+            Text(
+                "Visible: \(shownCount) of \(totalCount)",
+                comment: "Summary below transaction filters. The first number is visible transactions and the second is all active transactions."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .background(.bar)
+    }
+
+    @ViewBuilder
+    private var summaryValues: some View {
+        LabeledContent("Income", value: income.formattedCurrency)
+            .foregroundStyle(.green)
+        LabeledContent("Expenses", value: expenses.formattedCurrency)
+            .foregroundStyle(.red)
+        LabeledContent("Net", value: net.formattedCurrency)
+            .foregroundStyle(net < .zero ? .red : .primary)
     }
 }
 
@@ -850,6 +905,7 @@ private struct TransactionActiveFilterChips: View {
     @Environment(\.locale) private var locale
 
     @Binding var filter: TransactionAdvancedFilter
+    let definitions: [CategoryDefinition]
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -903,8 +959,8 @@ private struct TransactionActiveFilterChips: View {
     }
 
     private var categoryTitle: String? {
-        guard let category = filter.category else { return nil }
-        return category.localizedTitle(locale: locale)
+        guard let categoryID = filter.categoryID else { return nil }
+        return CategoryOption.resolve(id: categoryID, definitions: definitions, locale: locale).name
     }
 }
 
@@ -944,6 +1000,7 @@ private struct TransactionFilterSheet: View {
     @Environment(\.locale) private var locale
 
     @Binding var filter: TransactionAdvancedFilter
+    let definitions: [CategoryDefinition]
 
     var body: some View {
         NavigationStack {
@@ -984,11 +1041,11 @@ private struct TransactionFilterSheet: View {
                 }
 
                 Section("Category") {
-                    Picker("Category", selection: $filter.category) {
-                        Text("All categories").tag(Optional<CategoryKind>.none)
-                        ForEach(CategoryKind.sortedForDisplay(locale: locale)) { category in
-                            Label(category.localizedTitle(locale: locale), systemImage: category.systemImage)
-                                .tag(Optional(category))
+                    Picker("Category", selection: $filter.categoryID) {
+                        Text("All categories").tag(Optional<String>.none)
+                        ForEach(CategoryOption.available(definitions: definitions, locale: locale)) { category in
+                            Label(category.name, systemImage: category.systemImage)
+                                .tag(Optional(category.id))
                         }
                     }
                 }
@@ -1035,6 +1092,7 @@ private struct TransactionFilterSheet: View {
 
 private struct TransactionRowView: View {
     @Environment(\.locale) private var locale
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
 
     let transaction: Transaction
     let showsCompletedStatus: Bool
@@ -1048,7 +1106,7 @@ private struct TransactionRowView: View {
                     .font(.headline)
 
                 HStack(spacing: 6) {
-                    Label(transaction.category.localizedTitle(locale: locale), systemImage: transaction.category.systemImage)
+                    Label(category.name, systemImage: category.systemImage)
                     Text("Due \(transaction.dueDate, format: .dateTime.day().month().year())")
                 }
                 .font(.caption)
@@ -1091,6 +1149,10 @@ private struct TransactionRowView: View {
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
+    }
+
+    private var category: CategoryOption {
+        CategoryOption.resolve(id: transaction.categoryID, definitions: categoryDefinitions, locale: locale)
     }
 
     private var nextDueDate: Date? {
@@ -1187,6 +1249,7 @@ private struct TransactionEmptyState: View {
 }
 
 private struct TransactionDetailView: View {
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
 
@@ -1231,7 +1294,7 @@ private struct TransactionDetailView: View {
             }
 
             Section("Category") {
-                Label(transaction.category.localizedTitle(locale: locale), systemImage: transaction.category.systemImage)
+                Label(category.name, systemImage: category.systemImage)
             }
 
             if !transaction.notes.isEmpty {
@@ -1255,6 +1318,10 @@ private struct TransactionDetailView: View {
         .alert(completionConfirmationTitle, isPresented: $isShowingCompletionConfirmation) {
             Button("OK", role: .cancel) {}
         }
+    }
+
+    private var category: CategoryOption {
+        CategoryOption.resolve(id: transaction.categoryID, definitions: categoryDefinitions, locale: locale)
     }
 
     private var completionDateTitle: LocalizedStringKey {

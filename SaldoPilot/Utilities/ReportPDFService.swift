@@ -9,10 +9,11 @@ struct ReportTransaction {
     let transactionDate: Date
     let status: TransactionStatus
     let category: CategoryKind
+    let categoryName: String?
     let notes: String
     let isIncludedInOrdinaryCashFlow: Bool
 
-    init(transaction: Transaction, transactionDate: Date) {
+    init(transaction: Transaction, transactionDate: Date, categoryName: String? = nil) {
         id = transaction.id
         title = transaction.title
         amount = transaction.amount
@@ -20,6 +21,7 @@ struct ReportTransaction {
         self.transactionDate = transactionDate
         status = transaction.effectiveStatus
         category = transaction.category
+        self.categoryName = categoryName
         notes = transaction.notes
         isIncludedInOrdinaryCashFlow = transaction.isIncludedInOrdinaryCashFlow
     }
@@ -204,7 +206,7 @@ enum ReportPDFService {
             draw(dateFormatter.string(from: transaction.transactionDate), rect: CGRect(x: x + 4, y: y + 5, width: 74, height: 14), font: .systemFont(ofSize: 8))
             draw(currency(transaction.amount, formatter: currencyFormatter), rect: CGRect(x: x + 270, y: y + 5, width: 86, height: 14), font: .systemFont(ofSize: 8), alignment: .right)
             draw(strings.statusTitle(transaction.status), rect: CGRect(x: x + 363, y: y + 5, width: 76, height: 14), font: .systemFont(ofSize: 8))
-            draw(transaction.category.localizedTitle(locale: locale), rect: CGRect(x: x + 442, y: y + 5, width: width - 446, height: 14), font: .systemFont(ofSize: 8))
+            draw(transaction.categoryName ?? transaction.category.localizedTitle(locale: locale), rect: CGRect(x: x + 442, y: y + 5, width: width - 446, height: 14), font: .systemFont(ofSize: 8))
         }
         drawWrapped(row.text, rect: CGRect(x: x + 79, y: y + 5, width: 190, height: rowHeight - 10), font: .systemFont(ofSize: 8))
         context.setStrokeColor(UIColor.separator.cgColor)

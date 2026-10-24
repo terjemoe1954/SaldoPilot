@@ -12,6 +12,7 @@ import SwiftUI
 struct StatisticsView: View {
     @Environment(\.locale) private var locale
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @State private var selectedCategoryMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
 
     let onNewTransaction: () -> Void
@@ -65,6 +66,7 @@ struct StatisticsView: View {
             ordinaryTransactions: ordinaryTransactions,
             categoryTransactions: categoryTransactions,
             locale: locale,
+            categoryDefinitions: categoryDefinitions,
             selectedCategoryMonth: selectedCategoryMonth
         )
     }
@@ -98,6 +100,7 @@ private struct StatisticsSnapshot {
         ordinaryTransactions: [Transaction],
         categoryTransactions: [Transaction],
         locale: Locale,
+        categoryDefinitions: [CategoryDefinition],
         selectedCategoryMonth: Date
     ) {
         let calendar = Calendar.current
@@ -110,7 +113,7 @@ private struct StatisticsSnapshot {
 
         currentMonthSummary = StatisticsSummary(transactions: currentMonthTransactions)
         months = Self.makeMonthStatistics(transactions: ordinaryTransactions, calendar: calendar)
-        categoryBalances = Self.makeCategoryBalanceStatistics(transactions: categoryMonthTransactions, locale: locale)
+        categoryBalances = Self.makeCategoryBalanceStatistics(transactions: categoryMonthTransactions, locale: locale, definitions: categoryDefinitions)
         outstandingMonths = Self.makeOutstandingMonthStatistics(transactions: ordinaryTransactions, calendar: calendar)
     }
 
@@ -124,16 +127,17 @@ private struct StatisticsSnapshot {
         }
     }
 
-    private static func makeCategoryBalanceStatistics(transactions: [Transaction], locale: Locale) -> [CategoryStatistics] {
-        let groupedTransactions = Dictionary(grouping: transactions, by: \.category)
+    private static func makeCategoryBalanceStatistics(transactions: [Transaction], locale: Locale, definitions: [CategoryDefinition]) -> [CategoryStatistics] {
+        let groupedTransactions = Dictionary(grouping: transactions, by: \.categoryID)
 
-        return groupedTransactions.map { category, transactions in
+        return groupedTransactions.map { categoryID, transactions in
+            let category = CategoryOption.resolve(id: categoryID, definitions: definitions, locale: locale)
             let income = transactions.filter { $0.type == .income }.totalAmount
             let expenses = transactions.filter { $0.type == .expense }.totalAmount
 
             return CategoryStatistics(
-                id: category.rawValue,
-                name: category.localizedTitle(locale: locale),
+                id: category.id,
+                name: category.name,
                 icon: category.systemImage,
                 tint: category.tint,
                 income: income,
@@ -596,6 +600,8 @@ private struct StatisticsTransactionListView: View {
 }
 
 private struct StatisticsTransactionRow: View {
+    @Environment(\.locale) private var locale
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     let transaction: Transaction
 
     var body: some View {
@@ -614,7 +620,7 @@ private struct StatisticsTransactionRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text(transaction.category.title)
+                Text(CategoryOption.resolve(id: transaction.categoryID, definitions: categoryDefinitions, locale: locale).name)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

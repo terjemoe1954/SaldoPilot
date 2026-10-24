@@ -16,6 +16,7 @@ enum RecurrenceService {
         let type: TransactionType
         let dueDate: Date
         let category: CategoryKind
+        let customCategoryID: String?
         let recurrence: RecurrenceRule
         let recurrenceIntervalMonths: Int?
         let recurrenceSeriesID: UUID?
@@ -28,6 +29,7 @@ enum RecurrenceService {
             type = transaction.type
             dueDate = transaction.dueDate
             category = transaction.category
+            customCategoryID = transaction.customCategoryID
             recurrence = transaction.recurrence
             recurrenceIntervalMonths = transaction.recurrenceIntervalMonths
             recurrenceSeriesID = transaction.recurrenceSeriesID
@@ -88,6 +90,7 @@ enum RecurrenceService {
             dueDate: nextDueDate,
             status: .pending,
             category: transaction.category,
+            customCategoryID: transaction.customCategoryID,
             recurrence: transaction.recurrence,
             recurrenceIntervalMonths: transaction.recurrenceIntervalMonths,
             recurrenceSeriesID: transaction.recurrenceSeriesID,
@@ -116,6 +119,7 @@ enum RecurrenceService {
                 transaction.amount == snapshot.amount &&
                 transaction.type == snapshot.type &&
                 transaction.category == snapshot.category &&
+                transaction.customCategoryID == snapshot.customCategoryID &&
                 transaction.recurrence == snapshot.recurrence &&
                 transaction.recurrenceIntervalMonths == snapshot.recurrenceIntervalMonths &&
                 transaction.notes == snapshot.notes))
@@ -132,6 +136,7 @@ enum RecurrenceService {
             futureOccurrence.amount = transaction.amount
             futureOccurrence.type = transaction.type
             futureOccurrence.category = transaction.category
+            futureOccurrence.customCategoryID = transaction.customCategoryID
             futureOccurrence.recurrence = transaction.recurrence
             futureOccurrence.recurrenceIntervalMonths = transaction.recurrenceIntervalMonths
             futureOccurrence.recurrenceSeriesID = transaction.recurrenceSeriesID
@@ -171,6 +176,7 @@ enum RecurrenceService {
                 $0.amount == transaction.amount &&
                 $0.type == transaction.type &&
                 $0.category == transaction.category &&
+                $0.customCategoryID == transaction.customCategoryID &&
                 $0.recurrence == transaction.recurrence &&
                 $0.recurrenceIntervalMonths == transaction.recurrenceIntervalMonths &&
                 $0.notes == transaction.notes

@@ -212,7 +212,7 @@ struct SaldoPilotTests {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let storeURL = directory.appending(path: "PersistenceTest.store", directoryHint: .notDirectory)
-        let schema = Schema(SaldoPilotSchemaV3.models)
+        let schema = Schema(SaldoPilotSchemaV4.models)
 
         do {
             let configuration = ModelConfiguration(
@@ -254,8 +254,8 @@ struct SaldoPilotTests {
         #expect(reopenedTransactions.first?.amount == Decimal(321))
     }
 
-    @Test("A copied V2 store upgrades to V3 without changing financial data")
-    func migratesCopiedV2StoreToV3() throws {
+    @Test("A copied V2 store upgrades to V4 without changing financial data")
+    func migratesCopiedV2StoreToV4() throws {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: UUID().uuidString, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -299,7 +299,7 @@ struct SaldoPilotTests {
             try oldContainer.mainContext.save()
         }
 
-        let currentSchema = Schema(SaldoPilotSchemaV3.models)
+        let currentSchema = Schema(SaldoPilotSchemaV4.models)
         let configuration = ModelConfiguration(
             "MigrationTest",
             schema: currentSchema,
@@ -318,6 +318,8 @@ struct SaldoPilotTests {
         #expect(Set(transactions.map(\.id)) == [firstID, secondID])
         #expect(transactions.reduce(Decimal.zero) { $0 + $1.amount } == Decimal(string: "623.45")!)
         #expect(budgets.count == 1)
+        #expect(transactions.allSatisfy { $0.customCategoryID == nil })
+        #expect(budgets.allSatisfy { $0.customCategoryID == nil })
         #expect(budgets.first?.amount == Decimal(string: "9000.00")!)
         #expect(transactions.allSatisfy { $0.recurrenceSeriesID == nil })
         #expect(transactions.allSatisfy { $0.recurrenceAnchorDay == nil })

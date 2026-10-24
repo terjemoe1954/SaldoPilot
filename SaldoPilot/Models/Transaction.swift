@@ -8,9 +8,9 @@
 import Foundation
 import SwiftData
 
-typealias Transaction = SaldoPilotSchemaV3.Transaction
+typealias Transaction = SaldoPilotSchemaV4.Transaction
 
-extension SaldoPilotSchemaV3 {
+extension SaldoPilotSchemaV4 {
 @Model
 final class Transaction {
     var id: UUID = UUID()
@@ -21,6 +21,7 @@ final class Transaction {
     var paidDate: Date?
     var status: TransactionStatus = TransactionStatus.pending
     var category: CategoryKind = CategoryKind.other
+    var customCategoryID: String?
     var recurrence: RecurrenceRule = RecurrenceRule.none
     var recurrenceIntervalMonths: Int?
     var recurrenceSeriesID: UUID?
@@ -69,6 +70,7 @@ final class Transaction {
         paidDate: Date? = nil,
         status: TransactionStatus = .pending,
         category: CategoryKind = .other,
+        customCategoryID: String? = nil,
         recurrence: RecurrenceRule = .none,
         recurrenceIntervalMonths: Int? = nil,
         recurrenceSeriesID: UUID? = nil,
@@ -87,6 +89,7 @@ final class Transaction {
         self.paidDate = paidDate
         self.status = status
         self.category = category
+        self.customCategoryID = customCategoryID
         self.recurrence = recurrence
         self.recurrenceIntervalMonths = recurrenceIntervalMonths
         self.recurrenceSeriesID = recurrenceSeriesID
@@ -96,6 +99,10 @@ final class Transaction {
         self.updatedAt = updatedAt
         self.isCompleted = isCompleted
         self.isArchived = isArchived
+    }
+
+    var categoryID: String {
+        customCategoryID ?? category.rawValue
     }
 
     func markUpdated(at date: Date = .now) {

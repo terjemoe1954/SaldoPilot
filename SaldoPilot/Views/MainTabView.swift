@@ -21,6 +21,8 @@ struct MainTabView: View {
     @State private var newTransactionIntent: NewTransactionIntent?
     @State private var transactionListFilter: TransactionListFilter = .all
     @State private var isShowingOnboarding = false
+    @State private var isShowingOverdueAtLaunch = false
+    @State private var hasCheckedOverdueAtLaunch = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -73,9 +75,23 @@ struct MainTabView: View {
                 isShowingOnboarding = false
             }
         }
+        .sheet(isPresented: $isShowingOverdueAtLaunch) {
+            NavigationStack {
+                UnpaidBillsView(scope: .overdueOnly)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                isShowingOverdueAtLaunch = false
+                            }
+                        }
+                    }
+            }
+        }
         .task {
             if !hasCompletedOnboarding && transactions.isEmpty {
                 isShowingOnboarding = true
+            } else {
+                showOverdueAtLaunchIfNeeded()
             }
             await synchronizeNotifications()
         }
@@ -84,6 +100,23 @@ struct MainTabView: View {
                 await synchronizeNotifications()
             }
         }
+    }
+
+    private var overdueTransactions: [Transaction] {
+        let today = Calendar.current.startOfDay(for: .now)
+        return transactions.filter {
+            $0.type == .expense &&
+            $0.status == .pending &&
+            !$0.isCompleted &&
+            !$0.isArchived &&
+            $0.dueDate < today
+        }
+    }
+
+    private func showOverdueAtLaunchIfNeeded() {
+        guard !hasCheckedOverdueAtLaunch else { return }
+        hasCheckedOverdueAtLaunch = true
+        isShowingOverdueAtLaunch = !overdueTransactions.isEmpty
     }
 
     private var notificationSettings: NotificationSettings {

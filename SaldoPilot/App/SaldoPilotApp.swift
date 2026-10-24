@@ -179,7 +179,7 @@ struct SaldoPilotApp: App {
     @State private var networkStatusMonitor = NetworkStatusMonitor()
 
     private let modelContainer: ModelContainer = {
-        let schema = Schema(SaldoPilotSchemaV3.models)
+        let schema = Schema(SaldoPilotSchemaV4.models)
 
         if AppLaunchConfiguration.usesIsolatedCloudTestStore {
             let testCloudConfiguration = ModelConfiguration(

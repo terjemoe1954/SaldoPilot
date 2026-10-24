@@ -12,12 +12,13 @@ enum ExportService {
     static func makeJSONBackup(
         transactions: [Transaction],
         budgets: [Budget] = [],
+        categoryDefinitions: [CategoryDefinition] = [],
         settings: BackupAppSettings? = nil
     ) throws -> URL {
         let payload = ExportPayload(
             formatVersion: 4,
             exportedAt: .now,
-            categories: CategoryKind.allCases.map(ExportCategory.init),
+            categories: CategoryKind.allCases.map(ExportCategory.init) + categoryDefinitions.map(ExportCategory.init),
             transactions: transactions.map(ExportTransaction.init),
             budgets: budgets.map(ExportBudget.init),
             settings: settings
@@ -61,7 +62,7 @@ enum ExportService {
                 isoString(from: transaction.dueDate),
                 transaction.paidDate.map(isoString) ?? "",
                 transaction.status.rawValue,
-                transaction.category.rawValue,
+                transaction.categoryID,
                 transaction.recurrence.rawValue,
                 transaction.recurrenceIntervalMonths?.formatted() ?? "",
                 transaction.notes,
@@ -142,7 +143,7 @@ private struct ExportBudget: Encodable {
 
     init(budget: Budget) {
         id = budget.id
-        category = budget.category.rawValue
+        category = budget.categoryID
         monthStart = budget.monthStart
         amount = budget.amount.description
         createdAt = budget.createdAt
@@ -154,11 +155,26 @@ private struct ExportCategory: Encodable {
     let id: String
     let name: String
     let icon: String
+    let colorIdentifier: String
+    let legacyKindRawValue: String?
+    let isUserDefined: Bool
 
     init(category: CategoryKind) {
         id = category.rawValue
         name = String(localized: category.title)
         icon = category.systemImage
+        colorIdentifier = category.colorName
+        legacyKindRawValue = category.rawValue
+        isUserDefined = false
+    }
+
+    init(definition: CategoryDefinition) {
+        id = definition.id
+        name = definition.name
+        icon = definition.systemImage
+        colorIdentifier = definition.colorName
+        legacyKindRawValue = definition.legacyKindRawValue
+        isUserDefined = true
     }
 }
 
@@ -189,7 +205,7 @@ private struct ExportTransaction: Encodable {
         dueDate = transaction.dueDate
         paidDate = transaction.paidDate
         status = transaction.status.rawValue
-        category = transaction.category.rawValue
+        category = transaction.categoryID
         recurrence = transaction.recurrence.rawValue
         recurrenceIntervalMonths = transaction.recurrenceIntervalMonths?.formatted()
         recurrenceSeriesID = transaction.recurrenceSeriesID

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ReportsView: View {
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
 
     @State private var selectedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
@@ -16,6 +17,14 @@ struct ReportsView: View {
 
     var body: some View {
         Form {
+            Section("Payment follow-up") {
+                NavigationLink {
+                    UnpaidBillsView(scope: .allUnpaid)
+                } label: {
+                    Label("Unpaid bills", systemImage: "checklist")
+                }
+            }
+
             Section("Report options") {
                 Picker("Report type", selection: $selectedReportType) {
                     ForEach(ReportType.allCases) { reportType in
@@ -230,7 +239,11 @@ struct ReportsView: View {
     private func createReport() {
         let reportItems = reportTransactions.compactMap { transaction in
             transactionDate(for: transaction).map {
-                ReportTransaction(transaction: transaction, transactionDate: $0)
+                ReportTransaction(
+                    transaction: transaction,
+                    transactionDate: $0,
+                    categoryName: CategoryOption.resolve(id: transaction.categoryID, definitions: categoryDefinitions, locale: selectedLanguage.locale).name
+                )
             }
         }
 
@@ -377,6 +390,145 @@ private struct ReportSummaryView: View {
 private extension Array where Element == Transaction {
     var totalAmount: Decimal {
         reduce(.zero) { $0 + $1.amount }
+    }
+}
+
+enum UnpaidBillsScope {
+    case allUnpaid
+    case overdueOnly
+}
+
+struct UnpaidBillsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.locale) private var locale
+    @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
+
+    @State private var isShowingSaveError = false
+
+    let scope: UnpaidBillsScope
+
+    var body: some View {
+        List {
+            Section {
+                LabeledContent("Bills", value: unpaidBills.count.formatted())
+                LabeledContent("Total", value: totalAmount.formattedCurrency)
+            } header: {
+                Text(scope == .overdueOnly ? "Overdue at startup" : "Unpaid bills")
+            } footer: {
+                if scope == .overdueOnly {
+                    Text("The oldest overdue bill is shown first.")
+                } else {
+                    Text("All unpaid bills are sorted by due date, with the oldest first.")
+                }
+            }
+
+            if unpaidBills.isEmpty {
+                ContentUnavailableView(
+                    "No unpaid bills",
+                    systemImage: "checkmark.circle",
+                    description: Text("Everything in this list has been paid.")
+                )
+            } else {
+                Section("Bills by due date") {
+                    ForEach(unpaidBills, id: \.id) { transaction in
+                        UnpaidBillRow(
+                            title: transaction.title,
+                            category: CategoryOption.resolve(id: transaction.categoryID, definitions: categoryDefinitions, locale: locale).name,
+                            dueDate: transaction.dueDate,
+                            amount: transaction.amount,
+                            isOverdue: transaction.effectiveStatus == .overdue,
+                            onMarkPaid: { markPaid(transaction) }
+                        )
+                    }
+                }
+            }
+        }
+        .navigationTitle(scope == .overdueOnly ? "Overdue bills" : "Unpaid bills")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Could not save payment", isPresented: $isShowingSaveError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The bill was not marked as paid. Check the connection and try again.")
+        }
+    }
+
+    private var unpaidBills: [Transaction] {
+        let today = Calendar.current.startOfDay(for: .now)
+        return transactions
+            .filter { transaction in
+                let isUnpaidBill = transaction.type == .expense
+                    && transaction.status == .pending
+                    && !transaction.isCompleted
+                    && !transaction.isArchived
+                guard isUnpaidBill else { return false }
+                return scope == .allUnpaid || transaction.dueDate < today
+            }
+            .sorted { $0.dueDate < $1.dueDate }
+    }
+
+    private var totalAmount: Decimal {
+        unpaidBills.reduce(.zero) { $0 + $1.amount }
+    }
+
+    private func markPaid(_ transaction: Transaction) {
+        transaction.paidDate = transaction.dueDate
+        transaction.status = .paid
+        transaction.isCompleted = true
+        transaction.markUpdated()
+        RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            isShowingSaveError = true
+        }
+    }
+}
+
+private struct UnpaidBillRow: View {
+    let title: String
+    let category: String
+    let dueDate: Date
+    let amount: Decimal
+    let isOverdue: Bool
+    let onMarkPaid: () -> Void
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Button(action: onMarkPaid) {
+                Image(systemName: "square")
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Mark paid")
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+
+                Text(category)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Label {
+                    Text(dueDate, format: .dateTime.day().month().year())
+                } icon: {
+                    Image(systemName: isOverdue ? "exclamationmark.triangle.fill" : "calendar")
+                }
+                .font(.caption)
+                .foregroundStyle(isOverdue ? .red : .secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(amount.formattedCurrency)
+                .font(.body.weight(.semibold))
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
     }
 }
 

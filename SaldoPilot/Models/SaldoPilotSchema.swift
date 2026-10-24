@@ -164,12 +164,21 @@ enum SaldoPilotSchemaV3: VersionedSchema {
     }
 }
 
+enum SaldoPilotSchemaV4: VersionedSchema {
+    static var versionIdentifier: Schema.Version { Schema.Version(1, 3, 0) }
+
+    static var models: [any PersistentModel.Type] {
+        [Transaction.self, Budget.self, CategoryDefinition.self]
+    }
+}
+
 enum SaldoPilotMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [
             SaldoPilotSchemaV1.self,
             SaldoPilotSchemaV2.self,
-            SaldoPilotSchemaV3.self
+            SaldoPilotSchemaV3.self,
+            SaldoPilotSchemaV4.self
         ]
     }
 
@@ -182,6 +191,10 @@ enum SaldoPilotMigrationPlan: SchemaMigrationPlan {
             .lightweight(
                 fromVersion: SaldoPilotSchemaV2.self,
                 toVersion: SaldoPilotSchemaV3.self
+            ),
+            .lightweight(
+                fromVersion: SaldoPilotSchemaV3.self,
+                toVersion: SaldoPilotSchemaV4.self
             )
         ]
     }
