@@ -17,9 +17,6 @@ struct TransactionsView: View {
     @AppStorage(AppSettingsKey.showSettledTransactions) private var showSettledTransactions = true
     @AppStorage(AppSettingsKey.defaultPeriod) private var defaultPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.defaultDateType) private var defaultDateTypeRawValue = AppDefaultDateType.dueDate.rawValue
-    @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
-    @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
-
     @State private var selectedFilter: TransactionListFilter = .all
     @State private var advancedFilter = TransactionAdvancedFilter()
     @State private var searchText = ""
@@ -41,10 +38,6 @@ struct TransactionsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                AvailableAmountBanner(
-                    amount: availableAmount,
-                    showsCalculationBasis: availableAmount != nil
-                )
                 TransactionFilterPicker(selectedFilter: $selectedFilter)
 
                 if advancedFilter.hasActiveFilters {
@@ -242,14 +235,6 @@ struct TransactionsView: View {
         return transaction.title.localizedStandardContains(query)
             || transaction.notes.localizedStandardContains(query)
             || categoryOption(for: transaction).name.localizedStandardContains(query)
-    }
-
-    private var availableAmount: Decimal? {
-        AccountBalanceCalculator.availableBalance(
-            openingBalanceText: openingBalanceAmountText,
-            openingBalanceDate: Date(timeIntervalSince1970: openingBalanceDateTimestamp),
-            transactions: transactions
-        )
     }
 
     private func applyDefaultFiltersIfNeeded() {
@@ -680,66 +665,6 @@ private enum TransactionFilterType: String, CaseIterable, Identifiable {
         case .expense:
             transaction.type == .expense
         }
-    }
-}
-
-private struct AvailableAmountBanner: View {
-    let amount: Decimal?
-    let showsCalculationBasis: Bool
-
-    var body: some View {
-        VStack(spacing: 4) {
-            HStack {
-                Spacer(minLength: 0)
-
-                HStack(spacing: 8) {
-                    Image(systemName: systemImage)
-                        .font(.caption.weight(.semibold))
-                        .accessibilityHidden(true)
-
-                    if let amount {
-                        Text("Available")
-                            .font(.caption.weight(.semibold))
-
-                        Text(amount.formattedCurrency)
-                            .font(.subheadline.weight(.bold))
-                    } else {
-                        Text("Set opening balance in Settings")
-                            .font(.caption.weight(.semibold))
-                    }
-                }
-                .foregroundStyle(.black)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(tint, in: Capsule())
-                .accessibilityElement(children: .combine)
-
-                Spacer(minLength: 0)
-            }
-
-            if showsCalculationBasis {
-                Text(
-                    "Based on opening balance and settled transactions, independent of filters",
-                    comment: "Short explanation below the available account balance in the transaction list."
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(.bar)
-    }
-
-    private var systemImage: String {
-        guard let amount else { return "exclamationmark.circle.fill" }
-        return amount < .zero ? "minus.circle.fill" : "checkmark.circle.fill"
-    }
-
-    private var tint: Color {
-        guard let amount else { return .orange }
-        return amount < .zero ? .red : .green
     }
 }
 

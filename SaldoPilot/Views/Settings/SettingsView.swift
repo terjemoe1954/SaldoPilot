@@ -25,9 +25,6 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKey.notifyDueInAdvance) private var notifyDueInAdvance = false
     @AppStorage(AppSettingsKey.notificationAdvanceDays) private var notificationAdvanceDays = 7
     @AppStorage(AppSettingsKey.notifyPendingIncome) private var notifyPendingIncome = false
-    @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
-    @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
-
     @State private var isShowingDeleteAllConfirmation = false
     @State private var isShowingDeleteError = false
     @State private var isShowingOnboarding = false
@@ -72,27 +69,6 @@ struct SettingsView: View {
                             Text(dateType.title).tag(dateType)
                         }
                     }
-                }
-
-                Section {
-                    TextField("Opening balance", text: $openingBalanceAmountText)
-                        .keyboardType(.decimalPad)
-
-                    DatePicker(
-                        "Balance from date",
-                        selection: openingBalanceDateBinding,
-                        displayedComponents: .date
-                    )
-
-                    if !openingBalanceAmountText.isEmpty,
-                       Decimal.localizedValue(from: openingBalanceAmountText) == nil {
-                        Label("Enter a valid amount", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.red)
-                    }
-                } header: {
-                    Text("Account balance")
-                } footer: {
-                    Text("Available balance starts with this amount, then adds received income and subtracts paid expenses from the selected date.")
                 }
 
                 Section("Notifications") {
@@ -232,14 +208,6 @@ struct SettingsView: View {
             AppDefaultDateType(rawValue: defaultDateTypeRawValue) ?? .dueDate
         } set: { newValue in
             defaultDateTypeRawValue = newValue.rawValue
-        }
-    }
-
-    private var openingBalanceDateBinding: Binding<Date> {
-        Binding {
-            Date(timeIntervalSince1970: openingBalanceDateTimestamp)
-        } set: { newValue in
-            openingBalanceDateTimestamp = newValue.timeIntervalSince1970
         }
     }
 

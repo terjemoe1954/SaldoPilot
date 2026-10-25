@@ -247,11 +247,6 @@ private extension HelpArticle {
                         title: "Redigere, duplisere og slette",
                         systemImage: "slider.horizontal.3",
                         body: "Sveip på en post for handlinger. Rediger brukes når noe skal endres. Dupliser er nyttig for lignende poster. Sletting må bekreftes før posten fjernes."
-                    ),
-                    HelpItem(
-                        title: "Tilgjengelig beløp",
-                        systemImage: "creditcard",
-                        body: "Tilgjengelig beløp beregnes fra startsaldoen og oppgjorte poster fra valgt startdato: mottatte inntekter legges til og betalte utgifter trekkes fra. Beløpet endres ikke av listefiltrene. Hvis en betaling er større enn tilgjengelig beløp, foreslår SaldoPilot at posten beholdes som ventende."
                     )
                 ]
             ),
@@ -389,8 +384,7 @@ private extension HelpArticle {
                 items: [
                     HelpItem(title: "Find the right transaction", systemImage: "line.3.horizontal.decrease.circle", body: "Search by title, note, or category. Use the quick filters for all, overdue, next due, upcoming, paid, or receivable. The filter button includes Next 7 days, Next 30 days, date type, status, category, and amount."),
                     HelpItem(title: "Sorting", systemImage: "arrow.up.arrow.down", body: "In the filter view, sort by due date, paid date, amount, title, category, or status. This is useful when paying several bills on the same day."),
-                    HelpItem(title: "Edit, duplicate, and delete", systemImage: "slider.horizontal.3", body: "Swipe a transaction for actions. Edit changes details, Duplicate is useful for similar transactions, and Delete requires confirmation."),
-                    HelpItem(title: "Available amount", systemImage: "creditcard", body: "The available amount uses the opening balance and settled transactions from the selected start date: received income is added and paid expenses are subtracted. List filters do not change it. If a payment exceeds the available amount, SaldoPilot suggests keeping the transaction pending.")
+                    HelpItem(title: "Edit, duplicate, and delete", systemImage: "slider.horizontal.3", body: "Swipe a transaction for actions. Edit changes details, Duplicate is useful for similar transactions, and Delete requires confirmation.")
                 ]
             ),
             HelpSection(
