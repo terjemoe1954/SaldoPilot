@@ -29,8 +29,6 @@ struct TransactionsView: View {
     @State private var isShowingDeleteConfirmation = false
     @State private var isShowingDeletionError = false
     @State private var isShowingSaveError = false
-    @State private var transactionPendingCoverageConfirmation: Transaction?
-    @State private var isShowingCoverageWarning = false
 
     private let initialFilter: TransactionListFilter
     private var newTransactionAction: (() -> Void)?
@@ -56,6 +54,7 @@ struct TransactionsView: View {
                 TransactionSelectionSummary(
                     income: filteredSummary.income,
                     expenses: filteredSummary.expenses,
+                    receivable: filteredSummary.receivable,
                     net: filteredSummary.net,
                     shownCount: filteredTransactions.count,
                     totalCount: activeTransactions.count
@@ -170,23 +169,6 @@ struct TransactionsView: View {
             .sheet(isPresented: $isShowingAdvancedFilter) {
                 TransactionFilterSheet(filter: $advancedFilter, definitions: categoryDefinitions)
             }
-            .confirmationDialog(
-                "Not enough registered balance",
-                isPresented: $isShowingCoverageWarning,
-                titleVisibility: .visible
-            ) {
-                Button("Keep pending", role: .cancel) {
-                    transactionPendingCoverageConfirmation = nil
-                }
-                Button("Register as paid anyway", role: .destructive) {
-                    if let transactionPendingCoverageConfirmation {
-                        complete(transactionPendingCoverageConfirmation)
-                    }
-                    self.transactionPendingCoverageConfirmation = nil
-                }
-            } message: {
-                Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
-            }
             .onAppear {
                 applyDefaultFiltersIfNeeded()
             }
@@ -229,10 +211,18 @@ struct TransactionsView: View {
         let expenses = filteredTransactions
             .filter { $0.type == .expense }
             .reduce(Decimal.zero) { $0 + $1.amount }
+        let receivable = filteredTransactions
+            .filter {
+                $0.type == .income &&
+                !$0.isCompleted &&
+                $0.status == .pending
+            }
+            .reduce(Decimal.zero) { $0 + $1.amount }
 
         return TransactionFilteredSummary(
             income: income,
             expenses: expenses,
+            receivable: receivable,
             net: income - expenses
         )
     }
@@ -272,15 +262,6 @@ struct TransactionsView: View {
 
     private func markCompleted(_ transaction: Transaction) {
         guard !transaction.isSettled else { return }
-
-        if transaction.type == .expense,
-           let availableAmount,
-           transaction.amount > availableAmount {
-            transactionPendingCoverageConfirmation = transaction
-            isShowingCoverageWarning = true
-            return
-        }
-
         complete(transaction)
     }
 
@@ -765,12 +746,14 @@ private struct AvailableAmountBanner: View {
 private struct TransactionFilteredSummary {
     let income: Decimal
     let expenses: Decimal
+    let receivable: Decimal
     let net: Decimal
 }
 
 private struct TransactionSelectionSummary: View {
     let income: Decimal
     let expenses: Decimal
+    let receivable: Decimal
     let net: Decimal
     let shownCount: Int
     let totalCount: Int
@@ -806,6 +789,8 @@ private struct TransactionSelectionSummary: View {
             .foregroundStyle(.green)
         LabeledContent("Expenses", value: expenses.formattedCurrency)
             .foregroundStyle(.red)
+        LabeledContent("Receivable", value: receivable.formattedCurrency)
+            .foregroundStyle(.orange)
         LabeledContent("Net", value: net.formattedCurrency)
             .foregroundStyle(net < .zero ? .red : .primary)
     }
@@ -1343,16 +1328,12 @@ private struct TransactionDetailView: View {
 
 private struct RegisterCompletionDateView: View {
     @Environment(\.dismiss) private var dismiss
-    @Query private var transactions: [Transaction]
-    @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
-    @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
 
     let transaction: Transaction
     @Binding var completionDate: Date
     let modelContext: ModelContext
     let onSaved: () -> Void
 
-    @State private var isShowingCoverageWarning = false
     @State private var isShowingSaveError = false
 
     var body: some View {
@@ -1378,18 +1359,6 @@ private struct RegisterCompletionDateView: View {
                     }
                 }
             }
-            .confirmationDialog(
-                "Not enough registered balance",
-                isPresented: $isShowingCoverageWarning,
-                titleVisibility: .visible
-            ) {
-                Button("Keep pending", role: .cancel) { }
-                Button("Register as paid anyway", role: .destructive) {
-                    completeRegistration()
-                }
-            } message: {
-                Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
-            }
             .alert("Could not save transaction", isPresented: $isShowingSaveError) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -1411,23 +1380,7 @@ private struct RegisterCompletionDateView: View {
     }
 
     private func registerCompletion() {
-        if !transaction.isSettled,
-           transaction.type == .expense,
-           let availableBalance,
-           transaction.amount > availableBalance {
-            isShowingCoverageWarning = true
-            return
-        }
-
         completeRegistration()
-    }
-
-    private var availableBalance: Decimal? {
-        AccountBalanceCalculator.availableBalance(
-            openingBalanceText: openingBalanceAmountText,
-            openingBalanceDate: Date(timeIntervalSince1970: openingBalanceDateTimestamp),
-            transactions: transactions
-        )
     }
 
     private func completeRegistration() {

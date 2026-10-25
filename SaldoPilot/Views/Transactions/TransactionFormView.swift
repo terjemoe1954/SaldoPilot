@@ -13,8 +13,6 @@ struct TransactionFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
-    @AppStorage(AppSettingsKey.openingBalanceAmount) private var openingBalanceAmountText = ""
-    @AppStorage(AppSettingsKey.openingBalanceDate) private var openingBalanceDateTimestamp = Date.now.timeIntervalSince1970
 
     private let transaction: Transaction?
 
@@ -31,9 +29,6 @@ struct TransactionFormView: View {
     @State private var recurrenceIntervalMonths: Int
     @State private var notes: String
     @State private var isShowingRecurrenceScopeDialog = false
-    @State private var isShowingCoverageWarning = false
-    @State private var pendingCoverageScope: RecurrenceUpdateScope?
-    @State private var allowsInsufficientCoverage = false
     @State private var isShowingSaveError = false
     @State private var suggestedCategory: CategoryKind?
     @State private var categoryWasManuallySelected: Bool
@@ -139,23 +134,6 @@ struct TransactionFormView: View {
             } message: {
                 Text("Choose whether the change should apply only to this transaction or also to matching future transactions.")
             }
-            .confirmationDialog(
-                "Not enough registered balance",
-                isPresented: $isShowingCoverageWarning,
-                titleVisibility: .visible
-            ) {
-                Button("Keep pending", role: .cancel) {
-                    pendingCoverageScope = nil
-                }
-                Button("Register as paid anyway", role: .destructive) {
-                    guard let pendingCoverageScope else { return }
-                    allowsInsufficientCoverage = true
-                    save(scope: pendingCoverageScope)
-                    self.pendingCoverageScope = nil
-                }
-            } message: {
-                Text("SaldoPilot does not have enough registered available balance for this payment. The bank's actual balance may differ.")
-            }
             .alert("Could not save transaction", isPresented: $isShowingSaveError) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -252,17 +230,6 @@ struct TransactionFormView: View {
         }
         let resolvedIsCompleted = resolvedStatus == .paid || resolvedStatus == .received
 
-        if !allowsInsufficientCoverage,
-           resolvedIsCompleted,
-           type == .expense,
-           transaction?.isSettled != true,
-           let availableBalance,
-           amount > availableBalance {
-            pendingCoverageScope = scope
-            isShowingCoverageWarning = true
-            return
-        }
-
         let resolvedInterval = recurrence == .everyNMonths || recurrence == .custom ? recurrenceIntervalMonths : nil
 
         if let transaction {
@@ -319,14 +286,6 @@ struct TransactionFormView: View {
             modelContext.rollback()
             isShowingSaveError = true
         }
-    }
-
-    private var availableBalance: Decimal? {
-        AccountBalanceCalculator.availableBalance(
-            openingBalanceText: openingBalanceAmountText,
-            openingBalanceDate: Date(timeIntervalSince1970: openingBalanceDateTimestamp),
-            transactions: transactions
-        )
     }
 
     private func completedStatus(for type: TransactionType) -> TransactionStatus {
