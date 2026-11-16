@@ -6,6 +6,131 @@ import Testing
 
 @MainActor
 struct SaldoPilotTests {
+    @Test("Final audit preserves independent recurrence series and restores duplicate category definitions safely")
+    func stabilityAudit() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("SaldoPilot-Stability-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try StabilityVerification.run(at: root)
+    }
+
+    @Test("Forecast explanations reconcile exactly and preserve a fixed comparison baseline")
+    func forecastChanges() throws {
+        try ForecastChangesVerification.run()
+    }
+
+    @Test("Salary selection sync converges across three devices without changing data")
+    func forecastSalarySelectionSync() throws {
+        try ForecastSalarySelectionVerification.run()
+    }
+
+    @Test("Payday forecast separates settled balance, pending income and recurring bills without mutations")
+    func paydayForecast() throws {
+        try PaydayForecastVerification.run()
+    }
+
+    @Test("Sync tracks overlapping events and keeps export errors until export recovers")
+    func syncOverlappingEventsAndRecovery() {
+        var state = CloudSyncState()
+        let upload = UUID(), download = UUID()
+        let date = Date(timeIntervalSince1970: 100)
+        state.receive(id: upload, operation: .upload, endedAt: nil, succeeded: false, failure: nil)
+        state.receive(id: download, operation: .download, endedAt: nil, succeeded: false, failure: nil)
+        state.receive(id: upload, operation: .upload, endedAt: date, succeeded: false,
+                      failure: .init(date: date, domain: "CKErrorDomain", code: 2))
+        #expect(state.isSyncing)
+        state.receive(id: download, operation: .download, endedAt: date, succeeded: true, failure: nil)
+        #expect(!state.isSyncing)
+        #expect(state.latestFailure?.code == 2)
+        #expect(state.lastUpload == nil)
+        #expect(state.lastDownload == date)
+        state.receive(id: UUID(), operation: .setup, endedAt: date, succeeded: true, failure: nil)
+        #expect(state.latestFailure != nil)
+        state.receive(id: UUID(), operation: .upload, endedAt: date.addingTimeInterval(1), succeeded: true, failure: nil)
+        #expect(state.latestFailure == nil)
+        #expect(state.lastSuccess == date.addingTimeInterval(1))
+    }
+
+    @Test("Setup is not a successful sync and timestamps never move backwards")
+    func syncSetupAndTimestamps() {
+        var state = CloudSyncState()
+        let date = Date(timeIntervalSince1970: 100)
+        state.receive(id: UUID(), operation: .setup, endedAt: date, succeeded: true, failure: nil)
+        #expect(state.lastSuccess == nil)
+        state.receive(id: UUID(), operation: .upload, endedAt: date, succeeded: true, failure: nil)
+        state.receive(id: UUID(), operation: .upload, endedAt: date.addingTimeInterval(-1), succeeded: true, failure: nil)
+        #expect(state.lastUpload == date)
+        state.receive(id: UUID(), operation: .download, endedAt: date, succeeded: false, failure: nil)
+        #expect(state.latestFailure != nil)
+    }
+
+    @Test("Backup restores all fields, survives reopen and repeated imports, and rejects damaged files")
+    func backupRestoreRoundTrip() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("SaldoPilot-BackupTests-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let result = try BackupRestoreVerification.run(at: root)
+        #expect(result["result"] as? String == "passed")
+    }
+
+    @Test("Duplicate category IDs resolve consistently without removing records")
+    func duplicateCategoryDefinitions() {
+        let old = CategoryDefinition(id: "home", name: "Old", excludesFromSavingsTips: true, updatedAt: Date(timeIntervalSince1970: 1))
+        let new = CategoryDefinition(id: "home", name: "New", excludesFromSavingsTips: false, updatedAt: Date(timeIntervalSince1970: 2))
+        let custom = CategoryDefinition(id: "custom-test", name: "Custom")
+        let duplicate = CategoryDefinition(id: "custom-test", name: "Custom updated", updatedAt: custom.updatedAt.addingTimeInterval(1))
+        let input = [old, new, custom, duplicate]
+        let options = CategoryOption.available(definitions: input, locale: Locale(identifier: "nb"))
+        #expect(Set(options.map(\.id)).count == options.count)
+        #expect(options.first { $0.id == "home" }?.name == "New")
+        #expect(!CategoryOption.excludesFromSavingsTips(id: "home", definitions: input))
+        #expect(CategoryOption.available(definitions: input.reversed(), locale: Locale(identifier: "nb")) == options)
+        #expect(input.count == 4)
+    }
+
+    @Test("Fixed-cost categories are excluded by default and category overrides control savings tips")
+    func savingsTipCategoryExclusions() {
+        let now = Date.now
+        func expense(_ category: CategoryKind, amount: Decimal) -> Transaction {
+            Transaction(title: category.rawValue, amount: amount, type: .expense, dueDate: now, status: .paid, category: category, isCompleted: true)
+        }
+        let tax = expense(.deduction, amount: 1000)
+        let home = expense(.home, amount: 900)
+        let insurance = expense(.insurance, amount: 800)
+        let groceries = expense(.groceries, amount: 50)
+        let input = [tax, home, insurance, groceries]
+        let insight = AIInsightEngine.insights(transactions: input).first { $0.id == "savings" }
+        #expect(insight?.transactionIDs == [groceries.id])
+        #expect(!AIInsightEngine.insights(transactions: [tax, home, insurance]).contains { $0.id == "savings" })
+        let override = CategoryDefinition(id: CategoryKind.home.rawValue, name: "Home", legacyKindRawValue: CategoryKind.home.rawValue, excludesFromSavingsTips: false)
+        #expect(AIInsightEngine.insights(transactions: input, categoryDefinitions: [override]).first { $0.id == "savings" }?.transactionIDs == [home.id])
+        override.excludesFromSavingsTips = true
+        #expect(AIInsightEngine.insights(transactions: input, categoryDefinitions: [override]).first { $0.id == "savings" }?.transactionIDs == [groceries.id])
+    }
+
+    @Test("V4 categories migrate without losing data and gain default savings-tip policy")
+    func savingsCategoryMigration() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("SaldoPilot-V4-Savings-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("migration.store")
+        let id = UUID()
+        func createV4() throws {
+            let schema = Schema(SaldoPilotSchemaV4.models)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
+            container.mainContext.insert(SaldoPilotSchemaV4.Transaction(id: id, title: "Retained transaction", amount: 123, type: .expense, dueDate: .now, category: .insurance))
+            container.mainContext.insert(SaldoPilotSchemaV4.CategoryDefinition(id: CategoryKind.insurance.rawValue, name: "My insurance", legacyKindRawValue: CategoryKind.insurance.rawValue))
+            try container.mainContext.save()
+        }
+        try createV4()
+        let schema = Schema(SaldoPilotSchemaV6.models)
+        let container = try ModelContainer(for: schema, migrationPlan: SaldoPilotMigrationPlan.self, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
+        let items = try container.mainContext.fetch(FetchDescriptor<Transaction>())
+        let definitions = try container.mainContext.fetch(FetchDescriptor<CategoryDefinition>())
+        #expect(items.count == 1 && items.first?.id == id && items.first?.amount == 123)
+        #expect(definitions.first?.name == "My insurance")
+        #expect(definitions.first?.excludesFromSavingsTips == nil)
+        #expect(CategoryOption.excludesFromSavingsTips(id: CategoryKind.insurance.rawValue, definitions: definitions))
+    }
+
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = Locale(identifier: "en_US_POSIX")
@@ -317,7 +442,7 @@ struct SaldoPilotTests {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let storeURL = directory.appending(path: "PersistenceTest.store", directoryHint: .notDirectory)
-        let schema = Schema(SaldoPilotSchemaV4.models)
+        let schema = Schema(SaldoPilotSchemaV6.models)
 
         do {
             let configuration = ModelConfiguration(
@@ -404,7 +529,7 @@ struct SaldoPilotTests {
             try oldContainer.mainContext.save()
         }
 
-        let currentSchema = Schema(SaldoPilotSchemaV4.models)
+        let currentSchema = Schema(SaldoPilotSchemaV6.models)
         let configuration = ModelConfiguration(
             "MigrationTest",
             schema: currentSchema,
@@ -463,7 +588,7 @@ struct SaldoPilotTests {
 
         // Verify both the upgrade and a subsequent app launch on the upgraded store.
         for _ in 0..<2 {
-            let schema = Schema(SaldoPilotSchemaV4.models)
+            let schema = Schema(SaldoPilotSchemaV6.models)
             let configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
             let upgraded = try ModelContainer(
                 for: schema, migrationPlan: SaldoPilotMigrationPlan.self, configurations: [configuration]

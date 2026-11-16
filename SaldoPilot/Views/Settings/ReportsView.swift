@@ -526,9 +526,8 @@ struct UnpaidBillsView: View {
         transaction.status = .paid
         transaction.isCompleted = true
         transaction.markUpdated()
-        RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
-
         do {
+            try RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
             try modelContext.save()
         } catch {
             modelContext.rollback()

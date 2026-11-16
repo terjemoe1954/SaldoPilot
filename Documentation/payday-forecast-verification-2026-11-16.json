@@ -1,0 +1,21 @@
+{
+  "feature": "Expected surplus or deficit until next salary, without opening balance",
+  "availableBalanceAudit": "Opening balance fields and AccountBalanceCalculator are no longer used by the forecast. Existing saved settings remain intact.",
+  "rules": [
+    "Expected income minus unpaid expenses; no bank balance or opening balance",
+    "Period from today through selected payday, excluding selected salary and completed payments",
+    "Overdue unpaid expenses included; overdue income excluded because receipt date is unknown",
+    "Projected recurrence is read-only and explicit occurrences take precedence",
+    "Salary selection remains device-local",
+    "Each sum has a matching transaction drilldown"
+  ],
+  "verification": {
+    "isolatedCalculationTests": "passed: deficit, surplus, zero, salary excluded, date boundaries, exact drilldown membership, recurrence and no mutation",
+    "iPadSimulatorAppAndTestTargetBuild": "passed",
+    "MacDesignedForIPhoneIPadBuild": "passed",
+    "iPadUI": "No opening balance controls; Norwegian surplus/deficit and not-bank-balance labels, period dates and correct linked bill observed in isolated screenshot store",
+    "fullHostedTestSuite": "not run"
+  },
+  "dataChanges": "No production database changes or migrations; no projected transactions saved",
+  "testflight": "1.8.1 (29), Testing, Norwegian test notes saved"
+}

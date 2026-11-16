@@ -1,0 +1,32 @@
+{
+  "feature": "Clickable explanation of changes in expected surplus or deficit",
+  "comparison": "Fixed local value snapshot captured when first opening a valid forecast; user may explicitly replace baseline. No invented prior history.",
+  "checks": {
+    "reconciliation": "All per-transaction effects sum exactly to the change in net forecast",
+    "cases": [
+      "amount increased",
+      "due date moved",
+      "paid expense",
+      "received income",
+      "cancelled expense",
+      "archived expense",
+      "missing transaction",
+      "newly included expense",
+      "changed payday",
+      "new day",
+      "projected occurrence becomes real record",
+      "snapshot persistence",
+      "unchanged baseline on ordinary reopen",
+      "explicit baseline replacement",
+      "corrupt snapshot ignored",
+      "no mutation of transaction records"
+    ],
+    "combinedSalarySyncAndForecastTests": "passed",
+    "iPadAppAndTestTargetBuild": "passed",
+    "MacBuild": "passed",
+    "iPadUI": "Initial zero-difference view verified. In isolated screenshot data, marking Busskort 897 paid changed result from -4975 to -4078; explanation showed +897 and paid reason; tapping explanation opened actual paid transaction."
+  },
+  "dataProtection": "No database schema changes; snapshots are local and value-only. Production records were not changed. No external AI requests.",
+  "release": "1.9 (30), TestFlight Testing, Norwegian notes saved",
+  "pending": "Real iCloud delivery of the shared salary selection across physical devices must be verified in the next bundled TestFlight."
+}

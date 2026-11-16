@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 struct ImportDataView: View {
     @Environment(\.modelContext) private var modelContext
 
+    @State private var allowNewMySavingsRecords = false
     @State private var isShowingImporter = false
     @State private var pendingImportURL: URL?
     @State private var isShowingImportConfirmation = false
@@ -21,6 +22,8 @@ struct ImportDataView: View {
     var body: some View {
         Form {
             Section("Import file") {
+                Toggle("MySavings: Tillat nye poster uten sikkert treff", isOn: $allowNewMySavingsRecords)
+                Text("Bruk bare etter kontroll av at postene ikke finnes fra før. Koble eldre importer ved å importere originalfilen først.").font(.footnote).foregroundStyle(.secondary)
                 Button {
                     isShowingImporter = true
                 } label: {
@@ -31,7 +34,7 @@ struct ImportDataView: View {
             Section("Supported formats") {
                 ImportInfoRow(
                     title: "JSON",
-                    detail: "Imports transactions, settings, categories and recurrence fields from a structured backup. Existing budgets are always kept unchanged."
+                    detail: "Restores transactions, budgets, categories, settings and recurrence fields from a JSON backup."
                 )
                 ImportInfoRow(
                     title: "CSV",
@@ -40,13 +43,20 @@ struct ImportDataView: View {
             }
 
             Section("Safety") {
-                Text("Merge adds backup transactions. Replace removes existing transactions first. Budgets are always kept unchanged. Settings in the backup are restored in both modes. Purchase status and external AI consent are never restored.")
+                Text("MySavings: Uendrede lokale poster oppdateres fra nyere filer. Lokale endringer vises som konflikter og beholdes. Importer først den opprinnelige filen dersom du har importert tidligere.")
+                Text("Merge adds records with new IDs and keeps existing records unchanged. Replace restores transactions and, when included, budgets from the backup. Matching category definitions are restored; other categories are kept. Settings are restored in both modes. Purchase status and external AI consent are never restored.")
                     .foregroundStyle(.secondary)
             }
 
             if let importSummary {
                 Section("Import result") {
                     Text(importSummary.message)
+                    ForEach(importSummary.sourceConflicts) { conflict in
+                        VStack(alignment: .leading) {
+                            Text(conflict.title).font(.headline)
+                            Text(conflict.reason).foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
 
@@ -80,7 +90,7 @@ struct ImportDataView: View {
                 pendingImportURL = nil
             }
         } message: {
-            Text("Merge adds imported transactions. Replace removes existing transactions first. Existing budgets are kept unchanged.")
+            Text("Merge adds missing records without duplicating existing IDs. Replace removes existing transactions and restores the backup. Budgets are replaced only when the file contains budgets. Settings in the backup are restored.")
         }
     }
 
@@ -104,7 +114,8 @@ struct ImportDataView: View {
             importSummary = try ImportService.importFile(
                 at: pendingImportURL,
                 mode: mode,
-                modelContext: modelContext
+                modelContext: modelContext,
+                allowNewMySavingsRecordsAlongsideUntracked: allowNewMySavingsRecords
             )
             self.pendingImportURL = nil
         } catch {

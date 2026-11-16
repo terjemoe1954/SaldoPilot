@@ -1,0 +1,23 @@
+{
+  "allExportedFieldsPreserved": true,
+  "budgets": 2,
+  "categoryDefinitions": 3,
+  "cloudKit": "disabled in every test store",
+  "emptyBackupRestored": true,
+  "invalidBackupsRejectedWithoutChanges": 12,
+  "jsonWithoutBudgetsKeepsExistingBudgets": true,
+  "legacyV4AndCSV": true,
+  "monthEndAnchorPreserved": true,
+  "persistedStoreReopened": true,
+  "recurrenceRules": 7,
+  "repeatedMergeCreated": 0,
+  "result": "passed",
+  "settingsAndConsentChecks": true,
+  "storeDirectory": "/tmp/saldo-backup-tests/run-final",
+  "transactions": 9,
+  "testedAt": "2026-11-16",
+  "verificationRunner": "SaldoPilotTests/BackupRestoreVerification.swift",
+  "appAndTestsBuild": "passed",
+  "syncStatusPlacement": "Moved inside each navigation page; tab navigation verified on iPad simulator",
+  "testFlightRelease": "1.6.1 (24), Testing in Internal group"
+}

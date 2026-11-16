@@ -106,6 +106,7 @@ struct TransactionsView: View {
                     .listStyle(.plain)
                 }
             }
+            .modifier(CloudSyncStatusInset())
             .navigationTitle("Transactions")
             .searchable(text: $searchText, prompt: "Search transactions")
             .toolbar {
@@ -255,8 +256,13 @@ struct TransactionsView: View {
         transaction.isCompleted = true
         transaction.status = transaction.type == .income ? .received : .paid
         transaction.markUpdated()
-        RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
-        saveChanges()
+        do {
+            try RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            isShowingSaveError = true
+        }
     }
 
     private func duplicate(_ transaction: Transaction) {
@@ -685,14 +691,8 @@ private struct TransactionSelectionSummary: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ViewThatFits {
-                HStack(spacing: 14) {
-                    summaryValues
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    summaryValues
-                }
+            VStack(alignment: .leading, spacing: 4) {
+                summaryValues
             }
 
             Text(
@@ -705,6 +705,8 @@ private struct TransactionSelectionSummary: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .padding(.vertical, 8)
+        // Reserve the full header height before the list takes remaining space.
+        .fixedSize(horizontal: false, vertical: true)
         .background(.bar)
     }
 
@@ -807,6 +809,7 @@ private struct TransactionFilterPicker: View {
             .padding(.horizontal)
         }
         .contentMargins(.vertical, 6, for: .scrollContent)
+        .fixedSize(horizontal: false, vertical: true)
         .background(.bar)
     }
 }
@@ -865,6 +868,7 @@ private struct TransactionActiveFilterChips: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
+        .fixedSize(horizontal: false, vertical: true)
         .background(.bar)
     }
 
@@ -1158,7 +1162,7 @@ private struct TransactionEmptyState: View {
     }
 }
 
-private struct TransactionDetailView: View {
+struct TransactionDetailView: View {
     @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
@@ -1315,11 +1319,10 @@ private struct RegisterCompletionDateView: View {
         transaction.isCompleted = true
         transaction.markUpdated()
 
-        if !wasCompleted {
-            RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
-        }
-
         do {
+            if !wasCompleted {
+                try RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+            }
             try modelContext.save()
             dismiss()
             onSaved()

@@ -170,6 +170,11 @@ enum AppLaunchConfiguration {
     }
 }
 
+@MainActor
+private enum CloudStorageHealth {
+    static var usesLocalFallback = false
+}
+
 @main
 struct SaldoPilotApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -177,9 +182,11 @@ struct SaldoPilotApp: App {
     @AppStorage(AppSettingsKey.language) private var languageRawValue = AppLanguage.system.rawValue
     @State private var proPurchaseStore = ProPurchaseStore()
     @State private var networkStatusMonitor = NetworkStatusMonitor()
+    @State private var forecastSalarySelection = ForecastSalarySelection.live()
+    @Environment(\.scenePhase) private var scenePhase
 
     private let modelContainer: ModelContainer = {
-        let schema = Schema(SaldoPilotSchemaV4.models)
+        let schema = Schema(SaldoPilotSchemaV6.models)
 
         if AppLaunchConfiguration.usesIsolatedCloudTestStore {
             let testCloudConfiguration = ModelConfiguration(
@@ -249,6 +256,7 @@ struct SaldoPilotApp: App {
                 configurations: [cloudConfiguration]
             )
         } catch {
+            CloudStorageHealth.usesLocalFallback = true
             print("CloudKit SwiftData container failed, falling back to local storage: \(error)")
         }
 
@@ -267,20 +275,21 @@ struct SaldoPilotApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    AppStatusBanners(
-                        isICloudUnavailable: networkStatusMonitor.isICloudUnavailable,
-                        isOffline: networkStatusMonitor.isOffline
-                    )
-                }
                 .preferredColorScheme(selectedAppearance.colorScheme)
                 .environment(\.locale, selectedLanguage.locale)
                 .environment(proPurchaseStore)
+                .environment(networkStatusMonitor)
+                .environment(forecastSalarySelection)
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { forecastSalarySelection.refresh() }
+                }
                 .task {
+                    forecastSalarySelection.start()
                     try? CategoryStandardizationService.standardize(in: modelContainer.mainContext)
                     networkStatusMonitor.start(
                         cloudContainerIdentifier: AppLaunchConfiguration.activeCloudContainerIdentifier,
-                        simulatesICloudUnavailable: AppLaunchConfiguration.simulatesICloudUnavailable
+                        simulatesICloudUnavailable: AppLaunchConfiguration.simulatesICloudUnavailable,
+                        localFallback: CloudStorageHealth.usesLocalFallback
                     )
                 }
         }
@@ -293,56 +302,5 @@ struct SaldoPilotApp: App {
 
     private var selectedLanguage: AppLanguage {
         AppLanguage(rawValue: languageRawValue) ?? .system
-    }
-}
-
-private struct AppStatusBanners: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    let isICloudUnavailable: Bool
-    let isOffline: Bool
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if isICloudUnavailable {
-                AppStatusBanner(
-                    title: "ICLOUD UNAVAILABLE — CHANGES ARE SAVED ON THIS DEVICE",
-                    systemImage: "icloud.slash",
-                    color: Color(red: 0.54, green: 0.11, blue: 0.11),
-                    usesCompactLayout: dynamicTypeSize.isAccessibilitySize
-                )
-            } else if !AppLaunchConfiguration.usesLocalIsolatedTestStore, isOffline {
-                AppStatusBanner(
-                    title: "OFFLINE — CHANGES WILL SYNC WHEN CONNECTED",
-                    systemImage: "wifi.slash",
-                    color: Color(red: 0.54, green: 0.11, blue: 0.11),
-                    usesCompactLayout: dynamicTypeSize.isAccessibilitySize
-                )
-            }
-        }
-    }
-}
-
-private struct AppStatusBanner: View {
-    let title: LocalizedStringKey
-    let systemImage: String
-    let color: Color
-    let usesCompactLayout: Bool
-
-    var body: some View {
-        HStack {
-            Image(systemName: systemImage)
-
-            if !usesCompactLayout {
-                Text(title)
-            }
-        }
-        .font(.caption.bold())
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .foregroundStyle(.white)
-        .background(color)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(title))
     }
 }

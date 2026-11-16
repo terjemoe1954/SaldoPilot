@@ -95,6 +95,7 @@ struct BudgetsView: View {
                     proLockedContent
                 }
             }
+            .modifier(CloudSyncStatusInset())
             .navigationTitle("Budgets")
             .toolbar {
                 if canUseBudgets {

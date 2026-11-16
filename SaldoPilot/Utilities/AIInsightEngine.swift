@@ -18,7 +18,7 @@ struct AIInsight: Identifiable, Equatable {
 }
 
 enum AIInsightEngine {
-    static func insights(transactions: [Transaction], calendar: Calendar = .current, locale: Locale = .autoupdatingCurrent) -> [AIInsight] {
+    static func insights(transactions: [Transaction], categoryDefinitions: [CategoryDefinition] = [], calendar: Calendar = .current, locale: Locale = .autoupdatingCurrent) -> [AIInsight] {
         let activeTransactions = transactions.filter { !$0.isArchived && $0.status != .cancelled }
         guard !activeTransactions.isEmpty else {
             return [
@@ -58,7 +58,7 @@ enum AIInsightEngine {
             insights.append(unusualAmountInsight)
         }
 
-        if let savingsInsight = savingsInsight(transactions: activeTransactions, calendar: calendar, locale: locale) {
+        if let savingsInsight = savingsInsight(transactions: activeTransactions, definitions: categoryDefinitions, calendar: calendar, locale: locale) {
             insights.append(savingsInsight)
         }
 
@@ -242,25 +242,25 @@ enum AIInsightEngine {
         return nil
     }
 
-    private static func savingsInsight(transactions: [Transaction], calendar: Calendar, locale: Locale) -> AIInsight? {
+    private static func savingsInsight(transactions: [Transaction], definitions: [CategoryDefinition], calendar: Calendar, locale: Locale) -> AIInsight? {
         guard let currentMonth = calendar.dateInterval(of: .month, for: .now) else { return nil }
-        let categoryTotals = CategoryKind.allCases.compactMap { category -> (category: CategoryKind, amount: Decimal)? in
-            guard category != .home else { return nil }
-            let matches = transactions.filter { $0.type == .expense && $0.category == category && currentMonth.containsHalfOpen($0.dueDate) }
-            guard !matches.isEmpty else { return nil }
-            return (category, matches.totalAmount)
+        let candidates = transactions.filter {
+            $0.type == .expense && currentMonth.containsHalfOpen($0.dueDate)
+                && !CategoryOption.excludesFromSavingsTips(id: $0.categoryID, definitions: definitions)
         }
-
-        guard let largest = categoryTotals.max(by: { $0.amount < $1.amount }) else { return nil }
-        let categoryName = largest.category.localizedTitle(locale: locale)
-
+        let grouped = Dictionary(grouping: candidates, by: \.categoryID)
+        guard let largest = grouped.filter({ $0.value.totalAmount > .zero }).max(by: {
+            if $0.value.totalAmount == $1.value.totalAmount { return $0.key > $1.key }
+            return $0.value.totalAmount < $1.value.totalAmount
+        }) else { return nil }
+        let categoryName = CategoryOption.resolve(id: largest.key, definitions: definitions, locale: locale).name
+        let amount = largest.value.totalAmount
         return AIInsight(
-            id: "savings",
-            title: "Savings idea",
-            message: localized("Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency).", locale: locale),
-            systemImage: "scissors",
-            tint: .green,
-            transactionIDs: transactions.filter { $0.type == .expense && $0.category == largest.category && currentMonth.containsHalfOpen($0.dueDate) }.map(\.id)
+            id: "savings", title: "Savings idea",
+            message: locale.usesNorwegianLanguage
+                ? "Se gjennom \(categoryName). Registrerte utgifter i denne kategorien er \(amount.formattedCurrency) denne måneden."
+                : localized("Consider reviewing \(categoryName). Registered expenses in this category total \(amount.formattedCurrency) this month.", locale: locale),
+            systemImage: "scissors", tint: .green, transactionIDs: largest.value.map(\.id)
         )
     }
 

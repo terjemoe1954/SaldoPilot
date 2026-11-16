@@ -11,6 +11,7 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(\.locale) private var locale
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @AppStorage(AppSettingsKey.defaultPeriod) private var selectedPeriodRawValue = AppDefaultPeriod.thisMonth.rawValue
     @AppStorage(AppSettingsKey.showNameOnDashboard) private var showNameOnDashboard = false
     @AppStorage(AppSettingsKey.displayName) private var displayName = ""
@@ -51,6 +52,8 @@ struct DashboardView: View {
                         onShowNextDue: { onShowTransactions(.nextDue) }
                     )
 
+                    PaydayForecastCard()
+
                     DashboardQuickActionsSection(
                         onNewIncome: onNewIncome,
                         onNewExpense: onNewExpense,
@@ -75,6 +78,7 @@ struct DashboardView: View {
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
+            .modifier(CloudSyncStatusInset())
             .navigationTitle("Overview")
             .sheet(item: $selectedAIInsight) { insight in
                 AIInsightTransactionsView(insight: insight)
@@ -147,6 +151,7 @@ struct DashboardView: View {
     private var aiInsights: [AIInsight] {
         AIInsightEngine.insights(
             transactions: activeTransactions.filter(\.isIncludedInOrdinaryCashFlow),
+            categoryDefinitions: categoryDefinitions,
             locale: locale
         )
     }
@@ -818,6 +823,7 @@ private extension Array where Element == Transaction {
 private struct AIInsightTransactionsView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @State private var editingTransaction: Transaction?
 
     let insight: AIInsight

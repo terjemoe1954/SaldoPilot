@@ -146,6 +146,7 @@ enum AppSettingsKey {
     static let notifyPendingIncome = key("notifyPendingIncome")
     static let allowExternalAI = key("allowExternalAI")
     static let proStatus = key("proStatus")
+    static let forecastSalaryID = key("forecastSalaryID")
     static let openingBalanceAmount = key("openingBalanceAmount")
     static let openingBalanceDate = key("openingBalanceDate")
     static let hasCompletedOnboarding = key("hasCompletedOnboarding")

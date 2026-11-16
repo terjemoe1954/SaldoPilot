@@ -8,9 +8,9 @@
 import Foundation
 import SwiftData
 
-typealias Budget = SaldoPilotSchemaV4.Budget
+typealias Budget = SaldoPilotSchemaV5.Budget
 
-extension SaldoPilotSchemaV4 {
+extension SaldoPilotSchemaV5 {
 @Model
 final class Budget {
     var id: UUID = UUID()

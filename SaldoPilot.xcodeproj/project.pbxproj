@@ -6,6 +6,16 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+        C0D3A0010000000000000001 /* PBXContainerItemProxy */ = {
+            isa = PBXContainerItemProxy;
+            containerPortal = A895548D3055F2CB00ED13D1 /* Project object */;
+            proxyType = 1;
+            remoteGlobalIDString = A89554943055F2CB00ED13D1;
+            remoteInfo = SaldoPilot;
+        };
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		A8541DCB307F7C580076B8B6 /* SaldoPilotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SaldoPilotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A89554953055F2CB00ED13D1 /* SaldoPilot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SaldoPilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,7 +92,10 @@
 			);
 			buildRules = (
 			);
-			fileSystemSynchronizedGroups = (
+			dependencies = (
+                C0D3A0010000000000000002 /* PBXTargetDependency */,
+            );
+            fileSystemSynchronizedGroups = (
 				A8541DCC307F7C580076B8B6 /* SaldoPilotTests */,
 			);
 			name = SaldoPilotTests;
@@ -173,6 +186,14 @@
 			);
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+        C0D3A0010000000000000002 /* PBXTargetDependency */ = {
+            isa = PBXTargetDependency;
+            target = A89554943055F2CB00ED13D1 /* SaldoPilot */;
+            targetProxy = C0D3A0010000000000000001 /* PBXContainerItemProxy */;
+        };
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A8541DCF307F7C580076B8B6 /* Debug configuration for PBXNativeTarget "SaldoPilotTests" */ = {
@@ -353,7 +374,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SaldoPilot/SaldoPilot.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 4LR68777XL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -367,7 +388,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.terjemoe.SaldoPilot;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -390,7 +411,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SaldoPilot/SaldoPilot.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 4LR68777XL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -404,7 +425,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.terjemoe.SaldoPilot;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

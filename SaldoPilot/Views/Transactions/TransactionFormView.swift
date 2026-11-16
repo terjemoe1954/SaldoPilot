@@ -294,54 +294,54 @@ struct TransactionFormView: View {
 
         let resolvedInterval = recurrence == .everyNMonths || recurrence == .custom ? recurrenceIntervalMonths : nil
 
-        if let transaction {
-            let seriesSnapshot = RecurrenceService.SeriesSnapshot(transaction: transaction)
-            let futureOccurrences = RecurrenceService.futureOccurrences(matching: seriesSnapshot, in: transactions)
-            let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
-            transaction.title = trimmedTitle
-            transaction.amount = amount
-            transaction.type = type
-            transaction.dueDate = dueDate
-            transaction.paidDate = resolvedPaidDate
-            transaction.status = resolvedStatus
-            transaction.category = category
-            transaction.customCategoryID = customCategoryID
-            transaction.recurrence = recurrence
-            transaction.recurrenceIntervalMonths = resolvedInterval
-            transaction.notes = notes
-            transaction.isCompleted = resolvedIsCompleted
-            transaction.markUpdated()
-
-            if !wasCompleted && resolvedIsCompleted {
-                RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
-            }
-
-            if scope == .thisAndFuture {
-                RecurrenceService.applyTemplate(from: transaction, toFutureOccurrences: futureOccurrences)
-            }
-        } else {
-            let newTransaction = Transaction(
-                title: trimmedTitle,
-                amount: amount,
-                type: type,
-                dueDate: dueDate,
-                paidDate: resolvedPaidDate,
-                status: resolvedStatus,
-                category: category,
-                customCategoryID: customCategoryID,
-                recurrence: recurrence,
-                recurrenceIntervalMonths: resolvedInterval,
-                notes: notes,
-                isCompleted: resolvedIsCompleted
-            )
-            modelContext.insert(newTransaction)
-
-            if resolvedIsCompleted {
-                RecurrenceService.insertNextOccurrenceIfNeeded(after: newTransaction, in: modelContext)
-            }
-        }
-
         do {
+            if let transaction {
+                let seriesSnapshot = RecurrenceService.SeriesSnapshot(transaction: transaction)
+                let futureOccurrences = RecurrenceService.futureOccurrences(matching: seriesSnapshot, in: transactions)
+                let wasCompleted = transaction.isCompleted || transaction.status == .paid || transaction.status == .received
+                transaction.title = trimmedTitle
+                transaction.amount = amount
+                transaction.type = type
+                transaction.dueDate = dueDate
+                transaction.paidDate = resolvedPaidDate
+                transaction.status = resolvedStatus
+                transaction.category = category
+                transaction.customCategoryID = customCategoryID
+                transaction.recurrence = recurrence
+                transaction.recurrenceIntervalMonths = resolvedInterval
+                transaction.notes = notes
+                transaction.isCompleted = resolvedIsCompleted
+                transaction.markUpdated()
+
+                if !wasCompleted && resolvedIsCompleted {
+                    try RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
+                }
+
+                if scope == .thisAndFuture {
+                    RecurrenceService.applyTemplate(from: transaction, toFutureOccurrences: futureOccurrences)
+                }
+            } else {
+                let newTransaction = Transaction(
+                    title: trimmedTitle,
+                    amount: amount,
+                    type: type,
+                    dueDate: dueDate,
+                    paidDate: resolvedPaidDate,
+                    status: resolvedStatus,
+                    category: category,
+                    customCategoryID: customCategoryID,
+                    recurrence: recurrence,
+                    recurrenceIntervalMonths: resolvedInterval,
+                    notes: notes,
+                    isCompleted: resolvedIsCompleted
+                )
+                modelContext.insert(newTransaction)
+
+                if resolvedIsCompleted {
+                    try RecurrenceService.insertNextOccurrenceIfNeeded(after: newTransaction, in: modelContext)
+                }
+            }
+
             try modelContext.save()
             dismiss()
         } catch {

@@ -13,18 +13,22 @@ enum ExportService {
         transactions: [Transaction],
         budgets: [Budget] = [],
         categoryDefinitions: [CategoryDefinition] = [],
-        settings: BackupAppSettings? = nil
+        settings: BackupAppSettings? = nil,
+        importReceipts: [ExternalImportReceipt] = []
     ) throws -> URL {
+        let definitions = CategoryOption.preferredDefinitions(categoryDefinitions).values.sorted { $0.id < $1.id }
         let payload = ExportPayload(
-            formatVersion: 4,
+            formatVersion: 6,
             exportedAt: .now,
-            categories: CategoryKind.allCases.map(ExportCategory.init) + categoryDefinitions.map(ExportCategory.init),
+            categories: CategoryKind.allCases.filter { kind in !definitions.contains { $0.id == kind.rawValue } }.map(ExportCategory.init) + definitions.map(ExportCategory.init),
             transactions: transactions.map(ExportTransaction.init),
             budgets: budgets.map(ExportBudget.init),
-            settings: settings
+            settings: settings,
+            importReceipts: importReceipts.map(ExternalImportReceiptRecord.init)
         )
 
         let encoder = JSONEncoder()
+        // Keep readable ISO dates for older apps; V5 additionally keeps lossless timestamps.
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
 
@@ -131,19 +135,26 @@ private struct ExportPayload: Encodable {
     let transactions: [ExportTransaction]
     let budgets: [ExportBudget]
     let settings: BackupAppSettings?
+    let importReceipts: [ExternalImportReceiptRecord]
 }
 
 private struct ExportBudget: Encodable {
+    let preciseDates: [String: Double]
     let id: UUID
     let category: String
+    let legacyCategory: String
     let monthStart: Date
     let amount: String
     let createdAt: Date
     let updatedAt: Date
 
     init(budget: Budget) {
+        preciseDates = ["monthStart": budget.monthStart.timeIntervalSinceReferenceDate,
+                        "createdAt": budget.createdAt.timeIntervalSinceReferenceDate,
+                        "updatedAt": budget.updatedAt.timeIntervalSinceReferenceDate]
         id = budget.id
         category = budget.categoryID
+        legacyCategory = budget.category.rawValue
         monthStart = budget.monthStart
         amount = budget.amount.description
         createdAt = budget.createdAt
@@ -152,33 +163,50 @@ private struct ExportBudget: Encodable {
 }
 
 private struct ExportCategory: Encodable {
+    let preciseDates: [String: Double]
     let id: String
     let name: String
     let icon: String
     let colorIdentifier: String
     let legacyKindRawValue: String?
+    let excludesFromSavingsTips: Bool?
     let isUserDefined: Bool
+    let isHidden: Bool
+    let createdAt: Date?
+    let updatedAt: Date?
 
     init(category: CategoryKind) {
+        preciseDates = [:]
         id = category.rawValue
         name = String(localized: category.title)
         icon = category.systemImage
         colorIdentifier = category.colorName
         legacyKindRawValue = category.rawValue
+        excludesFromSavingsTips = nil
         isUserDefined = false
+        isHidden = false
+        createdAt = nil
+        updatedAt = nil
     }
 
     init(definition: CategoryDefinition) {
+        preciseDates = ["createdAt": definition.createdAt.timeIntervalSinceReferenceDate,
+                        "updatedAt": definition.updatedAt.timeIntervalSinceReferenceDate]
         id = definition.id
         name = definition.name
         icon = definition.systemImage
         colorIdentifier = definition.colorName
         legacyKindRawValue = definition.legacyKindRawValue
+        excludesFromSavingsTips = definition.excludesFromSavingsTips
         isUserDefined = true
+        isHidden = definition.isHidden
+        createdAt = definition.createdAt
+        updatedAt = definition.updatedAt
     }
 }
 
 private struct ExportTransaction: Encodable {
+    let preciseDates: [String: Double]
     let id: UUID
     let title: String
     let amount: String
@@ -187,6 +215,7 @@ private struct ExportTransaction: Encodable {
     let paidDate: Date?
     let status: String
     let category: String
+    let legacyCategory: String
     let recurrence: String
     let recurrenceIntervalMonths: String?
     let recurrenceSeriesID: UUID?
@@ -198,6 +227,11 @@ private struct ExportTransaction: Encodable {
     let isArchived: Bool
 
     init(transaction: Transaction) {
+        var dates = ["dueDate": transaction.dueDate.timeIntervalSinceReferenceDate,
+                     "createdAt": transaction.createdAt.timeIntervalSinceReferenceDate,
+                     "updatedAt": transaction.updatedAt.timeIntervalSinceReferenceDate]
+        if let paidDate = transaction.paidDate { dates["paidDate"] = paidDate.timeIntervalSinceReferenceDate }
+        preciseDates = dates
         id = transaction.id
         title = transaction.title
         amount = transaction.amount.description
@@ -206,6 +240,7 @@ private struct ExportTransaction: Encodable {
         paidDate = transaction.paidDate
         status = transaction.status.rawValue
         category = transaction.categoryID
+        legacyCategory = transaction.category.rawValue
         recurrence = transaction.recurrence.rawValue
         recurrenceIntervalMonths = transaction.recurrenceIntervalMonths?.formatted()
         recurrenceSeriesID = transaction.recurrenceSeriesID

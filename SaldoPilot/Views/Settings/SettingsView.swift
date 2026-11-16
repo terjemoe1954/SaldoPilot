@@ -153,6 +153,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            .modifier(CloudSyncStatusInset())
             .navigationTitle("Settings")
             .confirmationDialog(
                 "Delete all transactions?",

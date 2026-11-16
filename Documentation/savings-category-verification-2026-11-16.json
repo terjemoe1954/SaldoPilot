@@ -1,0 +1,34 @@
+{
+  "allExportedFieldsPreserved": true,
+  "budgets": 2,
+  "categoryDefinitions": 3,
+  "cloudKit": "disabled in every test store",
+  "defaultExclusions": [
+    "home",
+    "insurance",
+    "deduction"
+  ],
+  "emptyBackupRestored": true,
+  "invalidBackupsRejectedWithoutChanges": 12,
+  "jsonWithoutBudgetsKeepsExistingBudgets": true,
+  "legacyV4AndCSV": true,
+  "manualOverridesAndCustomCategories": true,
+  "monthEndAnchorPreserved": true,
+  "persistedStoreReopened": true,
+  "recurrenceRules": 7,
+  "repeatedMergeCreated": 0,
+  "result": "passed",
+  "settingsAndConsentChecks": true,
+  "storeDirectory": "/tmp/saldo-savings-verification-01/backup-round-trip",
+  "transactions": 9,
+  "v4ToV5MigrationPreservedAllExportedFields": true,
+  "uiToggleAndPersistenceVerified": "iPad simulator, isolated local store",
+  "testFlightPublished": "1.7 (25), Testing in Internal group",
+  "requiredCloudKitSchemaAddition": {
+    "recordType": "CD_CategoryDefinition",
+    "field": "CD_excludesFromSavingsTips",
+    "type": "INT64",
+    "deployment": "Deployed to Production 2026-11-16 before TestFlight upload"
+  },
+  "macLaunchRecovery": "Stopped pre-app dyld process and relaunched installed build 24; app and sync activity observed. Underlying launch cause not established."
+}

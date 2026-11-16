@@ -25,6 +25,7 @@ struct StatisticsView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                 }
+                .modifier(CloudSyncStatusInset())
                 .navigationTitle("Statistics")
             } else {
                 ScrollView {
@@ -42,6 +43,7 @@ struct StatisticsView: View {
                     }
                     .padding()
                 }
+                .modifier(CloudSyncStatusInset())
                 .navigationTitle("Statistics")
             }
         }

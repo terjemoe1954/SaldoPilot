@@ -41,14 +41,14 @@ struct CategoriesView: View {
             Button { isAddingCategory = true } label: { Label("New category", systemImage: "plus") }
         }
         .sheet(isPresented: $isAddingCategory) {
-            CategoryFormView(title: "New category") { name, icon, color in
-                modelContext.insert(CategoryDefinition(name: name, systemImage: icon, colorName: color))
+            CategoryFormView(title: "New category") { name, icon, color, excluded in
+                modelContext.insert(CategoryDefinition(name: name, systemImage: icon, colorName: color, excludesFromSavingsTips: excluded))
                 save()
             }
         }
         .sheet(item: $editedCategory) { category in
-            CategoryFormView(title: "Edit category", name: category.name, systemImage: category.systemImage, colorName: category.colorName) { name, icon, color in
-                saveChanges(to: category, name: name, icon: icon, color: color)
+            CategoryFormView(title: "Edit category", name: category.name, systemImage: category.systemImage, colorName: category.colorName, excludesFromSavingsTips: category.excludesFromSavingsTips) { name, icon, color, excluded in
+                saveChanges(to: category, name: name, icon: icon, color: color, excluded: excluded)
             }
         }
         .sheet(item: $deletingCategory) { category in
@@ -81,14 +81,15 @@ struct CategoriesView: View {
 
     private var options: [CategoryOption] { CategoryOption.available(definitions: definitions, locale: locale) }
 
-    private func saveChanges(to category: CategoryOption, name: String, icon: String, color: String) {
-        if let definition = definitions.first(where: { $0.id == category.id }) {
+    private func saveChanges(to category: CategoryOption, name: String, icon: String, color: String, excluded: Bool) {
+        if let definition = CategoryOption.preferredDefinitions(definitions)[category.id] {
             definition.name = name
             definition.systemImage = icon
             definition.colorName = color
+            definition.excludesFromSavingsTips = excluded
             definition.updatedAt = .now
         } else {
-            modelContext.insert(CategoryDefinition(id: category.id, name: name, systemImage: icon, colorName: color, legacyKindRawValue: category.legacyKind?.rawValue))
+            modelContext.insert(CategoryDefinition(id: category.id, name: name, systemImage: icon, colorName: color, legacyKindRawValue: category.legacyKind?.rawValue, excludesFromSavingsTips: excluded))
         }
         save()
     }
@@ -115,7 +116,7 @@ struct CategoriesView: View {
                 budget.markUpdated()
             }
         }
-        if let definition = definitions.first(where: { $0.id == category.id }) {
+        if let definition = CategoryOption.preferredDefinitions(definitions)[category.id] {
             if category.legacyKind == nil { modelContext.delete(definition) } else {
                 definition.isHidden = true
                 definition.updatedAt = .now
@@ -148,10 +149,20 @@ private struct CategoryManagementRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             VStack(alignment: .leading) {
                 Text(category.name).font(.headline)
+                if category.excludesFromSavingsTips {
+                    Label("Excluded from savings tips", systemImage: "lock").font(.caption).foregroundStyle(.secondary)
+                }
                 Text("\(transactionCount) transactions · \(budgetCount) budgets")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Spacer(minLength: 8)
+            Image(systemName: category.excludesFromSavingsTips ? "checkmark.circle.fill" : "circle")
+                .font(.title2)
+                .foregroundStyle(category.excludesFromSavingsTips ? Color.green : Color.secondary)
+                .accessibilityLabel(category.excludesFromSavingsTips
+                    ? Text("Excluded from savings tips")
+                    : Text("Included in savings tips"))
         }
     }
 }

@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-16",
+  "scope": [
+    "recurrence",
+    "backup",
+    "restore",
+    "sync state",
+    "salary choice synchronization"
+  ],
+  "smallFixes": [
+    "Idempotent next occurrence creation checks existing series and calendar day, including cancelled or restored occurrences",
+    "Independent explicit recurrence series cannot be absorbed by identical templates; legacy edit/delete matching excludes explicit foreign series",
+    "Recurrence fetch failures propagate to existing rollback/error handlers",
+    "Backup exports the effective category once per logical ID; replacement restore updates existing duplicate definitions consistently without deleting them",
+    "Delayed older sync failures cannot override a newer successful operation in the same direction"
+  ],
+  "validation": {
+    "fullHostedSuite": {
+      "result": "passed",
+      "tests": 30,
+      "destination": "iPad Pro 13-inch (M5), isolated screenshot-mode test host",
+      "xcresult": "/tmp/saldo-final-hosted-tests-20261116.xcresult"
+    },
+    "standaloneIntegratedAudit": "passed using fresh local stores and isolated UserDefaults suites",
+    "backupRestoreResults": {
+      "allExportedFieldsPreserved": true,
+      "budgets": 2,
+      "categoryDefinitions": 3,
+      "cloudKit": "disabled in every test store",
+      "emptyBackupRestored": true,
+      "invalidBackupsRejectedWithoutChanges": 12,
+      "jsonWithoutBudgetsKeepsExistingBudgets": true,
+      "legacyV4AndCSV": true,
+      "monthEndAnchorPreserved": true,
+      "persistedStoreReopened": true,
+      "recurrenceRules": 7,
+      "repeatedMergeCreated": 0,
+      "result": "passed",
+      "settingsAndConsentChecks": true,
+      "storeDirectory": "/tmp/saldo-final-audit-20261116/backup-roundtrip",
+      "transactions": 9
+    },
+    "macBuild": "passed"
+  },
+  "limits": [
+    "No production database or real iCloud account data modified",
+    "CloudKit transport timing is covered by prior user testing; automated concurrent settings tests use a three-device simulation",
+    "Several days of ordinary use cannot be reproduced by this single test session"
+  ],
+  "release": "1.9.1 (31), TestFlight Testing, Norwegian notes saved"
+}

@@ -1,0 +1,26 @@
+{
+  "feature": "Synchronize selected salary through iCloud key-value storage",
+  "releaseStatus": "Published together in TestFlight 1.9 (30)",
+  "dataProtection": [
+    "No SwiftData schema change or writes to transactions, categories, budgets or recurrence records",
+    "Device-specific atomic choices; deterministic conflict reconciliation",
+    "Intentional choices take precedence over migrated local preferences",
+    "Displaced local choices retained",
+    "Offline selection retained and retried",
+    "Account changes pause automatic sharing until a new explicit selection",
+    "Isolated screenshot/test preferences have a separate namespace and no production iCloud connection",
+    "Wait for a selected transaction to arrive instead of silently substituting another salary"
+  ],
+  "checks": {
+    "threeDeviceSimulation": "passed: migration, selection, clear, concurrent offline edits, reopen, malformed record, account change",
+    "forecastCalculationRegression": "passed",
+    "iPadAppAndTestTargetBuild": "passed",
+    "MacBuild": "passed",
+    "localSignedReleaseBuild": "passed",
+    "existingProfileSupportsKVS": true,
+    "iPadUI": "passed: selected salary, clear choice and reselect; forecast retained",
+    "backupRestoreRegression": "passed in disposable local stores: all exported fields preserved; repeated merge created zero duplicates"
+  },
+  "pending": "Real iCloud delivery across iPhone, iPad and Mac must be verified with the next bundled TestFlight release.",
+  "release": "1.9 (30), TestFlight Testing, Norwegian notes saved"
+}

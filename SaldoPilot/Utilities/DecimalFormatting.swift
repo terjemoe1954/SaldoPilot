@@ -105,24 +105,14 @@ enum AccountBalanceCalculator {
         openingBalanceText: String,
         openingBalanceDate: Date,
         transactions: [Transaction],
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        asOf: Date = .distantFuture
     ) -> Decimal? {
         guard let openingBalance = Decimal.localizedValue(from: openingBalanceText) else {
             return nil
         }
 
-        let startDate = calendar.startOfDay(for: openingBalanceDate)
-        return transactions.reduce(openingBalance) { balance, transaction in
-            guard
-                !transaction.isArchived,
-                transaction.status != .cancelled,
-                transaction.isSettled,
-                let paidDate = transaction.paidDate,
-                paidDate >= startDate
-            else {
-                return balance
-            }
-
+        return settledActivity(openingBalanceDate: openingBalanceDate, transactions: transactions, calendar: calendar, asOf: asOf).reduce(openingBalance) { balance, transaction in
             switch transaction.type {
             case .income:
                 return balance + transaction.amount
@@ -131,4 +121,12 @@ enum AccountBalanceCalculator {
             }
         }
     }
+    static func settledActivity(openingBalanceDate: Date, transactions: [Transaction], calendar: Calendar = .current, asOf: Date = .distantFuture) -> [Transaction] {
+        let start = calendar.startOfDay(for: openingBalanceDate)
+        return transactions.filter {
+            guard !$0.isArchived, $0.status != .cancelled, $0.isSettled, let paid = $0.paidDate else { return false }
+            return paid >= start && paid <= asOf
+        }.sorted { ($0.paidDate ?? $0.dueDate) < ($1.paidDate ?? $1.dueDate) }
+    }
+
 }

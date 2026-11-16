@@ -77,12 +77,19 @@ enum RecurrenceService {
         after transaction: Transaction,
         in modelContext: ModelContext,
         calendar: Calendar = .current
-    ) {
-        establishSeriesMetadata(for: transaction, in: modelContext, calendar: calendar)
+    ) throws {
+        guard transaction.recurrence != .none, transaction.status != .cancelled, !transaction.isArchived else { return }
+        let existing = try modelContext.fetch(FetchDescriptor<Transaction>())
+        establishSeriesMetadata(for: transaction, transactions: existing, calendar: calendar)
         guard let nextDueDate = nextDueDate(after: transaction.dueDate, for: transaction, calendar: calendar) else {
             return
         }
 
+        // Repeated completion, restored future occurrences, and cancelled occurrences must not create another row.
+        guard !existing.contains(where: {
+            $0.id != transaction.id && $0.recurrenceSeriesID == transaction.recurrenceSeriesID
+                && calendar.isDate($0.dueDate, inSameDayAs: nextDueDate)
+        }) else { return }
         let nextTransaction = Transaction(
             title: transaction.title,
             amount: transaction.amount,
@@ -115,6 +122,7 @@ enum RecurrenceService {
                 transaction.status != .cancelled &&
                 !transaction.isSettled &&
                 (snapshot.recurrenceSeriesID.map { transaction.recurrenceSeriesID == $0 } ?? (
+                transaction.recurrenceSeriesID == nil &&
                 transaction.title == snapshot.title &&
                 transaction.amount == snapshot.amount &&
                 transaction.type == snapshot.type &&
@@ -165,25 +173,20 @@ enum RecurrenceService {
 
     private static func establishSeriesMetadata(
         for transaction: Transaction,
-        in modelContext: ModelContext,
+        transactions: [Transaction],
         calendar: Calendar
     ) {
         guard transaction.recurrence != .none else { return }
 
-        let candidates = (try? modelContext.fetch(FetchDescriptor<Transaction>()))?
-            .filter {
-                $0.title == transaction.title &&
-                $0.amount == transaction.amount &&
-                $0.type == transaction.type &&
-                $0.category == transaction.category &&
-                $0.customCategoryID == transaction.customCategoryID &&
-                $0.recurrence == transaction.recurrence &&
-                $0.recurrenceIntervalMonths == transaction.recurrenceIntervalMonths &&
-                $0.notes == transaction.notes
-            } ?? [transaction]
-        let seriesID = transaction.recurrenceSeriesID
-            ?? candidates.compactMap(\.recurrenceSeriesID).first
-            ?? UUID()
+        let candidates = transactions.filter { candidate in
+            if let seriesID = transaction.recurrenceSeriesID {
+                return candidate.recurrenceSeriesID == seriesID || candidate.id == transaction.id
+            }
+            // Legacy rows may be grouped by template; never absorb a different explicit series.
+            return candidate.recurrenceSeriesID == nil && matchesTemplate(candidate, transaction)
+        }
+
+        let seriesID = transaction.recurrenceSeriesID ?? UUID()
         let anchorDay = transaction.recurrenceAnchorDay
             ?? candidates.compactMap(\.recurrenceAnchorDay).max()
             ?? candidates.map { calendar.component(.day, from: $0.dueDate) }.max()
@@ -194,4 +197,11 @@ enum RecurrenceService {
             candidate.recurrenceAnchorDay = anchorDay
         }
     }
+    private static func matchesTemplate(_ candidate: Transaction, _ source: Transaction) -> Bool {
+        candidate.title == source.title && candidate.amount == source.amount
+            && candidate.type == source.type && candidate.category == source.category
+            && candidate.customCategoryID == source.customCategoryID && candidate.recurrence == source.recurrence
+            && candidate.recurrenceIntervalMonths == source.recurrenceIntervalMonths && candidate.notes == source.notes
+    }
+
 }

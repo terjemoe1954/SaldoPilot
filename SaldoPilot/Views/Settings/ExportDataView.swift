@@ -13,6 +13,8 @@ struct ExportDataView: View {
     @Query(sort: \Budget.monthStart) private var budgets: [Budget]
     @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
 
+    @Query private var importReceipts: [ExternalImportReceipt]
+
     @State private var backupURL: URL?
     @State private var csvURL: URL?
     @State private var exportError: String?
@@ -82,7 +84,8 @@ struct ExportDataView: View {
                 transactions: transactions,
                 budgets: budgets,
                 categoryDefinitions: categoryDefinitions,
-                settings: BackupAppSettings.capture()
+                settings: BackupAppSettings.capture(),
+                importReceipts: importReceipts
             )
         } catch {
             exportError = error.localizedDescription
