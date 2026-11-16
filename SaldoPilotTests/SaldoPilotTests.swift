@@ -13,6 +13,111 @@ struct SaldoPilotTests {
         return calendar
     }
 
+    @Test("AI cards retain the exact transactions behind their summaries")
+    func insightTransactionLinks() throws {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let tomorrow = try #require(calendar.date(byAdding: .day, value: 1, to: today))
+        let monthStart = try #require(calendar.dateInterval(of: .month, for: today)).start
+        let previousMonth = try #require(calendar.date(byAdding: .day, value: -1, to: monthStart))
+        let first = Transaction(title: "Internet", amount: 500, type: .expense, dueDate: today)
+        let duplicate = Transaction(title: "Internet", amount: 500, type: .expense, dueDate: today)
+        let previous = Transaction(title: "Old expense", amount: 100, type: .expense, dueDate: previousMonth)
+        let future = Transaction(title: "Next payment", amount: 200, type: .expense, dueDate: tomorrow)
+        let cancelled = Transaction(title: "Cancelled", amount: 999, type: .expense, dueDate: today, status: .cancelled)
+        let archived = Transaction(title: "Archived", amount: 999, type: .expense, dueDate: today, isArchived: true)
+        let input = [first, duplicate, previous, future, cancelled, archived]
+        let insights = AIInsightEngine.insights(transactions: input, calendar: calendar)
+        func ids(_ name: String) throws -> Set<UUID> {
+            Set(try #require(insights.first { $0.id == name }).transactionIDs)
+        }
+        #expect(try ids("duplicate") == Set([first.id, duplicate.id]))
+        #expect(try ids("recurring") == Set([first.id, duplicate.id]))
+        #expect(try ids("dueSoon") == Set([first.id, duplicate.id, future.id]))
+        let month = try #require(calendar.dateInterval(of: .month, for: today))
+        #expect(try ids("situation") == Set([first, duplicate, future].filter { month.containsHalfOpen($0.dueDate) }.map(\.id)))
+        #expect(try ids("spendingChange") == Set([first, duplicate, previous, future].filter {
+            $0.dueDate < month.end
+        }.map(\.id)))
+        #expect(insights.allSatisfy { !$0.transactionIDs.contains(cancelled.id) && !$0.transactionIDs.contains(archived.id) })
+        #expect(AIInsightEngine.insights(transactions: []).allSatisfy { $0.transactionIDs.isEmpty })
+    }
+
+    @Test("Natural entry separates Norwegian amounts, due dates and recurrence")
+    func naturalEntryNorwegian() throws {
+        let now = try #require(date(year: 2026, month: 11, day: 16))
+        let draft = try NaturalTransactionDraftParser.parse(
+            "Legg inn strømregning på 1 249,50 kroner, forfall 25. november, hver måned",
+            now: now, calendar: calendar
+        )
+        #expect(draft.title == "strømregning")
+        #expect(draft.amount == Decimal(string: "1249.50")!)
+        #expect(draft.dueDate == date(year: 2026, month: 11, day: 25))
+        #expect(draft.recurrence == .monthly)
+        #expect(draft.reviewItems.contains(.inferredYear))
+    }
+
+    @Test("Currency decimals are not dates, and relative dates use the supplied clock")
+    func naturalEntryAmountsAndDates() throws {
+        let now = try #require(date(year: 2026, month: 12, day: 31))
+        let draft = try NaturalTransactionDraftParser.parse("Add coffee 49.50 NOK due tomorrow", now: now, calendar: calendar)
+        #expect(draft.amount == Decimal(string: "49.50")!)
+        #expect(draft.dueDate == date(year: 2027, month: 1, day: 1))
+        let income = try NaturalTransactionDraftParser.parse("Legg inn lønn 32000 kr 2027-01-15", now: now, calendar: calendar)
+        #expect(income.type == .income)
+        #expect(income.amount == 32000)
+        #expect(income.dueDate == date(year: 2027, month: 1, day: 15))
+        let interval = try NaturalTransactionDraftParser.parse("Forsikring 500 kr om 7 dager hver 3. måned", now: now, calendar: calendar)
+        #expect(interval.amount == 500)
+        #expect(interval.recurrence == .everyNMonths)
+        #expect(interval.recurrenceIntervalMonths == 3)
+        #expect(interval.dueDate == date(year: 2027, month: 1, day: 7))
+    }
+
+    @Test("Missing and invalid facts remain unfilled and visible for review")
+    func naturalEntryMissingFacts() throws {
+        let now = try #require(date(year: 2026, month: 11, day: 16))
+        let missing = try NaturalTransactionDraftParser.parse("Strømregning", now: now, calendar: calendar)
+        #expect(missing.amount == nil && missing.dueDate == nil)
+        #expect(missing.reviewItems.contains(.missingAmount))
+        #expect(missing.reviewItems.contains(.missingDate))
+        let invalid = try NaturalTransactionDraftParser.parse("Strøm 1000 kr forfall 31.02.2027", now: now, calendar: calendar)
+        #expect(invalid.amount == 1000)
+        #expect(invalid.dueDate == nil)
+        #expect(invalid.reviewItems.contains(.unclearDate))
+        let negative = try NaturalTransactionDraftParser.parse("Strøm -100 kr i morgen", now: now, calendar: calendar)
+        #expect(negative.amount == nil)
+        let weekly = try NaturalTransactionDraftParser.parse("Mat 500 kr i morgen ukentlig", now: now, calendar: calendar)
+        #expect(weekly.recurrence == .none)
+        #expect(weekly.reviewItems.contains(.unclearRecurrence))
+    }
+
+    @Test("Natural entry rejects multiple amounts and foreign currency")
+    func naturalEntryAmbiguity() throws {
+        #expect(throws: NaturalTransactionDraftError.self) {
+            try NaturalTransactionDraftParser.parse("Strøm 1000 kr og internett 500 kr i morgen")
+        }
+        #expect(throws: NaturalTransactionDraftError.self) {
+            try NaturalTransactionDraftParser.parse("Hotel 150 EUR due tomorrow")
+        }
+        #expect(throws: NaturalTransactionDraftError.self) {
+            try NaturalTransactionDraftParser.parse(String(repeating: "x", count: 501))
+        }
+    }
+
+    @Test("On-device language output must be grounded in the original text")
+    func naturalEntryModelGrounding() throws {
+        let original = try NaturalTransactionDraftParser.parse("Arbeidsgiver overfører 32000 kr i morgen")
+        let hallucinated = NaturalTransactionLanguageFields(title: "Invented description", kind: "income", kindEvidence: "salary")
+        let unchanged = NaturalTransactionDraftService.applying(hallucinated, to: original)
+        #expect(unchanged == original)
+        let grounded = NaturalTransactionLanguageFields(title: "Arbeidsgiver", kind: "income", kindEvidence: "Arbeidsgiver overfører")
+        let improved = NaturalTransactionDraftService.applying(grounded, to: original)
+        #expect(improved.title == "Arbeidsgiver")
+        #expect(improved.type == .income)
+        #expect(improved.amount == original.amount && improved.dueDate == original.dueDate)
+    }
+
     @Test("Currency input accepts Norwegian and English formats")
     func currencyInputFormats() {
         let expected = Decimal(string: "1234.50")!
@@ -323,6 +428,76 @@ struct SaldoPilotTests {
         #expect(budgets.first?.amount == Decimal(string: "9000.00")!)
         #expect(transactions.allSatisfy { $0.recurrenceSeriesID == nil })
         #expect(transactions.allSatisfy { $0.recurrenceAnchorDay == nil })
+    }
+
+    @Test("Released V3 stores migrate and reopen without losing records or recurrence data")
+    func migratesReleasedV3StoreToV4() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "V3.store")
+        let transactionID = UUID()
+        let budgetID = UUID()
+        let seriesID = UUID()
+        let dueDate = try #require(date(year: 2026, month: 10, day: 31))
+        let createdAt = dueDate.addingTimeInterval(-1000)
+        let updatedAt = dueDate.addingTimeInterval(-500)
+
+        do {
+            let schema = Schema(SaldoPilotSchemaV3.models)
+            let configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+            let old = try ModelContainer(for: schema, configurations: [configuration])
+            old.mainContext.insert(SaldoPilotSchemaV3.Transaction(
+                id: transactionID, title: "Historic payment", amount: Decimal(string: "1234.56")!,
+                type: .expense, dueDate: dueDate, paidDate: dueDate, status: .paid,
+                category: .home, recurrence: .everyNMonths, recurrenceIntervalMonths: 2,
+                recurrenceSeriesID: seriesID, recurrenceAnchorDay: 31, notes: "Keep this note",
+                createdAt: createdAt, updatedAt: updatedAt, isCompleted: true, isArchived: true
+            ))
+            old.mainContext.insert(SaldoPilotSchemaV3.Budget(
+                id: budgetID, category: .home, monthStart: dueDate, amount: 9000,
+                createdAt: createdAt, updatedAt: updatedAt
+            ))
+            try old.mainContext.save()
+        }
+
+        // Verify both the upgrade and a subsequent app launch on the upgraded store.
+        for _ in 0..<2 {
+            let schema = Schema(SaldoPilotSchemaV4.models)
+            let configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+            let upgraded = try ModelContainer(
+                for: schema, migrationPlan: SaldoPilotMigrationPlan.self, configurations: [configuration]
+            )
+            let transactions = try upgraded.mainContext.fetch(FetchDescriptor<Transaction>())
+            let budgets = try upgraded.mainContext.fetch(FetchDescriptor<Budget>())
+            #expect(transactions.count == 1)
+            let transaction = try #require(transactions.first)
+            #expect(transaction.id == transactionID)
+            #expect(transaction.title == "Historic payment")
+            #expect(transaction.amount == Decimal(string: "1234.56")!)
+            #expect(transaction.type == .expense)
+            #expect(transaction.dueDate == dueDate)
+            #expect(transaction.paidDate == dueDate)
+            #expect(transaction.status == .paid)
+            #expect(transaction.category == .home)
+            #expect(transaction.recurrence == .everyNMonths)
+            #expect(transaction.recurrenceIntervalMonths == 2)
+            #expect(transaction.recurrenceSeriesID == seriesID)
+            #expect(transaction.recurrenceAnchorDay == 31)
+            #expect(transaction.notes == "Keep this note")
+            #expect(transaction.createdAt == createdAt)
+            #expect(transaction.updatedAt == updatedAt)
+            #expect(transaction.isCompleted && transaction.isArchived)
+            #expect(transaction.customCategoryID == nil)
+            #expect(budgets.count == 1)
+            let budget = try #require(budgets.first)
+            #expect(budget.id == budgetID)
+            #expect(budget.category == .home)
+            #expect(budget.monthStart == dueDate)
+            #expect(budget.amount == 9000)
+            #expect(budget.createdAt == createdAt && budget.updatedAt == updatedAt)
+            #expect(budget.customCategoryID == nil)
+        }
     }
 
     @Test("Category standardization only moves explicit matches")

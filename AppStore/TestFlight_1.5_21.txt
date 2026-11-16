@@ -1,0 +1,19 @@
+SaldoPilot 1.5 (21) – registrering med vanlig språk
+
+Ny inntekt/utgift → Fyll ut med tekst → Lag utkast.
+Skriv beskrivelse, beløp med tall og forfallsdato, og eventuelt gjentakelse. Du kan også velge «Bruk eksempelet».
+
+Kontroller og endre feltene i utkastet. Aktiver «Jeg har kontrollert feltene nedenfor» og trykk Lagre. Ingenting lagres automatisk, og Avbryt skal la eksisterende poster være urørt.
+
+Test særlig:
+• Norsk tekst med beløp som 1 249,50 kroner og forfall 25. november.
+• Inntekt, utgift og månedlig gjentakelse.
+• Manglende beløp/dato og ugyldig dato: kontroller meldingene og rett feltene.
+• At Lagre er sperret før godkjenning.
+• At lagring oppretter én post, og at avbryting ikke oppretter noen.
+• Samme flyt på iPhone og Mac, og synkronisering mellom enhetene.
+
+Utkast starter som ventende. Velg eventuell betalt/mottatt-status og betalingsdato selv. Ett beløp per utkast, i NOK.
+Teksten behandles på enheten. Apples lokale AI brukes når tilgjengelig og egnet for språket; ellers brukes lokal teksttolking. AI-grenen var ikke tilgjengelig på utviklerens testmaskin, mens reserveflyten er testet.
+
+Bygget inkluderer også de klikkbare AI-kortene og rettelsen for oppstart med eldre databaser på Mac.

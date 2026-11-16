@@ -1,0 +1,16 @@
+{
+  "version": "1.5",
+  "build": "21",
+  "bundle_id": "com.terjemoe.SaldoPilot",
+  "validated": true,
+  "uploaded": true,
+  "testflight_status": "Testing",
+  "archive": "/Users/terjemoe/Library/Developer/Xcode/Archives/2026-11-16/SaldoPilot 1.5 (21).xcarchive",
+  "regression_tests_passed": 8,
+  "draft_approval_and_cancel_verified_on_simulator": true,
+  "physical_iphone_and_mac_testflight_installation": "not performed",
+  "testflight_group": "Internal",
+  "testflight_processing": "complete",
+  "testflight_notes": "Norwegian notes saved",
+  "build_url": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/c272ab02-07ec-4af1-8e56-9fde43f4b3f3"
+}

@@ -30,6 +30,11 @@ struct TransactionFormView: View {
     @State private var notes: String
     @State private var isShowingRecurrenceScopeDialog = false
     @State private var isShowingSaveError = false
+    @State private var naturalDraft: NaturalTransactionDraft?
+    @State private var hasReviewedNaturalDraft = false
+    @State private var isShowingNaturalEntry = false
+    @State private var replacementDraft: NaturalTransactionDraft?
+    @State private var isConfirmingDraftReplacement = false
     @State private var suggestedCategory: CategoryKind?
     @State private var categoryWasManuallySelected: Bool
     @FocusState private var focusedField: TransactionFormField?
@@ -60,6 +65,21 @@ struct TransactionFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let naturalDraft {
+                    NaturalTransactionReviewSection(draft: naturalDraft, hasReviewed: $hasReviewedNaturalDraft)
+                }
+                if transaction == nil {
+                    Section {
+                        Button {
+                            focusedField = nil
+                            isShowingNaturalEntry = true
+                        } label: {
+                            Label("Fill in with text", systemImage: "text.bubble")
+                        }
+                        .accessibilityIdentifier("fillTransactionWithText")
+                    }
+                }
+
                 TransactionDescriptionSection(
                     title: $title,
                     focusedField: $focusedField
@@ -118,6 +138,27 @@ struct TransactionFormView: View {
                     }
                     .disabled(!canSave)
                 }
+            }
+            .sheet(isPresented: $isShowingNaturalEntry) {
+                NaturalTransactionEntryView(defaultType: type) { draft in
+                    if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !amountText.isEmpty {
+                        replacementDraft = draft
+                    } else {
+                        applyNaturalDraft(draft)
+                    }
+                }
+            }
+            .onChange(of: isShowingNaturalEntry) { _, isShowing in
+                if !isShowing && replacementDraft != nil { isConfirmingDraftReplacement = true }
+            }
+            .confirmationDialog("Replace unsaved fields?", isPresented: $isConfirmingDraftReplacement, titleVisibility: .visible) {
+                Button("Use new draft") {
+                    if let draft = replacementDraft { applyNaturalDraft(draft) }
+                    replacementDraft = nil
+                }
+                Button("Keep current fields", role: .cancel) { replacementDraft = nil }
+            } message: {
+                Text("The new draft replaces the unsaved fields in this form. No stored transactions will change.")
             }
             .confirmationDialog(
                 "Update recurring transactions?",
@@ -180,6 +221,7 @@ struct TransactionFormView: View {
 
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && parsedAmount != nil
+            && (naturalDraft == nil || hasReviewedNaturalDraft)
     }
 
     private var parsedAmount: Decimal? {
@@ -197,7 +239,27 @@ struct TransactionFormView: View {
         category = suggestion ?? .other
     }
 
+    private func applyNaturalDraft(_ draft: NaturalTransactionDraft) {
+        naturalDraft = draft
+        hasReviewedNaturalDraft = false
+        categoryWasManuallySelected = true
+        title = draft.title
+        amountText = draft.amount.map { Self.amountFormatter.string(from: NSDecimalNumber(decimal: $0)) ?? "" } ?? ""
+        type = draft.type
+        category = draft.type == .income ? .income : (CategorySuggestionService.suggestion(for: draft.title, using: transactions) ?? .other)
+        customCategoryID = nil
+        suggestedCategory = nil
+        dueDate = draft.dueDate ?? Calendar.current.startOfDay(for: .now)
+        paidDate = .now
+        status = .pending
+        hasPaidDate = false
+        recurrence = draft.recurrence
+        recurrenceIntervalMonths = draft.recurrenceIntervalMonths ?? 1
+        notes = ""
+    }
+
     private func requestSave() {
+        guard canSave else { return }
         guard shouldAskForRecurringUpdate else {
             save(scope: .single)
             return
@@ -216,7 +278,7 @@ struct TransactionFormView: View {
     }
 
     private func save(scope: RecurrenceUpdateScope) {
-        guard let amount = parsedAmount else { return }
+        guard canSave, let amount = parsedAmount else { return }
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedPaidDate = hasPaidDate ? paidDate : nil
@@ -294,6 +356,7 @@ struct TransactionFormView: View {
 
     private func suggestCompletionForPastDate(_ newDueDate: Date) {
         guard transaction == nil,
+              naturalDraft == nil,
               status == .pending,
               newDueDate < Calendar.current.startOfDay(for: .now) else {
             return

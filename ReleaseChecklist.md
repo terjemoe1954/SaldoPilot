@@ -197,3 +197,46 @@ Testplan: `AppStore/ProTesting.md`
 - [x] Pro-informasjonsskjerm er lagt inn i Innstillinger
 - [x] Eksisterende basisfunksjoner skal forbli gratis
 - [x] Første Pro-verdi blir nye budsjett/prognose-funksjoner
+
+
+## iCloud-produksjonsskjema rettet 16. november 2026
+
+- Feilårsaken var at produksjonsskjemaet for `iCloud.com.terjemoe.SaldoPilot` manglet `CD_recurrenceAnchorDay` og `CD_recurrenceSeriesID` på `CD_Transaction`. Dette blokkerte eksport med CloudKit Invalid Arguments (12/2006).
+- CloudKit Console viste to nye felt og fem nye indekser; ingen slettinger eller endringer i sikkerhetsroller. Disse tilleggene ble publisert til Production, med bekreftelsen «Changes Deployed».
+- Den installerte Mac-appen ble startet på nytt. Loggen viste vellykket CloudKit-oppsett mot Production, fullført `CKModifyRecordsOperation` uten feil og fullført import fra CloudKit. Oversikten ble kontrollert i den kjørende appen.
+- Ingen testposter ble opprettet, og ingen appdata, CloudKit-poster eller soner ble slettet eller nullstilt. Eksisterende sikkerhetskopi er beholdt.
+- Synkronisering er verifisert mellom Mac-appen og CloudKit. Mottak på en annen fysisk enhet er ikke kontrollert i denne økten.
+- Denne rettelsen krever ikke ny TestFlight-build. AI-kortene og den permanente migreringsrettelsen i kildekoden er fortsatt separate, upubliserte appendringer.
+
+
+## TestFlight 1.4.1 (20) – 16. november 2026
+
+- Release-arkiv med klikkbare AI-kort og gjenopprettede, selvstendige V3-modeller for sikker migrering av eldre databaser.
+- Versjon, buildnummer, bundle-ID og kodesignatur er kontrollert. Apples validering og opplasting besto uten feil.
+- Apple fullførte behandlingen. Krypteringsspørsmålet er besvart ut fra appens bruk av Apples innebygde funksjoner.
+- Norske testnotater er lagret. Gruppen `Internal` har build **1.4.1 (20)** med status **Testing** og én eksisterende tester.
+- Arkivet er lagret i Xcode Archives under `2026-11-16/SaldoPilot 1.4.1 (20).xcarchive`.
+- De tre relevante regresjonstestene for AI-kort og V2/V3-migrering besto før arkivering. Migrering er også kontrollert mot en kopi av den eksisterende Mac-databasen; originale data og backup er beholdt.
+- Ingen App Store-innsending er utført. TestFlight-installasjon av build 20 på brukerens enheter er ikke utført i denne økten.
+
+
+## Tekstregistrering med kontrollert utkast – 16. november 2026 (publisert i 1.5 build 21)
+
+- Ny post har handlingen «Fyll ut med tekst». Teksten tolkes til et redigerbart utkast for én post; dato, beløp, type, kategori og gjentakelse kan kontrolleres i det vanlige skjemaet.
+- Utkastet er en verditype uten databasekontekst. Lagre er sperret til kontrollbryteren er aktivert og obligatoriske felt er gyldige. Avbryting skriver ingenting. Ulagrede felt erstattes bare etter bekreftelse.
+- Tolking skjer på enheten med Apple Foundation Models når tilgjengelig og egnet for valgt språk; en lokal parser er reserve. Beløp og datoer tolkes deterministisk. Ingen ekstern AI-tjeneste brukes.
+- Flere beløp og utenlandsk valuta avvises. Manglende/uklare opplysninger markeres. Utkast starter alltid som ventende, også ved historiske datoer; brukeren velger eventuell betalt/mottatt-status selv.
+- Åtte målrettede tester besto: fem for tekstutkast og tre regresjonstester for AI-kort og V2/V3-migrering. Simulatorbygget besto.
+- iPhone 17 (1AC5CF22-4235-4E14-B4E8-244FC3B74F2C), isolert lokalt eksempellager: 26 poster før utkast, 26 etter utkast og avbryting, 27 etter godkjenning og eksplisitt lagring. Den ene nye posten hadde NOK 1249, forfall 25.11.2026, månedlig gjentakelse, ventende status og ingen betalingsdato.
+- Norsk eksempel og kontrollskjerm er visuelt kontrollert. Nye skjermtekster har norsk, engelsk og thai. Systemmodellen var ikke tilgjengelig på testmaskinen; reell AI-generering er derfor ikke runtime-verifisert, mens lokal reserve og validering av modellfelt er testet.
+- Ingen databaseskjemaendring og ingen produksjonsdata brukt. Endringen inngår ikke i den allerede opplastede TestFlight-builden 1.4.1 (20).
+
+
+## TestFlight 1.5 (21) – 16. november 2026
+
+- Registrering med vanlig språk, redigerbart utkast, eksplisitt godkjenning og eksisterende lagringsskjema inngår i Release-arkivet.
+- Versjon, buildnummer, bundle-ID, kodesignatur og krypteringsopplysning i Info.plist er kontrollert. Apples validering og opplasting besto uten feil.
+- Apple fullførte behandlingen. Norske testnotater for iPhone og Mac er lagret.
+- Gruppen `Internal` viser **1.5 (21)** med status **Testing**, én eksisterende tester og 90 dagers tilgjengelighet.
+- Arkiv: `2026-11-16/SaldoPilot 1.5 (21).xcarchive` i Xcode Archives. Detaljer og buildlenke er lagret i `AppStore/Release_1.5_21.json`.
+- Åtte relevante tester og isolert simulatorflyt var verifisert før arkivering. Faktisk TestFlight-installasjon og gjennomgang på brukerens iPhone og Mac gjenstår som eiertest.

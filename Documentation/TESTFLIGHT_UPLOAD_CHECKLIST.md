@@ -1,4 +1,34 @@
-# SaldoPilot 1.3 build 8 – TestFlight-opplasting
+# SaldoPilot 1.5 build 21 – TestFlight
+
+- [x] Release-arkiv 1.5 (21), riktig bundle-ID og kodesignatur kontrollert.
+- [x] Åtte målrettede tester bestått; utkast, godkjenning, avbryting og lagring kontrollert i isolert simulatorlager.
+- [x] Apples validering og opplasting fullført uten feil.
+- [x] Behandling fullført og krypteringsopplysning registrert i Info.plist.
+- [x] Norske testnotater for iPhone og Mac lagret.
+- [x] `Internal` viser **Testing** for 1.5 (21).
+- [ ] Oppdater via TestFlight på iPhone og Mac og gjennomfør eiertesten.
+
+Testinstruksjoner: `AppStore/TestFlight_1.5_21.txt`.
+Utgivelsesstatus og buildlenke: `AppStore/Release_1.5_21.json`.
+
+---
+
+## Historisk sjekkliste for 1.4.1 build 20
+
+- [x] Release-arkiv 1.4.1 (20), riktig bundle-ID og signatur kontrollert.
+- [x] Migrering og AI-kort verifisert med tre relevante regresjonstester.
+- [x] Nødvendige gjentakelsesfelt publisert til CloudKit Production.
+- [x] Apple-validering og opplasting fullført uten feil.
+- [x] Behandling fullført og krypteringsopplysninger avklart.
+- [x] Norske testnotater lagret og `Internal` viser status **Testing** for build 20.
+- [ ] Installer build 20 gjennom TestFlight på ønskede enheter og gjennomfør eiertesten.
+
+Endringsnotater: `AppStore/TestFlight_1.4.1_20.txt`.
+
+---
+
+## Historisk sjekkliste for 1.3 build 8
+
 
 ## Før Archive
 

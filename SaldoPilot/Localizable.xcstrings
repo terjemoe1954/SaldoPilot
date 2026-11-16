@@ -9476,6 +9476,502 @@
           }
         }
       }
+    },
+    "Add an electricity bill for 1249 kroner, due 25 November, every month." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg inn strømregning på 1249 kroner, forfall 25. november, hver måned."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ค่าไฟ 1249 NOK ครบกำหนด 25 พฤศจิกายน ทุกเดือน"
+          }
+        }
+      }
+    },
+    "Check the description, amount, type, category, dates and recurrence. Save creates the transaction only after your approval." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontroller beskrivelse, beløp, type, kategori, datoer og gjentakelse. Posten opprettes først når du har godkjent feltene og trykker Lagre."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตรวจสอบคำอธิบาย จำนวนเงิน ประเภท หมวดหมู่ วันที่ และการทำซ้ำ รายการจะถูกสร้างเมื่อคุณอนุมัติและกดบันทึกเท่านั้น"
+          }
+        }
+      }
+    },
+    "Check whether this is income or an expense." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontroller om dette er en inntekt eller utgift."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตรวจสอบว่าเป็นรายรับหรือรายจ่าย"
+          }
+        }
+      }
+    },
+    "Create draft" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lag utkast"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "สร้างร่าง"
+          }
+        }
+      }
+    },
+    "Creating draft…" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lager utkast …"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำลังสร้างร่าง…"
+          }
+        }
+      }
+    },
+    "Describe one transaction" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beskriv én post"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "อธิบายหนึ่งรายการ"
+          }
+        }
+      }
+    },
+    "Describe one transaction to create a draft." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beskriv én post for å lage et utkast."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "อธิบายหนึ่งรายการเพื่อสร้างร่าง"
+          }
+        }
+      }
+    },
+    "Draft created with local text recognition." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utkast laget med lokal teksttolking."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "สร้างร่างด้วยการตีความข้อความบนอุปกรณ์"
+          }
+        }
+      }
+    },
+    "Draft created with on-device AI." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utkast laget med AI på enheten."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "สร้างร่างด้วย AI บนอุปกรณ์"
+          }
+        }
+      }
+    },
+    "Example" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eksempel"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตัวอย่าง"
+          }
+        }
+      }
+    },
+    "Fill in with text" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fyll ut med tekst"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กรอกด้วยข้อความ"
+          }
+        }
+      }
+    },
+    "I have checked the fields below" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeg har kontrollert feltene nedenfor"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ฉันตรวจสอบข้อมูลด้านล่างแล้ว"
+          }
+        }
+      }
+    },
+    "Keep current fields" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behold feltene"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เก็บข้อมูลปัจจุบัน"
+          }
+        }
+      }
+    },
+    "New drafts start as pending. If already paid or received, check the status and payment date below." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye utkast starter som ventende. Hvis posten allerede er betalt eller mottatt, kontroller status og betalingsdato nedenfor."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ร่างใหม่มีสถานะรอดำเนินการ หากชำระหรือรับเงินแล้ว โปรดตรวจสอบสถานะและวันที่ชำระด้านล่าง"
+          }
+        }
+      }
+    },
+    "No due date found. Today is proposed; check or change the date below." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fant ingen forfallsdato. I dag er foreslått; kontroller eller endre datoen nedenfor."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่พบวันครบกำหนด จึงเสนอวันนี้ โปรดตรวจสอบหรือเปลี่ยนวันที่ด้านล่าง"
+          }
+        }
+      }
+    },
+    "No valid amount found. Enter the amount below." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fant ikke et gyldig beløp. Fyll inn beløpet nedenfor."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่พบจำนวนเงินที่ถูกต้อง โปรดกรอกจำนวนเงินด้านล่าง"
+          }
+        }
+      }
+    },
+    "No year was specified. The current year is proposed; check the date below." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Årstall mangler. Inneværende år er foreslått; kontroller datoen nedenfor."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่ได้ระบุปี จึงเสนอปีปัจจุบัน โปรดตรวจสอบวันที่ด้านล่าง"
+          }
+        }
+      }
+    },
+    "Replace unsaved fields?" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstatte ulagrede felt?"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แทนที่ข้อมูลที่ยังไม่บันทึกหรือไม่?"
+          }
+        }
+      }
+    },
+    "Review draft" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontroller utkast"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตรวจสอบร่าง"
+          }
+        }
+      }
+    },
+    "Several amounts were found. Describe one transaction with one amount at a time." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fant flere beløp. Beskriv én post med ett beløp om gangen."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "พบหลายจำนวนเงิน โปรดอธิบายครั้งละหนึ่งรายการที่มีจำนวนเงินเดียว"
+          }
+        }
+      }
+    },
+    "Text is processed on this device. On-device AI is used when available; otherwise local text recognition is used." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teksten behandles på denne enheten. Lokal AI brukes når den er tilgjengelig, ellers brukes enkel lokal teksttolking."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ข้อความจะประมวลผลบนอุปกรณ์นี้ ใช้ AI บนอุปกรณ์เมื่อพร้อมใช้งาน มิฉะนั้นจะใช้การตีความข้อความแบบพื้นฐานบนอุปกรณ์"
+          }
+        }
+      }
+    },
+    "The due date is unclear or invalid. Today is proposed; choose the correct date below." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfallsdatoen er uklar eller ugyldig. I dag er foreslått; velg riktig dato nedenfor."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "วันครบกำหนดไม่ชัดเจนหรือไม่ถูกต้อง จึงเสนอวันนี้ โปรดเลือกวันที่ที่ถูกต้องด้านล่าง"
+          }
+        }
+      }
+    },
+    "The new draft replaces the unsaved fields in this form. No stored transactions will change." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det nye utkastet erstatter de ulagrede feltene i dette skjemaet. Ingen lagrede poster endres."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ร่างใหม่จะแทนที่ข้อมูลที่ยังไม่บันทึกในแบบฟอร์มนี้ โดยไม่เปลี่ยนรายการที่บันทึกไว้แล้ว"
+          }
+        }
+      }
+    },
+    "The repeat interval is unclear. No recurrence is selected; check the interval below." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjentakelsen er uklar. Ingen gjentakelse er valgt; kontroller intervallet nedenfor."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รอบการทำซ้ำไม่ชัดเจน จึงยังไม่เลือกการทำซ้ำ โปรดตรวจสอบรอบด้านล่าง"
+          }
+        }
+      }
+    },
+    "This app records amounts in NOK. Convert foreign currency yourself and enter the NOK amount." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appen registrerer beløp i NOK. Regn om eventuell utenlandsk valuta selv og oppgi beløpet i NOK."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แอปบันทึกจำนวนเงินเป็น NOK โปรดแปลงเงินสกุลอื่นด้วยตนเองและระบุจำนวนเงินเป็น NOK"
+          }
+        }
+      }
+    },
+    "Use at most 500 characters." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk maksimalt 500 tegn."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้ไม่เกิน 500 ตัวอักษร"
+          }
+        }
+      }
+    },
+    "Use new draft" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk nytt utkast"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้ร่างใหม่"
+          }
+        }
+      }
+    },
+    "Use numbers for the amount. Include a description and a due date, and optionally a repeat interval." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skriv beløpet med tall. Ta med beskrivelse og forfallsdato, og eventuelt hvor ofte posten gjentas."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้ตัวเลขระบุจำนวนเงิน พร้อมคำอธิบายและวันครบกำหนด และระบุรอบการทำซ้ำได้"
+          }
+        }
+      }
+    },
+    "Write a transaction" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skriv en post"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เขียนรายการ"
+          }
+        }
+      }
+    },
+    "You will review an editable draft before saving. Nothing is saved automatically." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du får kontrollere og endre et utkast før lagring. Ingenting lagres automatisk."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คุณจะได้ตรวจสอบและแก้ไขร่างก่อนบันทึก ไม่มีการบันทึกอัตโนมัติ"
+          }
+        }
+      }
+    },
+    "Use example" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk eksempelet"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้ตัวอย่าง"
+          }
+        }
+      }
     }
   },
   "version" : "1.3"

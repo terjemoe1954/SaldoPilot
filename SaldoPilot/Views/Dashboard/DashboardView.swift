@@ -17,6 +17,7 @@ struct DashboardView: View {
     @State private var customStartDate = Calendar.current.currentMonthStart
     @State private var customEndDate = Calendar.current.currentMonthEnd
     @State private var isShowingAIQuery = false
+    @State private var selectedAIInsight: AIInsight?
 
     let onNewIncome: () -> Void
     let onNewExpense: () -> Void
@@ -56,9 +57,11 @@ struct DashboardView: View {
                         onRegisterPayment: onRegisterPayment
                     )
 
-                    AIInsightSection(insights: aiInsights) {
-                        isShowingAIQuery = true
-                    }
+                    AIInsightSection(
+                        insights: aiInsights,
+                        onAsk: { isShowingAIQuery = true },
+                        onSelect: { selectedAIInsight = $0 }
+                    )
 
                     DashboardAttentionSection(
                         items: attentionItems,
@@ -73,6 +76,9 @@ struct DashboardView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Overview")
+            .sheet(item: $selectedAIInsight) { insight in
+                AIInsightTransactionsView(insight: insight)
+            }
             .sheet(isPresented: $isShowingAIQuery) {
                 AIQueryView(transactions: activeTransactions.filter(\.isIncludedInOrdinaryCashFlow))
             }
@@ -572,6 +578,7 @@ private struct DashboardNextDueTile: View {
 private struct AIInsightSection: View {
     let insights: [AIInsight]
     let onAsk: () -> Void
+    let onSelect: (AIInsight) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -592,7 +599,16 @@ private struct AIInsightSection: View {
 
             VStack(spacing: 10) {
                 ForEach(insights) { insight in
-                    AIInsightRow(insight: insight)
+                    if insight.transactionIDs.isEmpty {
+                        AIInsightRow(insight: insight)
+                    } else {
+                        Button {
+                            onSelect(insight)
+                        } label: {
+                            AIInsightRow(insight: insight)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
         }
@@ -618,6 +634,14 @@ private struct AIInsightRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !insight.transactionIDs.isEmpty {
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -789,4 +813,48 @@ private extension Array where Element == Transaction {
         onRegisterPayment: {},
         onShowTransactions: { _ in }
     )
+}
+
+private struct AIInsightTransactionsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
+    @State private var editingTransaction: Transaction?
+
+    let insight: AIInsight
+
+    private var matchingTransactions: [Transaction] {
+        let ids = Set(insight.transactionIDs)
+        return transactions.filter { ids.contains($0.id) && !$0.isArchived && $0.status != .cancelled }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text(insight.message)
+                        .foregroundStyle(.secondary)
+                }
+                Section("Transactions") {
+                    ForEach(matchingTransactions, id: \.id) { transaction in
+                        Button {
+                            editingTransaction = transaction
+                        } label: {
+                            AIQueryTransactionRow(transaction: transaction)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .navigationTitle(Text(insight.title))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .sheet(item: $editingTransaction) { transaction in
+                TransactionFormView(transaction: transaction)
+            }
+        }
+    }
 }

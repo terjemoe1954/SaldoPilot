@@ -118,7 +118,7 @@ private struct AIQueryExampleButton: View {
     }
 }
 
-private struct AIQueryTransactionRow: View {
+struct AIQueryTransactionRow: View {
     let transaction: Transaction
 
     var body: some View {

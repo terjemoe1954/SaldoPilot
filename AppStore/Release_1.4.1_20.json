@@ -1,0 +1,18 @@
+{
+  "version": "1.4.1",
+  "build": "20",
+  "bundle_id": "com.terjemoe.SaldoPilot",
+  "validation": "passed",
+  "upload": "succeeded",
+  "testflight_processing": "complete",
+  "regression_tests": [
+    "insightTransactionLinks",
+    "migratesCopiedV2StoreToV4",
+    "migratesReleasedV3StoreToV4"
+  ],
+  "archive": "/Users/terjemoe/Library/Developer/Xcode/Archives/2026-11-16/SaldoPilot 1.4.1 (20).xcarchive",
+  "testflight_group": "Internal",
+  "testflight_status": "Testing",
+  "testflight_notes": "Norwegian notes saved",
+  "build_url": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/73455988-0a05-4970-9118-f9a08f01178c"
+}

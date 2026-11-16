@@ -14,6 +14,7 @@ struct AIInsight: Identifiable, Equatable {
     let message: String
     let systemImage: String
     let tint: Color
+    var transactionIDs: [UUID] = []
 }
 
 enum AIInsightEngine {
@@ -112,7 +113,8 @@ enum AIInsightEngine {
             title: "Financial situation",
             message: message,
             systemImage: "text.magnifyingglass",
-            tint: net >= 0 ? .green : .orange
+            tint: net >= 0 ? .green : .orange,
+            transactionIDs: currentTransactions.map(\.id)
         )
     }
 
@@ -146,7 +148,8 @@ enum AIInsightEngine {
             title: "Spending change",
             message: message,
             systemImage: "chart.line.uptrend.xyaxis",
-            tint: tint
+            tint: tint,
+            transactionIDs: transactions.filter { $0.type == .expense && (currentMonth.containsHalfOpen($0.dueDate) || previousMonth.containsHalfOpen($0.dueDate)) }.map(\.id)
         )
     }
 
@@ -167,7 +170,8 @@ enum AIInsightEngine {
             title: "Upcoming payments",
             message: localized("You have \(dueSoon.count) transactions totaling \(dueSoon.totalAmount.formattedCurrency) due in the next 7 days.", locale: locale),
             systemImage: "calendar.badge.clock",
-            tint: .red
+            tint: .red,
+            transactionIDs: dueSoon.map(\.id)
         )
     }
 
@@ -189,7 +193,8 @@ enum AIInsightEngine {
             title: "Possible recurring transaction",
             message: localized("\(firstTransaction.title) appears more than once with the same amount. It may be recurring.", locale: locale),
             systemImage: "repeat",
-            tint: .purple
+            tint: .purple,
+            transactionIDs: group.map(\.id)
         )
     }
 
@@ -207,7 +212,8 @@ enum AIInsightEngine {
             title: "Possible duplicate",
             message: localized("\(firstTransaction.title) appears more than once on the same date and amount.", locale: locale),
             systemImage: "doc.on.doc",
-            tint: .orange
+            tint: .orange,
+            transactionIDs: duplicates.map(\.id)
         )
     }
 
@@ -227,7 +233,8 @@ enum AIInsightEngine {
                     title: "Unusual amount",
                     message: localized("\(unusual.title) is much higher than similar registered expenses.", locale: locale),
                     systemImage: "exclamationmark.magnifyingglass",
-                    tint: .orange
+                    tint: .orange,
+                    transactionIDs: group.map(\.id)
                 )
             }
         }
@@ -252,7 +259,8 @@ enum AIInsightEngine {
             title: "Savings idea",
             message: localized("Review \(categoryName). It is your largest expense category this month at \(largest.amount.formattedCurrency).", locale: locale),
             systemImage: "scissors",
-            tint: .green
+            tint: .green,
+            transactionIDs: transactions.filter { $0.type == .expense && $0.category == largest.category && currentMonth.containsHalfOpen($0.dueDate) }.map(\.id)
         )
     }
 
@@ -267,7 +275,8 @@ enum AIInsightEngine {
                     title: "Suggested category",
                     message: localized("\(transaction.title) may fit the \(categoryName) category.", locale: locale),
                     systemImage: "tag",
-                    tint: .blue
+                    tint: .blue,
+                    transactionIDs: [transaction.id]
                 )
             }
         }
@@ -289,7 +298,8 @@ enum AIInsightEngine {
             title: "Weekly summary",
             message: localized("The last 7 days include \(income.formattedCurrency) in income and \(expenses.formattedCurrency) in expenses.", locale: locale),
             systemImage: "calendar",
-            tint: .blue
+            tint: .blue,
+            transactionIDs: recentTransactions.map(\.id)
         )
     }
 

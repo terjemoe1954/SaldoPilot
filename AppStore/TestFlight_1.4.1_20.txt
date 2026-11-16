@@ -1,0 +1,8 @@
+SaldoPilot 1.4.1 (20)
+
+• Trykk på kortene under AI-oppsummering for å se postene oppsummeringen bygger på.
+• Åpne og rediger en post direkte fra oppsummeringens postliste.
+• Rettet et oppstartskrasj på Mac ved oppgradering av eldre databaser. Eksisterende poster og budsjetter bevares.
+• iCloud-produksjonsskjemaet er oppdatert for gjentakende poster.
+
+Test gjerne AI-kortene, oppstart med eksisterende data og iCloud-synkronisering mellom enhetene dine.
