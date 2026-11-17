@@ -11183,6 +11183,16 @@
           }
         }
       }
+    },
+    "Only this transaction will be deleted. Other occurrences will be kept." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bare denne posten slettes. Andre forekomster beholdes."
+          }
+        }
+      }
     }
   },
   "version" : "1.3"

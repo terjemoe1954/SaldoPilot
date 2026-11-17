@@ -1,0 +1,13 @@
+Redigering og sletting i listen «Mulige duplikater».
+
+Test på iPhone, iPad og Mac:
+• Åpne «Mulig duplikat» fra AI-oppsummeringen.
+• Kontroller at hver post har blyant for redigering og papirkurv for sletting.
+• Trykk blyanten, endre en testpost og lagre. Kontroller at riktig post blir endret.
+• Avbryt redigering og kontroller at ingen endring lagres.
+• Trykk papirkurven og kontroller postnavn og beløp i bekreftelsen.
+• Avbryt sletting: begge postene skal fortsatt finnes.
+• Bekreft sletting av en testpost: bare den valgte posten skal fjernes. Andre forekomster i en gjentakelse skal beholdes.
+• La synkroniseringen fullføre og kontroller endringene på de andre enhetene.
+
+Ingen automatisk sletting eller sammenslåing av mulige duplikater.

@@ -1,0 +1,23 @@
+{
+  "app": "SaldoPilot",
+  "version": "1.9.3",
+  "build": "33",
+  "state": "testing",
+  "archive": "/Users/terjemoe/Library/Developer/Xcode/Archives/2026-11-17/saldopilot-1.9.3-33.xcarchive",
+  "changes": [
+    "Edit and delete controls in possible-duplicate list",
+    "Deletion confirmation identifies selected transaction",
+    "Deletion affects only the selected transaction"
+  ],
+  "verification": [
+    "iPad simulator build succeeded",
+    "Release archive succeeded",
+    "Upload succeeded",
+    "Edit form opens from duplicate list",
+    "Delete confirmation and cancellation checked with isolated test data"
+  ],
+  "cloudSchema": "unchanged",
+  "testerGroup": "Internal",
+  "testNotesSaved": true,
+  "buildURL": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/519f808a-ceab-452d-b244-a8b28b118e01"
+}

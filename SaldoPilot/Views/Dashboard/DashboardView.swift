@@ -822,9 +822,13 @@ private extension Array where Element == Transaction {
 
 private struct AIInsightTransactionsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
     @State private var editingTransaction: Transaction?
+    @State private var transactionPendingDeletion: Transaction?
+    @State private var isShowingDeleteConfirmation = false
+    @State private var isShowingDeletionError = false
 
     let insight: AIInsight
 
@@ -842,12 +846,53 @@ private struct AIInsightTransactionsView: View {
                 }
                 Section("Transactions") {
                     ForEach(matchingTransactions, id: \.id) { transaction in
-                        Button {
-                            editingTransaction = transaction
-                        } label: {
-                            AIQueryTransactionRow(transaction: transaction)
+                        HStack(spacing: 16) {
+                            Button {
+                                editingTransaction = transaction
+                            } label: {
+                                AIQueryTransactionRow(transaction: transaction)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            if insight.id == "duplicate" {
+                                Button {
+                                    editingTransaction = transaction
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                        .labelStyle(.iconOnly)
+                                        .frame(minWidth: 44, minHeight: 44)
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Edit")
+
+                                Button(role: .destructive) {
+                                    requestDelete(transaction)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                        .labelStyle(.iconOnly)
+                                        .frame(minWidth: 44, minHeight: 44)
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Delete")
+                            }
                         }
-                        .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if insight.id == "duplicate" {
+                                Button(role: .destructive) {
+                                    requestDelete(transaction)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                Button {
+                                    editingTransaction = transaction
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.orange)
+                            }
+                        }
                     }
                 }
             }
@@ -861,6 +906,41 @@ private struct AIInsightTransactionsView: View {
             .sheet(item: $editingTransaction) { transaction in
                 TransactionFormView(transaction: transaction)
             }
+            .confirmationDialog(
+                "Delete transaction?",
+                isPresented: $isShowingDeleteConfirmation,
+                titleVisibility: .visible,
+                presenting: transactionPendingDeletion
+            ) { transaction in
+                Button("Delete only this transaction", role: .destructive) {
+                    deleteOnlyThisTransaction(transaction)
+                }
+                Button("Cancel", role: .cancel) { transactionPendingDeletion = nil }
+            } message: { transaction in
+                Text("\(transaction.title) - \(transaction.amount.formattedCurrency)\n") + Text("Only this transaction will be deleted. Other occurrences will be kept.")
+            }
+            .alert("Could not delete transaction", isPresented: $isShowingDeletionError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("The deletion was not saved. The transaction has been restored. Check the connection and try again.")
+            }
         }
     }
+
+    private func requestDelete(_ transaction: Transaction) {
+        transactionPendingDeletion = transaction
+        isShowingDeleteConfirmation = true
+    }
+
+    private func deleteOnlyThisTransaction(_ transaction: Transaction) {
+        modelContext.delete(transaction)
+        transactionPendingDeletion = nil
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            isShowingDeletionError = true
+        }
+    }
+
 }
