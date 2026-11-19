@@ -11193,6 +11193,136 @@
           }
         }
       }
+    },
+    "Edit payment date" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endre betalingsdato"
+          }
+        }
+      }
+    },
+    "Mark received" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marker mottatt"
+          }
+        }
+      }
+    },
+    "The due date is kept. Choose the date the payment should be recorded on." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfallsdatoen beholdes. Velg datoen betalingen skal registreres på."
+          }
+        }
+      }
+    },
+    "Custom interval" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valgt intervall"
+          }
+        }
+      }
+    },
+    "All dates" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle datoer"
+          }
+        }
+      }
+    },
+    "From date" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra dato"
+          }
+        }
+      }
+    },
+    "To date" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Til dato"
+          }
+        }
+      }
+    },
+    "The end date must be on or after the start date." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Til-dato må være samme dag som eller etter fra-dato."
+          }
+        }
+      }
+    },
+    "Includes only unpaid bills with a due date in the selected period, both overdue and upcoming." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viser bare ubetalte regninger med forfall i valgt periode, både forfalte og kommende."
+          }
+        }
+      }
+    },
+    "Unpaid bills in the selected period are sorted by due date, with the oldest first." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubetalte regninger i valgt periode vises etter forfallsdato, med den eldste først."
+          }
+        }
+      }
+    },
+    "No unpaid bills have a due date in the selected period." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen ubetalte regninger har forfall i valgt periode."
+          }
+        }
+      }
+    },
+    "Print unpaid checklist" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skriv ut sjekkliste for ubetalte regninger"
+          }
+        }
+      }
+    },
+    "Unpaid checklist" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubetalte regninger - sjekkliste"
+          }
+        }
+      }
     }
   },
   "version" : "1.3"

@@ -1,0 +1,18 @@
+{
+  "app": "SaldoPilot",
+  "version": "1.9.4",
+  "build": "34",
+  "state": "testing",
+  "archive": "/Users/terjemoe/Library/Developer/Xcode/Archives/2026-11-17/saldopilot-1.9.4-34.xcarchive",
+  "cloudSchema": "unchanged",
+  "checks": [
+    "payment settlement regression passed",
+    "iPad UI date selection, cancel, save and reopen verified",
+    "simulator build succeeded",
+    "signed release archive succeeded",
+    "App Store Connect upload succeeded"
+  ],
+  "testerGroup": "Internal",
+  "testNotesSaved": true,
+  "buildURL": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/2e5d06fd-e2fa-4900-b0c3-a86d1430b227"
+}

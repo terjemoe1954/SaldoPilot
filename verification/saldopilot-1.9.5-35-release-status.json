@@ -1,0 +1,19 @@
+{
+  "app": "SaldoPilot",
+  "version": "1.9.5",
+  "build": "35",
+  "state": "testing",
+  "archive": "/Users/terjemoe/Library/Developer/Xcode/Archives/2026-11-19/saldopilot-1.9.5-35.xcarchive",
+  "cloudSchema": "unchanged",
+  "verification": [
+    "32 isolated tests passed",
+    "date interval and unpaid-only filtering passed",
+    "PDF boundary sizes and pagination passed",
+    "iPad period selection, totals, report shortcut and print preview checked",
+    "signed release archive succeeded",
+    "TestFlight Internal group shows Testing"
+  ],
+  "testerGroup": "Internal",
+  "testNotesSaved": true,
+  "buildURL": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/a26035e3-b455-478e-bbdc-a7ab298fd2ea"
+}

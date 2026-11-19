@@ -407,10 +407,40 @@ struct UnpaidBillsView: View {
     @State private var isShowingSaveError = false
     @State private var isShowingPrintError = false
 
+    @State private var selectedPeriod = UnpaidBillsPeriod.thisMonth
+    @State private var startDate = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+    @State private var endDate: Date = {
+        let calendar = Calendar.current
+        let end = calendar.dateInterval(of: .month, for: .now)?.end ?? .now
+        return calendar.date(byAdding: .day, value: -1, to: end) ?? end
+    }()
+
     let scope: UnpaidBillsScope
 
     var body: some View {
         List {
+            if scope == .allUnpaid {
+                Section {
+                    Picker("Period", selection: $selectedPeriod) {
+                        Text("This month").tag(UnpaidBillsPeriod.thisMonth)
+                        Text("Custom interval").tag(UnpaidBillsPeriod.custom)
+                        Text("All dates").tag(UnpaidBillsPeriod.allDates)
+                    }
+                    if selectedPeriod == .custom {
+                        DatePicker("From date", selection: $startDate, displayedComponents: .date)
+                        DatePicker("To date", selection: $endDate, displayedComponents: .date)
+                        if !isValidPeriod {
+                            Text("The end date must be on or after the start date.").foregroundStyle(.red)
+                        }
+                    } else if selectedPeriod == .thisMonth {
+                        Text(Date.now, format: .dateTime.month(.wide).year())
+                    }
+                } header: {
+                    Text("Period")
+                } footer: {
+                    Text("Includes only unpaid bills with a due date in the selected period, both overdue and upcoming.")
+                }
+            }
             Section {
                 LabeledContent("Bills", value: unpaidBills.count.formatted())
                 LabeledContent("Total", value: totalAmount.formattedCurrency)
@@ -420,7 +450,7 @@ struct UnpaidBillsView: View {
                 if scope == .overdueOnly {
                     Text("The oldest overdue bill is shown first.")
                 } else {
-                    Text("All unpaid bills are sorted by due date, with the oldest first.")
+                    Text("Unpaid bills in the selected period are sorted by due date, with the oldest first.")
                 }
             }
 
@@ -428,15 +458,15 @@ struct UnpaidBillsView: View {
                 ContentUnavailableView(
                     "No unpaid bills",
                     systemImage: "checkmark.circle",
-                    description: Text("Everything in this list has been paid.")
+                    description: Text(scope == .overdueOnly ? "Everything in this list has been paid." : "No unpaid bills have a due date in the selected period.")
                 )
             } else {
-                if !overdueBills.isEmpty {
+                if !unpaidBills.isEmpty {
                     Section {
                         Button {
-                            printOverdueChecklist()
+                            printChecklist()
                         } label: {
-                            Label("Print overdue checklist", systemImage: "printer")
+                            Label(scope == .overdueOnly ? "Print overdue checklist" : "Print unpaid checklist", systemImage: "printer")
                         }
                     } header: {
                         Text("Printable checklist")
@@ -473,32 +503,32 @@ struct UnpaidBillsView: View {
         }
     }
 
+    private var isValidPeriod: Bool {
+        selectedPeriod != .custom || Calendar.current.startOfDay(for: startDate) <= Calendar.current.startOfDay(for: endDate)
+    }
+
+    private var periodDescription: String {
+        guard let interval = UnpaidBillsSelection.interval(period: selectedPeriod, start: startDate, end: endDate) else {
+            return String(localized: "All dates", locale: locale)
+        }
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("d MMM yyyy")
+        let lastDay = Calendar.current.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
+        return formatter.string(from: interval.start) + " - " + formatter.string(from: lastDay)
+    }
+
     private var unpaidBills: [Transaction] {
-        let today = Calendar.current.startOfDay(for: .now)
-        return transactions
-            .filter { transaction in
-                let isUnpaidBill = transaction.type == .expense
-                    && transaction.status == .pending
-                    && !transaction.isCompleted
-                    && !transaction.isArchived
-                guard isUnpaidBill else { return false }
-                return scope == .allUnpaid || transaction.dueDate < today
-            }
-            .sorted { $0.dueDate < $1.dueDate }
+        UnpaidBillsSelection.bills(from: transactions, overdueOnly: scope == .overdueOnly, period: selectedPeriod, start: startDate, end: endDate)
     }
 
     private var totalAmount: Decimal {
         unpaidBills.reduce(.zero) { $0 + $1.amount }
     }
 
-    private var overdueBills: [Transaction] {
-        let today = Calendar.current.startOfDay(for: .now)
-        return unpaidBills.filter { $0.dueDate < today }
-    }
-
     @MainActor
-    private func printOverdueChecklist() {
-        let reportTransactions = overdueBills.map { transaction in
+    private func printChecklist() {
+        let reportTransactions = unpaidBills.map { transaction in
             ReportTransaction(
                 transaction: transaction,
                 transactionDate: transaction.dueDate,
@@ -511,11 +541,13 @@ struct UnpaidBillsView: View {
         }
 
         do {
-            let url = try ReportPDFService.makeOverdueChecklist(
-                transactions: reportTransactions,
-                locale: locale
-            )
-            ReportPDFService.printReport(at: url, jobName: String(localized: "Overdue checklist"))
+            let url: URL
+            if scope == .overdueOnly {
+                url = try ReportPDFService.makeOverdueChecklist(transactions: reportTransactions, locale: locale)
+            } else {
+                url = try ReportPDFService.makeUnpaidChecklist(transactions: reportTransactions, locale: locale, periodDescription: periodDescription)
+            }
+            ReportPDFService.printReport(at: url, jobName: String(localized: scope == .overdueOnly ? "Overdue checklist" : "Unpaid checklist", locale: locale))
         } catch {
             isShowingPrintError = true
         }

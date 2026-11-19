@@ -33,6 +33,15 @@ enum ReportPDFService {
         transactions: [ReportTransaction],
         locale: Locale
     ) throws -> URL {
+        try makeChecklist(transactions: transactions, locale: locale, title: ReportStrings(locale: locale).overdueChecklist, periodDescription: nil, filenamePrefix: "Overdue")
+    }
+
+    static func makeUnpaidChecklist(transactions: [ReportTransaction], locale: Locale, periodDescription: String) throws -> URL {
+        let unpaid = transactions.filter { $0.type == .expense && ($0.status == .pending || $0.status == .overdue) }
+        return try makeChecklist(transactions: unpaid, locale: locale, title: ReportStrings(locale: locale).unpaidChecklist, periodDescription: periodDescription, filenamePrefix: "Unpaid")
+    }
+
+    private static func makeChecklist(transactions: [ReportTransaction], locale: Locale, title: String, periodDescription: String?, filenamePrefix: String) throws -> URL {
         let strings = ReportStrings(locale: locale)
         let pageBounds = CGRect(x: 0, y: 0, width: 595, height: 842)
         let margin: CGFloat = 32
@@ -59,12 +68,15 @@ enum ReportPDFService {
                 context.cgContext.fill(pageBounds)
                 pageNumber += 1
 
-                draw(strings.overdueChecklist, rect: CGRect(x: margin, y: margin, width: contentWidth, height: 28), font: .boldSystemFont(ofSize: 20))
+                draw(title, rect: CGRect(x: margin, y: margin, width: contentWidth, height: 28), font: .boldSystemFont(ofSize: 20))
                 draw("\(strings.generated): \(Date.now.formatted(date: .abbreviated, time: .shortened))", rect: CGRect(x: margin, y: margin + 31, width: contentWidth, height: 16), font: .systemFont(ofSize: 9), color: .darkGray)
                 draw("\(strings.count): \(sortedTransactions.count)    \(strings.total): \(currency(totalAmount, formatter: currencyFormatter))", rect: CGRect(x: margin, y: margin + 47, width: contentWidth, height: 16), font: .systemFont(ofSize: 9), color: .darkGray)
                 draw("\(strings.page) \(pageNumber)", rect: CGRect(x: margin, y: margin, width: contentWidth, height: 16), font: .systemFont(ofSize: 9), color: .darkGray, alignment: .right)
 
-                var y = margin + 73
+                if let periodDescription {
+                    draw("\(strings.period): \(periodDescription)", rect: CGRect(x: margin, y: margin + 63, width: contentWidth, height: 16), font: .systemFont(ofSize: 9), color: .darkGray)
+                }
+                var y = margin + (periodDescription == nil ? 73 : 89)
                 context.cgContext.setFillColor(UIColor(white: 0.86, alpha: 1).cgColor)
                 context.cgContext.fill(CGRect(x: margin, y: y, width: contentWidth, height: 24))
                 draw(strings.paid, rect: CGRect(x: margin + 4, y: y + 6, width: 34, height: 14), font: .boldSystemFont(ofSize: 8))
@@ -97,7 +109,7 @@ enum ReportPDFService {
         }
 
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SaldoPilot-Overdue-Checklist-\(fileDay(from: .now)).pdf")
+            .appendingPathComponent("SaldoPilot-\(filenamePrefix)-Checklist-\(fileDay(from: .now))-\(UUID().uuidString).pdf")
         try data.write(to: url, options: .atomic)
         return url
     }
@@ -480,6 +492,7 @@ private struct ReportStrings {
     var expensesUnpaid: String { languageCode == "nb" ? "Utgift ubetalt" : languageCode == "th" ? "รายจ่ายที่ยังไม่จ่าย" : "Expenses unpaid" }
     var page: String { languageCode == "nb" ? "Side" : languageCode == "th" ? "หน้า" : "Page" }
     var overdueChecklist: String { languageCode == "nb" ? "Forfalte poster – avkrysningsliste" : languageCode == "th" ? "รายการเกินกำหนด – รายการตรวจสอบ" : "Overdue transactions – checklist" }
+    var unpaidChecklist: String { languageCode == "nb" ? "Ubetalte regninger - avkrysningsliste" : languageCode == "th" ? "รายการใบเรียกเก็บเงินที่ยังไม่ชำระ" : "Unpaid bills - checklist" }
     var paid: String { languageCode == "nb" ? "Betalt" : languageCode == "th" ? "จ่ายแล้ว" : "Paid" }
     var dueDate: String { languageCode == "nb" ? "Forfallsdato" : languageCode == "th" ? "วันครบกำหนด" : "Due date" }
     var total: String { languageCode == "nb" ? "Totalt" : languageCode == "th" ? "รวม" : "Total" }

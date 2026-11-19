@@ -1,0 +1,15 @@
+Rapport over ubetalte regninger med periodevalg og utskrift.
+
+Åpne Innstillinger → Rapporter → Ubetalte regninger, eller bruk snarveien i Poster.
+
+Test på iPhone, iPad og Mac:
+• Denne måneden: kontroller antall, totalsum og forfallsdatoer mot de ubetalte regningene dine.
+• Valgt intervall: velg fra- og til-dato. Regninger på begge grensedatoene skal være med; neste dag skal være utenfor.
+• Alle datoer: kontroller at ubetalte regninger utenfor denne måneden også vises.
+• Betalte, fullførte, arkiverte og kansellerte poster samt ventende inntekter skal ikke vises.
+• Skriv ut sjekklisten og kontroller overskrift, valgt periode, totalsum og avkrysningsbokser. Oppsettet er det samme som for forfalte regninger.
+• Kontroller sideskift dersom listen fyller flere sider.
+• Utskrift og periodevalg skal ikke endre poster eller betalingsstatus.
+• Kontroller at den eksisterende rapporten over forfalte regninger fortsatt fungerer.
+
+Kun ubetalte utgifter/regninger tas med. Avkrysningsboksene på papiret endrer ikke data i appen.

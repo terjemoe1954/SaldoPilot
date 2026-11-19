@@ -6,6 +6,16 @@ import Testing
 
 @MainActor
 struct SaldoPilotTests {
+    @Test("Unpaid bill checklist uses inclusive date boundaries and excludes settled, archived, cancelled and income rows")
+    func unpaidBillChecklist() throws {
+        try UnpaidBillsReportVerification.run()
+    }
+
+    @Test("Payment date selection preserves due dates and does not duplicate recurrence on repeated saves")
+    func paymentDateSelection() throws {
+        try TransactionSettlementVerification.run()
+    }
+
     @Test("Final audit preserves independent recurrence series and restores duplicate category definitions safely")
     func stabilityAudit() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("SaldoPilot-Stability-" + UUID().uuidString)

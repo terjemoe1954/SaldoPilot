@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "published": true,
+  "productionDataModified": false,
+  "checks": [
+    "Default payment date uses stored paidDate, otherwise dueDate",
+    "User selects a different payment date before saving",
+    "Cancel leaves record unchanged",
+    "Saving expense sets paid and completed",
+    "Saving income sets received and completed",
+    "Due date and amount are unchanged",
+    "Repeated save does not create another recurrence",
+    "Cancelled records protected",
+    "Reload preserves payment date",
+    "iPad UI: circle opens date sheet, selected date persists, paid checkmark reopens stored date"
+  ],
+  "uiTestStore": "local isolated screenshot data; no CloudKit",
+  "testFlight": "1.9.4 (34)"
+}

@@ -1,0 +1,13 @@
+Betalingssirkel og valg av betalingsdato i «Poster».
+
+Test på iPhone, iPad og Mac:
+• Trykk den tomme sirkelen ved en ubetalt testpost. Kontroller postnavn, beløp og foreslått betalingsdato.
+• Betalingsdato foreslås fra registrert betalingsdato, ellers forfallsdatoen. Velg en annen dato og bekreft «Marker betalt».
+• Kontroller at posten får grønn hake, og at beløp og forfallsdato er uendret.
+• Trykk den grønne haken igjen. Den lagrede betalingsdatoen skal vises og kunne korrigeres.
+• Avbryt et datovalg: ingen endringer skal lagres.
+• Test en inntekt: den skal merkes mottatt med valgt mottaksdato.
+• Test en gjentakende post: første betaling skal opprette neste forekomst én gang. Korrigering av betalingsdato eller gjentatt lagring skal ikke lage flere forekomster.
+• Vent til synkroniseringen er ferdig og kontroller betalingsstatus og dato på de andre enhetene.
+
+Ingen data skal slettes for å gjennomføre denne testen.

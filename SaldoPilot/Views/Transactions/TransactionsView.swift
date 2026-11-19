@@ -21,6 +21,7 @@ struct TransactionsView: View {
     @State private var advancedFilter = TransactionAdvancedFilter()
     @State private var searchText = ""
     @State private var editingTransaction: Transaction?
+    @State private var paymentTransaction: Transaction?
     @State private var transactionPendingDeletion: Transaction?
     @State private var isShowingAdvancedFilter = false
     @State private var isShowingDeleteConfirmation = false
@@ -62,20 +63,36 @@ struct TransactionsView: View {
                 } else {
                     List {
                         ForEach(filteredTransactions, id: \.id) { transaction in
-                            NavigationLink {
-                                TransactionDetailView(transaction: transaction)
-                            } label: {
-                                TransactionRowView(
-                                    transaction: transaction,
-                                    showsCompletedStatus: showCompletedStatus
-                                )
+                            HStack(spacing: 8) {
+                                Button {
+                                    paymentTransaction = transaction
+                                } label: {
+                                    Image(systemName: transaction.isSettled ? "checkmark.circle.fill" : "circle")
+                                        .font(.title2)
+                                        .foregroundStyle(transaction.isSettled ? Color.green : Color.secondary)
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(transaction.status == .cancelled || transaction.isArchived)
+                                .accessibilityLabel(transaction.isSettled ? Text("Edit payment date") : transaction.type == .income ? Text("Mark received") : Text("Mark paid"))
+                                .accessibilityValue(Text(transaction.effectiveStatus.title))
+
+                                NavigationLink {
+                                    TransactionDetailView(transaction: transaction)
+                                } label: {
+                                    TransactionRowView(
+                                        transaction: transaction,
+                                        showsCompletedStatus: showCompletedStatus
+                                    )
+                                }
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 if !transaction.isSettled {
                                     Button {
-                                        markCompleted(transaction)
+                                        paymentTransaction = transaction
                                     } label: {
-                                        Label("Mark paid", systemImage: "checkmark.circle")
+                                        Label(transaction.type == .income ? "Mark received" : "Mark paid", systemImage: "checkmark.circle")
                                     }
                                     .tint(.green)
                                 }
@@ -111,6 +128,12 @@ struct TransactionsView: View {
             .searchable(text: $searchText, prompt: "Search transactions")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
+                    NavigationLink {
+                        UnpaidBillsView(scope: .allUnpaid)
+                    } label: {
+                        Label("Unpaid bills", systemImage: "checklist")
+                    }
+
                     Button {
                         newTransactionAction?()
                     } label: {
@@ -126,6 +149,9 @@ struct TransactionsView: View {
             }
             .sheet(item: $editingTransaction) { transaction in
                 TransactionFormView(transaction: transaction)
+            }
+            .sheet(item: $paymentTransaction) { transaction in
+                TransactionPaymentSheet(transaction: transaction)
             }
             .confirmationDialog(
                 "Delete transaction?",
@@ -244,25 +270,6 @@ struct TransactionsView: View {
         let defaultDateType = AppDefaultDateType(rawValue: defaultDateTypeRawValue) ?? .dueDate
         advancedFilter.period = TransactionDatePeriod(defaultPeriod: defaultPeriod)
         advancedFilter.dateType = TransactionFilterDateType(rawValue: defaultDateType.rawValue) ?? .dueDate
-    }
-
-    private func markCompleted(_ transaction: Transaction) {
-        guard !transaction.isSettled else { return }
-        complete(transaction)
-    }
-
-    private func complete(_ transaction: Transaction) {
-        transaction.paidDate = .now
-        transaction.isCompleted = true
-        transaction.status = transaction.type == .income ? .received : .paid
-        transaction.markUpdated()
-        do {
-            try RecurrenceService.insertNextOccurrenceIfNeeded(after: transaction, in: modelContext)
-            try modelContext.save()
-        } catch {
-            modelContext.rollback()
-            isShowingSaveError = true
-        }
     }
 
     private func duplicate(_ transaction: Transaction) {

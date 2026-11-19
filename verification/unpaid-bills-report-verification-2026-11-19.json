@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "published": true,
+  "productionDataModified": false,
+  "testSuite": {
+    "tests": 32,
+    "failures": 0
+  },
+  "checks": [
+    "Only unpaid expense rows; includes pending and explicit overdue status",
+    "Settled, completed, archived, cancelled and income rows excluded",
+    "This month, custom inclusive end day and all-dates selection",
+    "Invalid ranges return no rows",
+    "DST boundary preserves the whole selected calendar day",
+    "PDF generation for 0, 1, 24, 25 and 70 bills; last row retained and multipage verified",
+    "Existing overdue checklist reuses unchanged table layout",
+    "iPad UI: Reports route, period choices, custom date selection and print preview",
+    "iPad UI: same report opens from Transactions toolbar"
+  ],
+  "uiSample": {
+    "monthCount": 6,
+    "monthTotal": "8178.00",
+    "customEnd": "2026-11-23",
+    "customCount": 3,
+    "customTotal": "3379.00"
+  },
+  "changesDoNotRequireCloudSchema": true,
+  "testFlight": "1.9.5 (35)"
+}
