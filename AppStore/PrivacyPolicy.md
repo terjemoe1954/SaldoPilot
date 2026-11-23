@@ -1,12 +1,12 @@
 # SaldoPilot Privacy Policy
 
-Last updated: 2026-10-14
+Last updated: 2026-11-23
 
 SaldoPilot is a personal finance app for tracking income, expenses, due dates, categories, recurring transactions, reminders, backups, and local financial summaries.
 
 ## Data Stored by the App
 
-SaldoPilot stores the financial data you enter, including transaction titles, amounts, dates, status, categories, recurrence rules, notes, settings, language choice, and notification preferences.
+SaldoPilot stores the financial data you enter, including transaction titles, amounts, dates, status, categories, recurrence rules, notes, savings goals (name, target amount, saved amount and optional target date), import history used to identify previously imported records, settings, language choice, and notification preferences.
 
 SaldoPilot does not require a SaldoPilot account.
 
@@ -36,16 +36,14 @@ SaldoPilot can schedule local notifications for due dates and pending income rem
 
 ## Import, Export, and Reports
 
-SaldoPilot can import and export files when you explicitly choose those actions. A JSON backup can contain transactions, budgets, relevant app settings, notes, and recurrence rules. A CSV export contains transaction data for use in spreadsheet apps.
+SaldoPilot can import and export files when you explicitly choose those actions. A JSON backup can contain transactions, budgets, custom categories, savings goals, import history, relevant app settings, notes, and recurrence rules. A CSV export contains transaction data for use in spreadsheet apps.
 
 SaldoPilot can also create PDF reports containing selected transaction data and financial totals. JSON, CSV, and PDF files are created locally. The app opens Apple's system share or print interface, and you choose whether and where to save, share, or print a file.
 
 Exported files may contain sensitive financial data, so share and store them carefully. Purchase status and consent for possible future external AI processing are not included in backups.
 
-## Support
+## Contact and Support
 
-For support, use the GitHub issues page for this project:
-
-https://github.com/terjemoe1954/SaldoPilot/issues
+For private support or privacy questions, email terjemoe54@hotmail.com. You may also report general problems at https://github.com/terjemoe1954/SaldoPilot/issues
 
 Do not include private financial details in public issues. Use general examples or anonymized amounts when possible.
