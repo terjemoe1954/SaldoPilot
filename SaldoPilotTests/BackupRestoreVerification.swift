@@ -14,7 +14,7 @@ enum BackupRestoreVerification {
         if try !condition() { throw Failure(description: message) }
     }
     static func store(_ url: URL) throws -> ModelContainer {
-        let schema = Schema(SaldoPilotSchemaV6.models)
+        let schema = Schema(SaldoPilotSchemaV7.models)
         return try ModelContainer(for: schema, configurations: [
             ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
         ])

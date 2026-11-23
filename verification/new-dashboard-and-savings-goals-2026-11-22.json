@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-22",
+  "feature": "New responsive dashboard, bills and savings goals",
+  "release": {
+    "version": "1.10.0",
+    "build": "36",
+    "publishedToTestFlight": true,
+    "state": "testing",
+    "buildURL": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/79e37538-8e2f-437f-971b-b7e29610d585"
+  },
+  "implemented": [
+    "Responsive single/two-column dashboard with bounded desktop width",
+    "Existing financial summary and payday forecast retained",
+    "Overdue expense bills and upcoming seven-day window with payment-date sheet and transaction details",
+    "Savings goal creation, editing, optional target date, progress and soft deletion",
+    "V6 to V7 additive SwiftData migration; existing released schemas unchanged",
+    "Backup format 7 with deduplicated goals and tombstones; repeat merge preserves local goals; older backups preserve goals",
+    "Insight sentences honor the selected app language",
+    "Old automatic overdue popup replaced by visible dashboard section"
+  ],
+  "validation": {
+    "iOSSimulatorBuild": "passed",
+    "macDesignedForIPadBuild": "passed, unsigned, not launched against user data",
+    "swiftTesting": {
+      "tests": 33,
+      "failures": 0,
+      "resultBundle": "/tmp/saldopilot-home-final.xcresult"
+    },
+    "newTests": [
+      "Exact V6 store migration retains transactions, recurrence series, budgets, category policy and receipts",
+      "Bill date boundaries and exclusion of paid, archived, cancelled and income",
+      "Goal creation, editing, logical deduplication, deletion tombstone and unchanged transactions",
+      "Lossless goal backup dates, repeated import, merge preserving local edits, explicit replace, invalid payload atomic rejection and old backup preservation"
+    ],
+    "iPadVisual": "Observed correct two-column dashboard and localized content with isolated screenshot data",
+    "interactiveUI": "Device Hub input failed with invalid element IDs and AXError.cannotComplete; no successful full UI interaction claimed",
+    "iPhone": "Installed and launched in isolated screenshot mode; manual visual/interaction check still required",
+    "productionUserDataTouched": false
+  },
+  "beforeTestFlight": [],
+  "cloudKitSchema": {
+    "state": "deployedToProduction",
+    "date": "2026-11-22",
+    "addedRecordType": "CD_SavingsGoal",
+    "existingTypesChanged": false
+  },
+  "userAcceptanceTests": [
+    "Regninger, betalingsdato og prognose på iPhone, iPad og Mac",
+    "Sparemål: opprett, endre og slett; kontroller synk på alle tre enheter",
+    "Sikkerhetskopi og gjentatt sammenslåing uten doble mål"
+  ]
+}

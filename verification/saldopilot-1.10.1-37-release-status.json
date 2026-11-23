@@ -1,0 +1,30 @@
+{
+  "app": "SaldoPilot",
+  "version": "1.10.1",
+  "build": "37",
+  "date": "2026-11-23",
+  "state": "testing",
+  "archive": "/Users/terjemoe/Library/Developer/Xcode/Archives/2026-11-23/saldopilot-1.10.1-37.xcarchive",
+  "cloudSchema": "unchanged; uses the schema already deployed for 1.10.0",
+  "verification": [
+    "34 isolated tests passed",
+    "iOS and Mac builds passed",
+    "Early payout date changes forecast boundary without moving normal January recurrence or inserting records",
+    "iPad UI count/action ordering, explanation, date picker and cancel flow verified",
+    "Signed release archive succeeded",
+    "Internal group Build 1.10.1 (37) shows Testing",
+    "Norwegian What to Test saved"
+  ],
+  "features": [
+    "Actions below overview on every layout",
+    "Active transaction count in selected period",
+    "Savings goals below AI insights",
+    "Clear forecast totals, selected payout name and recurrence estimates",
+    "Change date for one selected payout while retaining normal recurrence day"
+  ],
+  "testNotesPrepared": true,
+  "testerGroup": "Internal",
+  "testNotesSaved": true,
+  "buildURL": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/3b4d6c9f-6f9b-4eca-b08e-69c0eb2f09f8",
+  "uploadResult": "Upload succeeded / EXPORT SUCCEEDED"
+}

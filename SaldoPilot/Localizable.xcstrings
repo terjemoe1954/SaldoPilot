@@ -1188,7 +1188,7 @@
       "localizations" : {
         "nb" : {
           "stringUnit" : {
-            "state" : "machine_translated",
+            "state" : "translated",
             "value" : "Regninger"
           }
         },
@@ -5777,7 +5777,7 @@
       "localizations" : {
         "nb" : {
           "stringUnit" : {
-            "state" : "machine_translated",
+            "state" : "translated",
             "value" : "Navn"
           }
         },
@@ -6097,7 +6097,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neste lønn"
+            "value" : "Neste lønn eller pensjon"
           }
         }
       }
@@ -6941,7 +6941,7 @@
       "localizations" : {
         "nb" : {
           "stringUnit" : {
-            "state" : "machine_translated",
+            "state" : "translated",
             "value" : "Forfalte regninger"
           }
         },
@@ -8585,7 +8585,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Velg neste lønn for å se forventede inntekter minus utgifter."
+            "value" : "Velg neste lønn eller pensjon for å se forventede inntekter minus utgifter."
           }
         }
       }
@@ -10440,7 +10440,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ubetalte regninger til og med lønningsdagen"
+            "value" : "Ubetalte regninger til og med utbetalingsdagen"
           }
         }
       }
@@ -10462,7 +10462,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Frem til neste lønn"
+            "value" : "Frem til neste lønn eller pensjon"
           }
         }
       }
@@ -11320,6 +11320,677 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ubetalte regninger - sjekkliste"
+          }
+        }
+      }
+    },
+    "Your overview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din oversikt"
+          }
+        }
+      }
+    },
+    "Savings goals" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparemål"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg til"
+          }
+        }
+      }
+    },
+    "What would you like to save for?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hva vil du spare til?"
+          }
+        }
+      }
+    },
+    "Create a buffer, a holiday fund or another savings goal." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opprett en buffer, feriesparing eller et annet sparemål."
+          }
+        }
+      }
+    },
+    "Create savings goal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opprett sparemål"
+          }
+        }
+      }
+    },
+    "Goals are tracked separately and do not change income, expenses or the forecast." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparemål føres separat og endrer ikke inntekter, utgifter eller prognosen."
+          }
+        }
+      }
+    },
+    "%@ remaining" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ igjen"
+          }
+        }
+      }
+    },
+    "Goal details" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Måldetaljer"
+          }
+        }
+      }
+    },
+    "Target amount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Målbeløp"
+          }
+        }
+      }
+    },
+    "Saved so far" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spart hittil"
+          }
+        }
+      }
+    },
+    "Target date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Måldato"
+          }
+        }
+      }
+    },
+    "Enter the total saved for this goal. This does not register a payment or move money." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppgi samlet beløp spart til dette målet. Dette registrerer ingen betaling og flytter ingen penger."
+          }
+        }
+      }
+    },
+    "Delete savings goal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slett sparemål"
+          }
+        }
+      }
+    },
+    "New savings goal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt sparemål"
+          }
+        }
+      }
+    },
+    "Edit savings goal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rediger sparemål"
+          }
+        }
+      }
+    },
+    "Only the savings goal is removed. Transactions and amounts are kept." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bare sparemålet fjernes. Poster og beløp beholdes."
+          }
+        }
+      }
+    },
+    "Could not save savings goal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke lagre sparemålet"
+          }
+        }
+      }
+    },
+    "View all" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vis alle"
+          }
+        }
+      }
+    },
+    "No unpaid bills due in the next 7 days." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen ubetalte regninger forfaller de neste 7 dagene."
+          }
+        }
+      }
+    },
+    "Upcoming bills" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kommende regninger"
+          }
+        }
+      }
+    },
+    "Unpaid in this overview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubetalt i oversikten"
+          }
+        }
+      }
+    },
+    "All overdue bills and bills due in the next 7 days, independent of the selected period." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle forfalte regninger og regninger som forfaller de neste 7 dagene, uavhengig av valgt periode."
+          }
+        }
+      }
+    },
+    "No overdue bills" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen forfalte regninger"
+          }
+        }
+      }
+    },
+    "Overdue: %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfalt: %lld"
+          }
+        }
+      }
+    },
+    "Next 7 days: %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neste 7 dager: %lld"
+          }
+        }
+      }
+    },
+    "View all %lld bills" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vis alle %lld regninger"
+          }
+        }
+      }
+    },
+    "Registered deficit in selected period" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrert underskudd i valgt periode"
+          }
+        }
+      }
+    },
+    "Registered surplus in selected period" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrert overskudd i valgt periode"
+          }
+        }
+      }
+    },
+    "Registered income minus expenses, not your bank balance." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerte inntekter minus utgifter, ikke saldo på konto."
+          }
+        }
+      }
+    },
+    "Restored %lld savings goals." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjenopprettet %lld sparemål."
+          }
+        }
+      }
+    },
+    "Remove this savings goal?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slette sparemålet?"
+          }
+        }
+      }
+    },
+    "Mark paid: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merk betalt: %@"
+          }
+        }
+      }
+    },
+    "Until next salary or pension" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frem til neste lønn eller pensjon"
+          }
+        }
+      }
+    },
+    "Next salary or pension" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neste lønn eller pensjon"
+          }
+        }
+      }
+    },
+    "Select your next salary or pension to see expected income minus expenses." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg neste lønn eller pensjon for å se forventede inntekter minus utgifter."
+          }
+        }
+      }
+    },
+    "Creates a backup with transactions, budgets, savings goals, settings, notes and recurrence rules. Purchase status and external AI consent are not included." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lager en sikkerhetskopi med poster, budsjetter, sparemål, innstillinger, notater og gjentakelser. Kjøpsstatus og samtykke til ekstern KI er ikke inkludert."
+          }
+        }
+      }
+    },
+    "Restores transactions, budgets, savings goals, categories, settings and recurrence fields from a JSON backup." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjenoppretter poster, budsjetter, sparemål, kategorier, innstillinger og gjentakelser fra en JSON-sikkerhetskopi."
+          }
+        }
+      }
+    },
+    "Existing savings goals are kept when merging. Replace restores goals only when the file includes them. Older backups never remove your goals." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eksisterende sparemål beholdes ved sammenslåing. Erstatt gjenoppretter sparemål bare når filen inneholder dem. Eldre sikkerhetskopier fjerner aldri sparemålene dine."
+          }
+        }
+      }
+    },
+    "Transactions in selected period: %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poster i valgt periode: %lld"
+          }
+        }
+      }
+    },
+    "Other unpaid income through payday" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andre ubetalte inntekter til og med utbetalingsdagen"
+          }
+        }
+      }
+    },
+    "The selected payout itself is not included. Paid transactions are excluded; overdue bills are included." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selve utbetalingen du har valgt er ikke med i summen. Betalte poster er utelatt; forfalte regninger er med."
+          }
+        }
+      }
+    },
+    "Includes %lld estimated recurring occurrences. Open to check the estimates." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inkluderer %lld beregnede gjentakelser. Åpne for å kontrollere anslagene."
+          }
+        }
+      }
+    },
+    "Selected payout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valgt utbetaling"
+          }
+        }
+      }
+    },
+    "Payout date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utbetalingsdato"
+          }
+        }
+      }
+    },
+    "Change date for this payout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endre dato for denne utbetalingen"
+          }
+        }
+      }
+    },
+    "How to read the forecast" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slik leser du prognosen"
+          }
+        }
+      }
+    },
+    "We calculate other unpaid income minus unpaid bills from today through the selected payout date. The selected salary or pension itself is excluded, as are completed payments. Overdue unpaid bills are included." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vi beregner andre ubetalte inntekter minus ubetalte regninger fra i dag til og med valgt utbetalingsdato. Selve lønnen eller pensjonen du har valgt er ikke med, og betalte poster er utelatt. Forfalte ubetalte regninger er med."
+          }
+        }
+      }
+    },
+    "Example: no other unpaid income and 5,000 kr in unpaid bills gives −5,000 kr. This means bills exceed other expected income by 5,000 kr before the payout; it does not mean your bank account is overdrawn." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eksempel: Ingen andre ubetalte inntekter og 5 000 kr i ubetalte regninger gir −5 000 kr. Det betyr at regningene er 5 000 kr høyere enn andre forventede inntekter før utbetalingen. Det betyr ikke at kontoen er overtrukket."
+          }
+        }
+      }
+    },
+    "The monthly overview covers the selected period. This forecast covers a different period and includes estimates from recurring schedules, so the totals can differ." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Månedsoversikten gjelder valgt periode. Denne prognosen gjelder en annen periode og kan inkludere anslag fra gjentakelser. Derfor kan totalsummene være forskjellige."
+          }
+        }
+      }
+    },
+    "If December is paid on the 10th instead of the 20th, change the date for that payout above. The normal recurrence day and other saved occurrences are kept. The updated date syncs with the transaction." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvis desemberutbetalingen kommer den 10. i stedet for den 20., endrer du datoen for akkurat den utbetalingen ovenfor. Vanlig gjentakelsesdag og andre lagrede forekomster beholdes. Den nye datoen synkroniseres sammen med posten."
+          }
+        }
+      }
+    },
+    "Through payout date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Til og med utbetalingsdatoen"
+          }
+        }
+      }
+    },
+    "Estimated recurring occurrences" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beregnede gjentakelser"
+          }
+        }
+      }
+    },
+    "Estimated occurrences" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antall beregnede forekomster"
+          }
+        }
+      }
+    },
+    "Estimated recurring income" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inntektsanslag fra gjentakelser"
+          }
+        }
+      }
+    },
+    "Estimated recurring bills" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regningsanslag fra gjentakelser"
+          }
+        }
+      }
+    },
+    "These estimates are already included in the totals above. They are not extra saved transactions. Check the dated rows below if an amount seems too high." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disse anslagene inngår allerede i totalsummene ovenfor. De er ikke ekstra lagrede poster. Kontroller radene med dato nedenfor hvis et beløp virker for høyt."
+          }
+        }
+      }
+    },
+    "Only this payout date changes. The normal recurrence day and other saved occurrences are kept. No income is marked as received." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bare datoen for denne utbetalingen endres. Vanlig gjentakelsesdag og andre lagrede forekomster beholdes. Ingen inntekt markeres som mottatt."
+          }
+        }
+      }
+    },
+    "Change payout date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endre utbetalingsdato"
+          }
+        }
+      }
+    },
+    "Could not change payout date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke endre utbetalingsdato"
+          }
+        }
+      }
+    },
+    "The payout may have changed on another device. No date was saved. Close and reopen the date editor before trying again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utbetalingen kan ha blitt endret på en annen enhet. Ingen dato ble lagret. Lukk og åpne datovalget på nytt før du prøver igjen."
           }
         }
       }

@@ -34,7 +34,7 @@ struct ImportDataView: View {
             Section("Supported formats") {
                 ImportInfoRow(
                     title: "JSON",
-                    detail: "Restores transactions, budgets, categories, settings and recurrence fields from a JSON backup."
+                    detail: "Restores transactions, budgets, savings goals, categories, settings and recurrence fields from a JSON backup."
                 )
                 ImportInfoRow(
                     title: "CSV",
@@ -43,6 +43,7 @@ struct ImportDataView: View {
             }
 
             Section("Safety") {
+                Text("Existing savings goals are kept when merging. Replace restores goals only when the file includes them. Older backups never remove your goals.")
                 Text("MySavings: Uendrede lokale poster oppdateres fra nyere filer. Lokale endringer vises som konflikter og beholdes. Importer først den opprinnelige filen dersom du har importert tidligere.")
                 Text("Merge adds records with new IDs and keeps existing records unchanged. Replace restores transactions and, when included, budgets from the backup. Matching category definitions are restored; other categories are kept. Settings are restored in both modes. Purchase status and external AI consent are never restored.")
                     .foregroundStyle(.secondary)

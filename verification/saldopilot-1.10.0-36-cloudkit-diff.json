@@ -1,0 +1,27 @@
+{
+  "originalSHA256": "d63649e2ce0e9be309c43d4e937e0c2dc69cbead3c738a22158bba4153c642fe",
+  "addedRecordTypes": [
+    "CD_SavingsGoal"
+  ],
+  "unchangedRecordTypes": [
+    "CD_Budget",
+    "CD_CategoryDefinition",
+    "CD_ExternalImportReceipt",
+    "CD_Transaction",
+    "Users"
+  ],
+  "changedExistingTypes": [],
+  "newBusinessFields": 9,
+  "newIndexes": 21,
+  "appleValidation": "Validation Passed",
+  "importResult": "The schema was successfully imported.",
+  "deploymentResult": "The schema is deployed to Production.",
+  "deploymentDate": "2026-11-22",
+  "container": "iCloud.com.terjemoe.SaldoPilot",
+  "productionTypesAdded": [
+    "CD_SavingsGoal"
+  ],
+  "productionIndexesAdded": 21,
+  "existingDataTypesChanged": [],
+  "recordDataModified": false
+}

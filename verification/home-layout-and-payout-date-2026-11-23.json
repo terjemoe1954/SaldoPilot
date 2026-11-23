@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-23",
+  "state": "published to TestFlight",
+  "latestPublishedBuild": "1.10.1 (37)",
+  "changes": [
+    "Actions directly below the hero on every layout",
+    "Active transaction count for selected due-date period, including transfers excluded from ordinary cash-flow totals",
+    "Savings goals moved below insights",
+    "Forecast shows selected payout name and separates income, unpaid bills and recurrence estimates",
+    "Plain-language explanation and example of forecast versus monthly overview",
+    "Edit one pending payout date while preserving recurrence anchor and other stored occurrences"
+  ],
+  "calculationPolicy": "Original forecast arithmetic retained. User confirmed screenshot incomes represent real upcoming income.",
+  "dataProtection": [
+    "No new schema or iCloud deployment needed",
+    "No user transaction or savings goal was edited during testing",
+    "Cancel edits only local sheet state; successful save changes selected payout date, anchor when missing, and updatedAt",
+    "Guard against stale editor, settled/archived/cancelled income and past dates"
+  ],
+  "validation": {
+    "isolatedSwiftTests": {
+      "passed": 34,
+      "failed": 0,
+      "resultBundle": "/tmp/saldopilot-home-followup-tests.xcresult"
+    },
+    "iOSSimulatorBuild": "passed",
+    "macBuild": "passed",
+    "iPadUI": [
+      "Observed count and Actions above bills",
+      "Opened forecast and explanation",
+      "Opened date editor and calendar",
+      "Changed test date from Nov 25 to Nov 24, cancelled and verified original Nov 25 remained",
+      "Returned to updated dashboard"
+    ],
+    "decemberExceptionTest": "Dec 20 to Dec 10 shortens forecast, next monthly occurrence remains Jan 20, same transaction ID and no inserted rows"
+  },
+  "productionUserDataTouched": false,
+  "buildURL": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/3b4d6c9f-6f9b-4eca-b08e-69c0eb2f09f8"
+}

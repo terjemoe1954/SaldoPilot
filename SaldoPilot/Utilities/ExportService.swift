@@ -14,17 +14,19 @@ enum ExportService {
         budgets: [Budget] = [],
         categoryDefinitions: [CategoryDefinition] = [],
         settings: BackupAppSettings? = nil,
-        importReceipts: [ExternalImportReceipt] = []
+        importReceipts: [ExternalImportReceipt] = [],
+        savingsGoals: [SavingsGoal] = []
     ) throws -> URL {
         let definitions = CategoryOption.preferredDefinitions(categoryDefinitions).values.sorted { $0.id < $1.id }
         let payload = ExportPayload(
-            formatVersion: 6,
+            formatVersion: 7,
             exportedAt: .now,
             categories: CategoryKind.allCases.filter { kind in !definitions.contains { $0.id == kind.rawValue } }.map(ExportCategory.init) + definitions.map(ExportCategory.init),
             transactions: transactions.map(ExportTransaction.init),
             budgets: budgets.map(ExportBudget.init),
             settings: settings,
-            importReceipts: importReceipts.map(ExternalImportReceiptRecord.init)
+            importReceipts: importReceipts.map(ExternalImportReceiptRecord.init),
+            savingsGoals: SavingsGoalSelection.preferred(savingsGoals).map(SavingsGoalRecord.init)
         )
 
         let encoder = JSONEncoder()
@@ -136,6 +138,7 @@ private struct ExportPayload: Encodable {
     let budgets: [ExportBudget]
     let settings: BackupAppSettings?
     let importReceipts: [ExternalImportReceiptRecord]
+    let savingsGoals: [SavingsGoalRecord]
 }
 
 private struct ExportBudget: Encodable {

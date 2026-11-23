@@ -9,7 +9,7 @@ enum TransactionSettlementVerification {
     enum Failure: Error { case checkFailed }
     static func check(_ result: Bool) throws { if !result { throw Failure.checkFailed } }
     static func run() throws {
-        let schema = Schema(SaldoPilotSchemaV6.models)
+        let schema = Schema(SaldoPilotSchemaV7.models)
         let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)])
         let context = ModelContext(container)
         context.autosaveEnabled = false

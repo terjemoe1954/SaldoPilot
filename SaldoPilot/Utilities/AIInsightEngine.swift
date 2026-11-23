@@ -304,7 +304,9 @@ enum AIInsightEngine {
     }
 
     private static func localized(_ value: String.LocalizationValue, locale: Locale) -> String {
-        String(localized: value, bundle: .main, locale: locale)
+        let code = locale.usesNorwegianLanguage ? "nb" : (locale.language.languageCode?.identifier ?? "en")
+        let bundle = Bundle.main.path(forResource: code, ofType: "lproj").flatMap(Bundle.init(path:)) ?? .main
+        return String(localized: value, bundle: bundle, locale: locale)
     }
 }
 

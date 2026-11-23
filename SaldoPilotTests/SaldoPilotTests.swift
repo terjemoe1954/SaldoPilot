@@ -6,6 +6,14 @@ import Testing
 
 @MainActor
 struct SaldoPilotTests {
+    @Test("One early payout updates forecast boundaries without shifting normal recurrence or creating rows")
+    func earlyPayoutDate() throws { try PaydayDateVerification.run() }
+
+    @Test("New home preserves bill boundaries, migrates V6 and round-trips goals without cash-flow mutations")
+    func newHomeAndSavingsGoals() throws {
+        try DashboardHomeVerification.run()
+    }
+
     @Test("Unpaid bill checklist uses inclusive date boundaries and excludes settled, archived, cancelled and income rows")
     func unpaidBillChecklist() throws {
         try UnpaidBillsReportVerification.run()
@@ -131,7 +139,7 @@ struct SaldoPilotTests {
             try container.mainContext.save()
         }
         try createV4()
-        let schema = Schema(SaldoPilotSchemaV6.models)
+        let schema = Schema(SaldoPilotSchemaV7.models)
         let container = try ModelContainer(for: schema, migrationPlan: SaldoPilotMigrationPlan.self, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
         let items = try container.mainContext.fetch(FetchDescriptor<Transaction>())
         let definitions = try container.mainContext.fetch(FetchDescriptor<CategoryDefinition>())
@@ -452,7 +460,7 @@ struct SaldoPilotTests {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let storeURL = directory.appending(path: "PersistenceTest.store", directoryHint: .notDirectory)
-        let schema = Schema(SaldoPilotSchemaV6.models)
+        let schema = Schema(SaldoPilotSchemaV7.models)
 
         do {
             let configuration = ModelConfiguration(
@@ -539,7 +547,7 @@ struct SaldoPilotTests {
             try oldContainer.mainContext.save()
         }
 
-        let currentSchema = Schema(SaldoPilotSchemaV6.models)
+        let currentSchema = Schema(SaldoPilotSchemaV7.models)
         let configuration = ModelConfiguration(
             "MigrationTest",
             schema: currentSchema,
@@ -598,7 +606,7 @@ struct SaldoPilotTests {
 
         // Verify both the upgrade and a subsequent app launch on the upgraded store.
         for _ in 0..<2 {
-            let schema = Schema(SaldoPilotSchemaV6.models)
+            let schema = Schema(SaldoPilotSchemaV7.models)
             let configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
             let upgraded = try ModelContainer(
                 for: schema, migrationPlan: SaldoPilotMigrationPlan.self, configurations: [configuration]

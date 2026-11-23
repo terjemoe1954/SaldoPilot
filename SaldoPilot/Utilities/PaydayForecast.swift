@@ -18,6 +18,10 @@ enum PaydayForecast {
         var expensesTotal: Decimal { expenses.reduce(0) { $0 + $1.amount } }
         var incomeTotal: Decimal { income.reduce(0) { $0 + $1.amount } }
         var net: Decimal { incomeTotal - expensesTotal }
+        var projectedIncomeTotal: Decimal { income.filter(\.projected).reduce(0) { $0 + $1.amount } }
+        var projectedExpensesTotal: Decimal { expenses.filter(\.projected).reduce(0) { $0 + $1.amount } }
+        var projectedCount: Int { (income + expenses).filter(\.projected).count }
+
     }
 
     static func salaryCandidates(_ transactions: [Transaction], now: Date = .now, calendar: Calendar = .current) -> [Transaction] {

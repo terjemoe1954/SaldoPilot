@@ -13,6 +13,7 @@ struct ExportDataView: View {
     @Query(sort: \Budget.monthStart) private var budgets: [Budget]
     @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
 
+    @Query private var savingsGoals: [SavingsGoal]
     @Query private var importReceipts: [ExternalImportReceipt]
 
     @State private var backupURL: URL?
@@ -22,7 +23,7 @@ struct ExportDataView: View {
     var body: some View {
         Form {
             Section("JSON backup") {
-                Text("Creates a backup with transactions, budgets, settings, notes and recurrence rules. Purchase status and external AI consent are not included.")
+                Text("Creates a backup with transactions, budgets, savings goals, settings, notes and recurrence rules. Purchase status and external AI consent are not included.")
                     .foregroundStyle(.secondary)
 
                 Button {
@@ -85,7 +86,8 @@ struct ExportDataView: View {
                 budgets: budgets,
                 categoryDefinitions: categoryDefinitions,
                 settings: BackupAppSettings.capture(),
-                importReceipts: importReceipts
+                importReceipts: importReceipts,
+                savingsGoals: savingsGoals
             )
         } catch {
             exportError = error.localizedDescription

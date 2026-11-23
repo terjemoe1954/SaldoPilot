@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct DashboardView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.locale) private var locale
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
     @Query(sort: \CategoryDefinition.name) private var categoryDefinitions: [CategoryDefinition]
@@ -27,59 +28,46 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    if showNameOnDashboard && !displayName.trimmedForDisplay.isEmpty {
-                        DashboardGreetingView(name: displayName.trimmedForDisplay)
-                    }
-
-                    if activeTransactions.isEmpty {
-                        DashboardGettingStartedCard(
-                            onNewIncome: onNewIncome,
-                            onNewExpense: onNewExpense
-                        )
-                    }
-
-                    DashboardPeriodSection(
-                        selectedPeriod: selectedPeriodBinding,
-                        customStartDate: $customStartDate,
-                        customEndDate: $customEndDate
-                    )
-
-                    DashboardSummarySection(
-                        summary: summary,
-                        onShowOverdue: { onShowTransactions(.overdue) },
-                        onShowNextDue: { onShowTransactions(.nextDue) }
-                    )
-
-                    PaydayForecastCard()
-
-                    DashboardQuickActionsSection(
-                        onNewIncome: onNewIncome,
-                        onNewExpense: onNewExpense,
-                        onRegisterPayment: onRegisterPayment
-                    )
-
-                    AIInsightSection(
-                        insights: aiInsights,
-                        onAsk: { isShowingAIQuery = true },
-                        onSelect: { selectedAIInsight = $0 }
-                    )
-
-                    DashboardAttentionSection(
-                        items: attentionItems,
-                        onShowTransactions: { onShowTransactions(.all) },
-                        onSelectItem: { item in
-                            onShowTransactions(item.listFilter)
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        if showNameOnDashboard && !displayName.trimmedForDisplay.isEmpty {
+                            DashboardGreetingView(name: displayName.trimmedForDisplay)
                         }
-                    )
-
+                        if activeTransactions.isEmpty {
+                            DashboardGettingStartedCard(onNewIncome: onNewIncome, onNewExpense: onNewExpense)
+                        }
+                        DashboardPeriodSection(selectedPeriod: selectedPeriodBinding,
+                                               customStartDate: $customStartDate, customEndDate: $customEndDate)
+                        overviewHero
+                        quickActions
+                        if geometry.size.width >= 760 && !dynamicTypeSize.isAccessibilitySize {
+                            HStack(alignment: .top, spacing: 20) {
+                                VStack(spacing: 20) {
+                                    DashboardBillsSection(transactions: transactions)
+                                }.frame(maxWidth: .infinity)
+                                VStack(spacing: 20) {
+                                    PaydayForecastCard()
+                                }.frame(maxWidth: .infinity)
+                            }
+                        } else {
+                            DashboardBillsSection(transactions: transactions)
+                            PaydayForecastCard()
+                        }
+                        AIInsightSection(insights: aiInsights,
+                                         onAsk: { isShowingAIQuery = true },
+                                         onSelect: { selectedAIInsight = $0 })
+                        SavingsGoalsSection()
+                    }
+                    .frame(maxWidth: 1120)
+                    .padding(geometry.size.width >= 760 ? 24 : 16)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding()
+                .background(Color(.systemGroupedBackground))
             }
-            .background(Color(.systemGroupedBackground))
             .modifier(CloudSyncStatusInset())
-            .navigationTitle("Overview")
+            .navigationTitle("Your overview")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedAIInsight) { insight in
                 AIInsightTransactionsView(insight: insight)
             }
@@ -87,6 +75,42 @@ struct DashboardView: View {
                 AIQueryView(transactions: activeTransactions.filter(\.isIncludedInOrdinaryCashFlow))
             }
         }
+    }
+
+    private var overviewHero: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(summary.net < 0 ? "Registered deficit in selected period" : "Registered surplus in selected period")
+                .font(.subheadline.weight(.medium))
+            Text(summary.net.formattedCurrency)
+                .font(.largeTitle.weight(.bold)).monospacedDigit()
+                .minimumScaleFactor(0.6).lineLimit(1)
+            Text("Transactions in selected period: \(activeTransactions.filter { periodInterval.containsHalfOpen($0.dueDate) }.count)")
+                .font(.subheadline)
+            Text("Registered income minus expenses, not your bank balance.")
+                .font(.caption).foregroundStyle(.white.opacity(0.9))
+            Rectangle().fill(.white.opacity(0.25)).frame(height: 1)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 30) { heroAmounts }
+                VStack(alignment: .leading, spacing: 12) { heroAmounts }
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+        .background(LinearGradient(colors: [Color(red: 0.06, green: 0.31, blue: 0.67), Color(red: 0.20, green: 0.20, blue: 0.47)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 22))
+    }
+    @ViewBuilder private var heroAmounts: some View {
+        heroAmount("Income", amount: summary.income)
+        heroAmount("Expenses", amount: summary.expenses)
+        if summary.outstanding != 0 { heroAmount("Receivable", amount: summary.outstanding) }
+    }
+    private func heroAmount(_ title: LocalizedStringKey, amount: Decimal) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundStyle(.white.opacity(0.85))
+            Text(amount.formattedCurrency).font(.headline).monospacedDigit()
+        }
+    }
+    private var quickActions: some View {
+        DashboardQuickActionsSection(onNewIncome: onNewIncome, onNewExpense: onNewExpense, onRegisterPayment: onRegisterPayment)
     }
 
     private var selectedPeriod: DashboardPeriod {

@@ -16,24 +16,35 @@ struct PaydayForecastCard: View {
         Button { showingDetails = true } label: {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Label("Until next salary", systemImage: "calendar.badge.clock").font(.headline)
+                    Label("Until next salary or pension", systemImage: "calendar.badge.clock").font(.headline)
                     Spacer()
                     Image(systemName: "chevron.right").accessibilityHidden(true)
                 }
                 if let result {
+                    Text(result.salary.title).font(.subheadline.weight(.medium))
                     Text(result.net.formattedCurrency)
                         .font(.title2.bold())
-                        .foregroundStyle(result.net < 0 ? Color.red : Color.primary)
+                        .foregroundStyle(result.net < 0 ? Color.red : Color.green)
                     Text(result.net < 0 ? LocalizedStringKey("Expected deficit") : LocalizedStringKey("Expected surplus"))
                         .font(.subheadline).foregroundStyle(.secondary)
-                    LabeledContent("Next salary", value: result.salary.dueDate.formatted(.dateTime.day().month(.abbreviated).year().locale(locale)))
+                    LabeledContent("Next salary or pension", value: result.salary.dueDate.formatted(.dateTime.day().month(.abbreviated).year().locale(locale)))
                         .font(.subheadline)
+                    LabeledContent("Other unpaid income through payday", value: result.incomeTotal.formattedCurrency)
+                        .font(.caption)
+                    LabeledContent("Unpaid bills through payday", value: "− " + result.expensesTotal.formattedCurrency)
+                        .font(.caption)
+                    Text("The selected payout itself is not included. Paid transactions are excluded; overdue bills are included.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if result.projectedCount > 0 {
+                        Text("Includes \(result.projectedCount) estimated recurring occurrences. Open to check the estimates.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     if result.net < 0 {
                         Label("Expected expenses exceed expected income in this period.", systemImage: "exclamationmark.triangle")
                             .font(.subheadline).foregroundStyle(.red)
                     }
                 } else {
-                    Text("Select your next salary to see expected income minus expenses.")
+                    Text("Select your next salary or pension to see expected income minus expenses.")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
                 Text("Expected surplus or deficit - not your bank balance.").font(.caption).foregroundStyle(.secondary)
@@ -41,7 +52,7 @@ struct PaydayForecastCard: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background, in: RoundedRectangle(cornerRadius: 12))
+            .background(.background, in: RoundedRectangle(cornerRadius: 20))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -51,6 +62,7 @@ struct PaydayForecastCard: View {
 
 struct PaydayForecastView: View {
     @State private var changeHistory = ForecastChangeHistory.live()
+    @State private var editingPayday: Transaction?
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Transaction.dueDate) private var transactions: [Transaction]
@@ -66,11 +78,20 @@ struct PaydayForecastView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Next salary", selection: Binding(get: { selectedSalary?.id.uuidString ?? "none" }, set: { salarySelection.select($0) })) {
+                    Picker("Next salary or pension", selection: Binding(get: { selectedSalary?.id.uuidString ?? "none" }, set: { salarySelection.select($0) })) {
                         Text("Select income transaction").tag("none")
                         ForEach(candidates, id: \.id) { item in
                             Text(item.title + " · " + item.dueDate.formatted(.dateTime.day().month(.abbreviated).year().locale(locale)) + " · " + item.amount.formattedCurrency)
                                 .tag(item.id.uuidString)
+                        }
+                    }
+                    if let salary = selectedSalary {
+                        LabeledContent("Selected payout", value: salary.title)
+                        LabeledContent("Payout date") {
+                            Text(salary.dueDate, format: .dateTime.day().month(.abbreviated).year().locale(locale))
+                        }
+                        Button { editingPayday = salary } label: {
+                            Label("Change date for this payout", systemImage: "calendar.badge.clock")
                         }
                     }
                 } header: {
@@ -95,23 +116,38 @@ struct PaydayForecastView: View {
                     }
                 }
 
+                Section("How to read the forecast") {
+                    Text("We calculate other unpaid income minus unpaid bills from today through the selected payout date. The selected salary or pension itself is excluded, as are completed payments. Overdue unpaid bills are included.")
+                    Text("Example: no other unpaid income and 5,000 kr in unpaid bills gives −5,000 kr. This means bills exceed other expected income by 5,000 kr before the payout; it does not mean your bank account is overdrawn.")
+                    Text("The monthly overview covers the selected period. This forecast covers a different period and includes estimates from recurring schedules, so the totals can differ.")
+                    Text("If December is paid on the 10th instead of the 20th, change the date for that payout above. The normal recurrence day and other saved occurrences are kept. The updated date syncs with the transaction.")
+                }
                 if let result {
                     Section("Forecast") {
                         LabeledContent("From today", value: result.startDate.formatted(.dateTime.day().month(.abbreviated).year().locale(locale)))
-                        LabeledContent("Through payday", value: result.salary.dueDate.formatted(.dateTime.day().month(.abbreviated).year().locale(locale)))
-                        LabeledContent("Expected income before salary", value: result.incomeTotal.formattedCurrency)
+                        LabeledContent("Through payout date", value: result.salary.dueDate.formatted(.dateTime.day().month(.abbreviated).year().locale(locale)))
+                        LabeledContent("Other unpaid income through payday", value: result.incomeTotal.formattedCurrency)
                         LabeledContent("Unpaid expenses including overdue bills", value: "− " + result.expensesTotal.formattedCurrency)
                         LabeledContent { Text(result.net.formattedCurrency) } label: {
                             Text(result.net < 0 ? LocalizedStringKey("Expected deficit") : LocalizedStringKey("Expected surplus"))
                         }
                             .fontWeight(.bold)
-                            .foregroundStyle(result.net < 0 ? Color.red : Color.primary)
+                            .foregroundStyle(result.net < 0 ? Color.red : Color.green)
                         if result.net < 0 {
                             Label("Expected expenses exceed expected income in this period.", systemImage: "exclamationmark.triangle")
                                 .foregroundStyle(.red)
                         }
                         Text("Expected surplus or deficit - not your bank balance.")
                             .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    if result.projectedCount > 0 {
+                        Section("Estimated recurring occurrences") {
+                            LabeledContent("Estimated occurrences", value: String(result.projectedCount))
+                            LabeledContent("Estimated recurring income", value: result.projectedIncomeTotal.formattedCurrency)
+                            LabeledContent("Estimated recurring bills", value: result.projectedExpensesTotal.formattedCurrency)
+                            Text("These estimates are already included in the totals above. They are not extra saved transactions. Check the dated rows below if an amount seems too high.")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                        }
                     }
                     Section("What changed?") {
                         NavigationLink {
@@ -152,9 +188,10 @@ struct PaydayForecastView: View {
                     }
                 }
             }
+            .sheet(item: $editingPayday) { PaydayDateSheet(transaction: $0) }
             .onAppear { saveFirstComparison() }
             .onChange(of: selectedSalary?.id) { _, _ in saveFirstComparison() }
-            .navigationTitle("Until next salary")
+            .navigationTitle("Until next salary or pension")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
     }

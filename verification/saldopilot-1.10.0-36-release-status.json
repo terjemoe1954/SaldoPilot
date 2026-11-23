@@ -1,0 +1,28 @@
+{
+  "app": "SaldoPilot",
+  "version": "1.10.0",
+  "build": "36",
+  "state": "testing",
+  "archive": "/Users/terjemoe/Library/Developer/Xcode/Archives/2026-11-22/saldopilot-1.10.0-36.xcarchive",
+  "cloudSchema": "CD_SavingsGoal deployed to Production; all existing types preserved",
+  "verification": [
+    "33 isolated tests passed",
+    "V6 to V7 migration and savings-goal backup/merge tests passed",
+    "iOS simulator and Designed for iPad Mac builds passed",
+    "signed release archive succeeded",
+    "Apple schema validation passed; production deployment confirmed",
+    "Upload and export succeeded",
+    "Norwegian What to Test saved",
+    "Internal group Builds lists 1.10.0 (36) as Testing"
+  ],
+  "remainingUserTesting": [
+    "Hands-on testing on iPhone, iPad and Mac",
+    "Savings goal create/edit/delete synchronization across all devices"
+  ],
+  "uploadResult": "Upload succeeded / EXPORT SUCCEEDED",
+  "testNotesPrepared": true,
+  "testerGroup": "Internal",
+  "testNotesSaved": true,
+  "buildURL": "https://appstoreconnect.apple.com/teams/69a6de6f-0408-47e3-e053-5b8c7c11a4d1/apps/6812693014/testflight/ios/79e37538-8e2f-437f-971b-b7e29610d585",
+  "cloudSchemaDeployed": true
+}

@@ -1,0 +1,9 @@
+Ny forside, regningsoversikt og sparemål på iPhone, iPad og Mac.
+
+• Ny forside med overskudd/underskudd, forfalte og kommende regninger, prognose og sparemål. To kolonner når skjermen har plass.
+• Regninger: Kontroller antall, beløp og datoer. Åpne en regning og bruk betalingssirkel til å velge dato. Avbryt først, og kontroller deretter at en godkjent betaling vises én gang og synkroniseres.
+• Prognose: Kontroller lønns-/pensjonsvalg, beregning og hvilke poster som inngår. Beløpet er forventet overskudd/underskudd, ikke saldo på konto.
+• Sparemål: Opprett, rediger og slett et testmål. Kontroller målbeløp, spart hittil, fremdrift og valgfri måldato. Kontroller samme resultat på alle tre enhetene. Sparemål endrer ikke inntekter, utgifter eller prognosen.
+• Sikkerhetskopi: Ta en ny JSON-kopi med sparemål. Gjentatt import med «Slå sammen» skal ikke lage duplikater. Eksisterende lokale sparemål beholdes ved sammenslåing.
+• Eldre sikkerhetskopier og MySavings-filer skal fortsatt kunne importeres uten å fjerne sparemål.
+• Regningene vises nå direkte på forsiden ved oppstart. Rapportene finnes fortsatt under «Vis alle» og Innstillinger → Rapporter.

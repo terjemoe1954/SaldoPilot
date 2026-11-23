@@ -1,0 +1,16 @@
+{
+  "recordType": "CD_SavingsGoal",
+  "status": "deployed to Production 2026-11-22",
+  "fields": {
+    "CD_entityName": "STRING",
+    "CD_id": "STRING",
+    "CD_name": "STRING",
+    "CD_targetAmount": "DOUBLE",
+    "CD_savedAmount": "DOUBLE",
+    "CD_targetDate": "TIMESTAMP",
+    "CD_createdAt": "TIMESTAMP",
+    "CD_updatedAt": "TIMESTAMP",
+    "CD_isDeleted": "INT64"
+  },
+  "note": "Validate against an export of the live development schema and the generated Core Data model. Preserve all current types and fields; this file is a checklist, not a full schema replacement."
+}

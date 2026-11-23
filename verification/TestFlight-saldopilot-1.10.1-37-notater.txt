@@ -1,0 +1,11 @@
+Oppdatert forside og tydeligere prognose på iPhone, iPad og Mac.
+
+• Handlinger ligger rett under oversikten, også på små skjermer.
+• Oversikten viser antall aktive poster i valgt periode.
+• Sparemål er flyttet lenger ned, under AI-oppsummeringen.
+• Prognosen viser fullt navn på valgt lønn/pensjon, andre ubetalte inntekter og ubetalte regninger til og med utbetalingsdatoen. Selve den valgte utbetalingen er ikke med. Beløpet er forventet overskudd/underskudd, ikke kontosaldo.
+• Beregnede gjentakelser vises med egne summer og antall, og inngår allerede i totalsummene.
+• Nytt valg: «Endre dato for denne utbetalingen». Test for eksempel 10. desember i stedet for 20. desember. Bare denne utbetalingen flyttes; vanlig gjentakelsesdag og andre lagrede forekomster beholdes.
+• Avbryt en datoendring og kontroller at opprinnelig dato beholdes. Lagre deretter en dato og kontroller synk og prognose på alle tre enhetene.
+• Kontroller at neste ordinære utbetaling fortsatt følger vanlig dag, at inntekten ikke markeres mottatt og at det ikke oppstår en ekstra post.
+• Regninger, betalingsdato, sparemål og sikkerhetskopi skal fortsatt fungere som tidligere.

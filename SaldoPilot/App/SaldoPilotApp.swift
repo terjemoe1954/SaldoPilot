@@ -186,7 +186,7 @@ struct SaldoPilotApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     private let modelContainer: ModelContainer = {
-        let schema = Schema(SaldoPilotSchemaV6.models)
+        let schema = Schema(SaldoPilotSchemaV7.models)
 
         if AppLaunchConfiguration.usesIsolatedCloudTestStore {
             let testCloudConfiguration = ModelConfiguration(

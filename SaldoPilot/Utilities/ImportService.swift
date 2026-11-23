@@ -16,6 +16,7 @@ struct ImportSummary: Equatable {
     let replacedBudgets: Int
     let settingsRestored: Bool
     let skippedRows: Int
+    var goalsCreated: Int = 0
     var sourceUpdated: Int = 0
     var sourceLinked: Int = 0
     var sourceOlderSkipped: Int = 0
@@ -28,6 +29,7 @@ struct ImportSummary: Equatable {
             String(localized: "Imported \(transactionsCreated) transactions. Matched categories for \(categorizedRows) rows. Skipped \(skippedRows) rows.")
         }
         var messages = [transactionMessage]
+        if goalsCreated > 0 { messages.append(String(localized: "Restored \(goalsCreated) savings goals.")) }
         if budgetsCreated > 0 || replacedBudgets > 0 {
             messages.append(String(localized: "Imported \(budgetsCreated) budgets. Replaced \(replacedBudgets) existing budgets."))
         }
@@ -85,6 +87,16 @@ enum ImportService {
         let existingBudgets = try context.fetch(FetchDescriptor<Budget>())
         let existingDefinitions = try context.fetch(FetchDescriptor<CategoryDefinition>())
         let existingReceipts = try context.fetch(FetchDescriptor<ExternalImportReceipt>())
+        let existingGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
+        var goalsCreated = 0
+        if mode == .replaceExisting, importResult.includesSavingsGoals {
+            existingGoals.forEach { context.delete($0) }
+        }
+        var goalIDs = Set(mode == .replaceExisting && importResult.includesSavingsGoals ? [] : existingGoals.map(\.id))
+        for record in importResult.savingsGoals {
+            guard goalIDs.insert(record.id).inserted else { continue }
+            context.insert(record.makeGoal()); goalsCreated += 1
+        }
         var transfer = MySavingsTransferOutcome()
         var transactionIDs = Set(existingTransactions.map(\.id))
         var budgetIDs = Set(existingBudgets.map(\.id))
@@ -174,6 +186,7 @@ enum ImportService {
             replacedBudgets: replacedBudgets,
             settingsRestored: importResult.settings != nil && importResult.mySavingsExportedAt == nil,
             skippedRows: skippedRows,
+            goalsCreated: goalsCreated,
             sourceUpdated: transfer.updated,
             sourceLinked: transfer.linked,
             sourceOlderSkipped: transfer.olderSkipped,
@@ -282,7 +295,9 @@ enum ImportService {
             categorizedRows: categorizedRows,
             skippedRows: skippedRows,
             mySavingsExportedAt: payload.isMySavings ? payload.exportedAt : nil,
-            importReceipts: payload.importReceipts
+            importReceipts: payload.importReceipts,
+            savingsGoals: payload.savingsGoals,
+            includesSavingsGoals: payload.includesSavingsGoals
         )
     }
 
@@ -468,6 +483,8 @@ private struct ImportPayload: Decodable {
     let sourceApp: String?
     let exportedAt: Date?
     let importReceipts: [ExternalImportReceiptRecord]
+    let savingsGoals: [SavingsGoalRecord]
+    let includesSavingsGoals: Bool
     var isMySavings: Bool { sourceApp == "MySavings" || (formatVersion == 4 && (categories ?? []).contains { $0.id?.hasPrefix("mysavings-") == true }) }
     let formatVersion: Int?
     let categories: [ImportCategory]?
@@ -477,7 +494,7 @@ private struct ImportPayload: Decodable {
     let settings: BackupAppSettings?
 
     enum CodingKeys: String, CodingKey {
-        case sourceApp, exportedAt, importReceipts
+        case sourceApp, exportedAt, importReceipts, savingsGoals
         case formatVersion
         case categories
         case transactions
@@ -491,7 +508,7 @@ private struct ImportPayload: Decodable {
 
     init(from decoder: Decoder) throws {
         if let transactions = try? [ImportTransaction](from: decoder) {
-            sourceApp = nil; exportedAt = nil; importReceipts = []
+            sourceApp = nil; exportedAt = nil; importReceipts = []; savingsGoals = []; includesSavingsGoals = false
             formatVersion = nil
             categories = []
             self.transactions = transactions
@@ -505,9 +522,13 @@ private struct ImportPayload: Decodable {
         sourceApp = try container.decodeIfPresent(String.self, forKey: .sourceApp)
         exportedAt = try container.decodeIfPresent(Date.self, forKey: .exportedAt)
         importReceipts = try container.decodeIfPresent([ExternalImportReceiptRecord].self, forKey: .importReceipts) ?? []
+        includesSavingsGoals = container.contains(.savingsGoals)
+        savingsGoals = includesSavingsGoals ? try container.decode([SavingsGoalRecord].self, forKey: .savingsGoals) : []
+        guard savingsGoals.allSatisfy(\.isValid), Set(savingsGoals.map(\.id)).count == savingsGoals.count else { throw BackupImportError.invalidBackup }
         guard importReceipts.allSatisfy(\.isValid), Set(importReceipts.map(\.sourceID)).count == importReceipts.count else { throw BackupImportError.invalidBackup }
         formatVersion = try container.decodeIfPresent(Int.self, forKey: .formatVersion)
-        if let formatVersion, !(1...6).contains(formatVersion) { throw BackupImportError.unsupportedVersion }
+        if let formatVersion, !(1...7).contains(formatVersion) { throw BackupImportError.unsupportedVersion }
+        if formatVersion == 7 && !includesSavingsGoals { throw BackupImportError.invalidBackup }
         categories = container.contains(.categories) ? try container.decode([ImportCategory].self, forKey: .categories) : []
         transactions = try Self.decodeTransactions(from: container)
         includesBudgets = container.contains(.budgets)
@@ -542,6 +563,8 @@ private struct PreparedImportResult {
     let skippedRows: Int
     var mySavingsExportedAt: Date? = nil
     var importReceipts: [ExternalImportReceiptRecord] = []
+    var savingsGoals: [SavingsGoalRecord] = []
+    var includesSavingsGoals: Bool = false
 }
 
 private struct ImportBudget: Decodable {
